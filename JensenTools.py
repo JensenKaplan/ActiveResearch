@@ -12,6 +12,13 @@ from itertools import product
 from functools import partial
 import pandas as pd 
 
+def getSaveDir(name = 'mac', project = 'Sr2PrO4'):
+	if name == 'mac':
+		return '/Users/jensenkaplan/Dropbox (GaTech)/Jensen/{}/'.format(project)
+	else:
+		return '/Users/jensenkaplan/Dropbox (GaTech)/Jensen/{}/'.format(project)
+	
+
 #Self made functions for grid search calculations
 #####################################################################################################################################################################
 def saveMatrix(xmin,xmax,numx,bpfmin,bpfmax,numbpf,LSList,runDir,comp):
@@ -28,7 +35,7 @@ def saveMatrix(xmin,xmax,numx,bpfmin,bpfmax,numbpf,LSList,runDir,comp):
 		sio.savemat(runDir+'LS_%i.mat'%LSList[j], savedict)
 	return
 
-def saveMatrixPar(xmin,xmax,numx,bpfmin,bpfmax,numbpf,LSList,runDir,comp,numlevels):
+def saveMatrixPar(xmin,xmax,numx,bpfmin,bpfmax,numbpf,LSList,runDir,numlevels):
 	x = np.linspace(xmin,xmax,numx)
 	bpf = np.linspace(bpfmin,bpfmax,numx)
 	print('Xmin = %0.3f to Xmax = %.3f\nBPFmin = %.3f to BPFmax = %.3f \nwith number of steps in X = %s, Bpf = %s'%(xmin,xmax,bpfmin,bpfmax,numx,numbpf))
@@ -49,6 +56,54 @@ def saveMatrixPar(xmin,xmax,numx,bpfmin,bpfmax,numbpf,LSList,runDir,comp,numleve
 		sio.savemat(runDir+'LS_%i.mat'%LSList[j], savedict)
 	return
 
+def energyCalcKPar(x,bpf,LS, numlevels):
+	numlevels = numlevels
+	Stev = {}
+
+	Stev['B40'] = bpf
+	Stev['B60'] = x*bpf
+	Stev['B44'] = 5*Stev['B40']
+	Stev['B64'] = -21*Stev['B60']
+
+	Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling=LS)
+	Pr.diagonalize()
+	e = kmeansSort(Pr.eigenvalues,numlevels)
+	return e
+
+def energyCalcKParJ(x,bpf, numlevels):
+	numlevels = numlevels
+	Stev = {}
+
+	Stev['B40'] = bpf
+	Stev['B60'] = x*bpf
+	Stev['B44'] = 5*Stev['B40']
+	Stev['B64'] = -21*Stev['B60']
+
+	Pr = cef.CFLevels.Bdict(Bdict=Stev, ion ='Ce3+')
+	Pr.diagonalize()
+	e = kmeansSort(Pr.eigenvalues,numlevels)
+	return e
+
+def saveMatrixParJ(xmin,xmax,numx,bpfmin,bpfmax,numbpf,runDir,numlevels):
+	x = np.linspace(xmin,xmax,numx)
+	bpf = np.linspace(bpfmin,bpfmax,numx)
+	print('Xmin = %0.3f to Xmax = %.3f\nBPFmin = %.3f to BPFmax = %.3f \nwith number of steps in X = %s, Bpf = %s'%(xmin,xmax,bpfmin,bpfmax,numx,numbpf))
+
+
+	savedict = {'X': x, 'B': bpf}
+	# if __name__ == '__main__':
+	with mp.Pool() as P:
+		E = P.starmap(partial(energyCalcKParJ, numlevels = numlevels),product(x,bpf))
+		print(E[0])
+		E = np.reshape(E,(numx,-1,numlevels))
+		# P.close()
+
+	if (os.path.exists(runDir) == False):
+		os.makedirs(runDir)
+	for i in range(np.shape(E)[2]):
+		savedict['E%i'%(i+1)] = E[:,:,i]
+	sio.savemat(runDir+'J_grid.mat', savedict)
+	return
 
 def saveEvsLS(E,LS,runDir):
 	savedict = {'LS': LS}
@@ -205,19 +260,7 @@ def energyCalcK(x,bpf,LS):
 		# print(i)
 	return e
 
-def energyCalcKPar(x,bpf,LS, numlevels):
-	numlevels = numlevels
-	Stev = {}
 
-	Stev['B40'] = bpf
-	Stev['B60'] = x*bpf
-	Stev['B44'] = 5*Stev['B40']
-	Stev['B64'] = -21*Stev['B60']
-
-	Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling=LS)
-	Pr.diagonalize()
-	e = kmeansSort(Pr.eigenvalues,numlevels)
-	return e
 
 def energyCalcKPar2(LS,x = 0.0352 ,bpf = -0.3970, numlevels = 4):
 	numlevels = numlevels
