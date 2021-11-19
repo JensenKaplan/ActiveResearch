@@ -16,7 +16,7 @@ def getSaveDir(name = 'mac', project = 'Sr2PrO4'):
 	if name == 'mac':
 		return '/Users/jensenkaplan/Dropbox (GaTech)/Jensen/{}/'.format(project)
 	else:
-		return '/Users/jensenkaplan/Dropbox (GaTech)/Jensen/{}/'.format(project)
+		return "C:/Users/jense/Dropbox (GaTech)/Jensen/{}/".format(project)
 	
 
 #Self made functions for grid search calculations
@@ -169,7 +169,7 @@ def loadMatrixJ(runDir):
 	dataList = []
 	EList = []
 	E = []
-	print(data.keys())
+	# print(data.keys())
 	for i in data.keys():
 		if 'E' in i:
 			E.append(i)

@@ -18,7 +18,7 @@ import scipy.io as sio
 from functools import reduce
 # import time
 
-saveDir = getSaveDir() + 'cubic_matrix_J/' 
+saveDir = getSaveDir(name = 'windows') + 'cubic_matrix_J/' 
 
 
 # ### Define the measured energy levels (from INS data) and define an allowable tolerance between calculated and measured energy.
