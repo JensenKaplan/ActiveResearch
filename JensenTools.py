@@ -70,6 +70,64 @@ def energyCalcKPar(x,bpf,LS, numlevels):
 	e = kmeansSort(Pr.eigenvalues,numlevels)
 	return e
 
+# This function loads my .mat files for analyzing, plotting, finding compatibilities.
+#THIS WORKS since it can properly use my previously generated PrO2 data.
+def loadMatrixLS(runDir):
+	#Where to save and load the energy data for contours
+	matList = os.listdir(runDir) #The different LS calculations
+	LSNames = [] #Saving the LS names for plotting
+	for i in matList:
+		s = i.split('.')[0].split('_')
+		LSNames.append((s[0]+ ' = ' + s[1] + ' meV'))
+	dataList = []
+	EList = []
+	#List for storing energy level names, as taken from .mat file, helps keep track of which energy band we are talking about
+	for c in range(len(matList)):
+		data = sio.loadmat(runDir+matList[c])
+		E = []
+		for i in data.keys():
+			if 'E' in i:
+				E.append(i)
+		dataList.append(data)
+		EList.append(E)
+
+	return LSNames, EList, dataList
+
+
+
+	#List for storing energy level names, as taken from .mat file, helps keep track of which energy band we are talking about
+	for c in range(len(matList)):
+		E = []
+		for i in data.keys():
+			if 'E' in i:
+				E.append(i)
+		dataList.append(data)
+		EList.append(E)
+
+	return EList, dataList
+
+# contour plotting function for all energy bands
+def plotContoursLS(data,EList,E,LSName):
+	plt.figure()
+	numplots = len(EList)
+	if (numplots%2 == 0):
+		snum = np.sqrt(numplots)
+	else:
+		snum = np.sqrt(numplots) + 1
+	for i in range(1,numplots+1):
+		ax = plt.subplot(snum,snum,i)
+		# print(data['X'])
+		mapp = ax.contourf(data['X'][0],data['B'][0],data[EList[i-1]])
+		# print(np.shape(data[EList[i-1]]))
+		ax.set(xlabel = 'Ratio of B60/B40', ylabel = 'B Prefactor', title = EList[i-1])
+		cbar = plt.colorbar(mapp,ax = ax)
+		cbar.set_label('Energy (meV)')
+
+	plt.tight_layout(h_pad = -1, w_pad = -2)
+	plt.suptitle(LSName)
+	# plt.show()
+	return	
+
 def energyCalcKParJ(x,bpf, numlevels):
 	numlevels = numlevels
 	Stev = {}
@@ -89,12 +147,11 @@ def saveMatrixParJ(xmin,xmax,numx,bpfmin,bpfmax,numbpf,runDir,numlevels):
 	bpf = np.linspace(bpfmin,bpfmax,numx)
 	print('Xmin = %0.3f to Xmax = %.3f\nBPFmin = %.3f to BPFmax = %.3f \nwith number of steps in X = %s, Bpf = %s'%(xmin,xmax,bpfmin,bpfmax,numx,numbpf))
 
-
 	savedict = {'X': x, 'B': bpf}
 	# if __name__ == '__main__':
 	with mp.Pool() as P:
 		E = P.starmap(partial(energyCalcKParJ, numlevels = numlevels),product(x,bpf))
-		print(E[0])
+		# print(E[0])
 		E = np.reshape(E,(numx,-1,numlevels))
 		# P.close()
 
@@ -104,6 +161,44 @@ def saveMatrixParJ(xmin,xmax,numx,bpfmin,bpfmax,numbpf,runDir,numlevels):
 		savedict['E%i'%(i+1)] = E[:,:,i]
 	sio.savemat(runDir+'J_grid.mat', savedict)
 	return
+# This function loads my .mat files for analyzing, plotting, finding compatibilities.
+#THIS WORKS since it can properly use my previously generated PrO2 data.
+def loadMatrixJ(runDir):
+	#Where to save and load the energy data for contours
+	data = sio.loadmat(runDir)
+	dataList = []
+	EList = []
+	E = []
+	print(data.keys())
+	for i in data.keys():
+		if 'E' in i:
+			E.append(i)
+		dataList.append(data)
+		EList.append(E)
+	return E, data
+
+# contour plotting function for all energy bands
+def plotContoursJ(data,EList):
+	plt.figure()
+	numplots = len(EList)
+	if(numplots == 2):
+		snum = 2
+	elif (numplots%2 == 0):
+		snum = np.sqrt(numplots)
+	else:
+		snum = np.sqrt(numplots) + 1
+
+	for i in range(1,numplots+1):
+		ax = plt.subplot(snum,snum,i)
+		mapp = ax.contourf(data['X'][0],data['B'][0],data[EList[i-1]])
+		# print(np.shape(data[EList[i-1]]))
+		ax.set(xlabel = 'Ratio of B60/B40', ylabel = 'B Prefactor', title = EList[i-1])
+		cbar = plt.colorbar(mapp,ax = ax)
+		cbar.set_label('Energy (meV)')
+
+	plt.tight_layout(h_pad = -1, w_pad = -2)
+	plt.show()
+	return	
 
 def saveEvsLS(E,LS,runDir):
 	savedict = {'LS': LS}
@@ -220,28 +315,7 @@ def loadEvsLS(runDir):
 	# print(np.shape(E1))
 	return LS, E1, E2, E3, E4
 
-# This function loads my .mat files for analyzing, plotting, finding compatibilities.
-#THIS WORKS since it can properly use my previously generated PrO2 data.
-def loadMatrix(runDir):
-	#Where to save and load the energy data for contours
-	matList = os.listdir(runDir) #The different LS calculations
-	LSNames = [] #Saving the LS names for plotting
-	for i in matList:
-		s = i.split('.')[0].split('_')
-		LSNames.append((s[0]+ ' = ' + s[1] + ' meV'))
-	dataList = []
-	EList = []
-	#List for storing energy level names, as taken from .mat file, helps keep track of which energy band we are talking about
-	for c in range(len(matList)):
-		data = sio.loadmat(runDir+matList[c])
-		E = []
-		for i in data.keys():
-			if 'E' in i:
-				E.append(i)
-		dataList.append(data)
-		EList.append(E)
 
-	return LSNames, EList, dataList
 
 def energyCalcK(x,bpf,LS):
 	numlevels = 4
@@ -309,9 +383,43 @@ def kmeansSort(e,numlevels):
 #Check if E1 is within tolerance, add (x,bpf) coords to list
 #Check the same for E2, etc.
 #Then only keep the coordinates that appear in all of the energy bands
-def paramFinder(data,band,E,tolerance,comp,LSName):
+def paramFinderLS(data,band,E,tolerance,comp,LSName):
 
 	print('\nParameter search for: ',' Compound: ', comp, ' at ', LSName, 'with %0.3f tolerance.' %tolerance)
+	coords = []
+	#The first part that only care about individual energy band and toleranc 
+	for i in range(len(E)):
+		for j in range(len(data[band[i]])):
+			for k in range(len(data[band[i]][j])):
+				if not (np.isnan(data[band[i]][j][k])):
+					if (((1-tolerance)*E[i] <= data[band[i]][j][k]) and ((1+tolerance)*E[i] >=  data[band[i]][j][k])):
+						temp = [data[band[i]][j][k]]
+						if ([j,k] not in coords):
+							coords.append([j,k])
+
+	newCoords = []
+	#The second part that only leaves the coordinates that fall within all four bands.
+	for i in coords:
+		allbands = []
+		for j in range(len(E)):
+			if ((1-tolerance)*E[j] <= data[band[j]][i[0]][i[1]] and ((1+tolerance)*E[j] >= data[band[j]][i[0]][i[1]])):
+				allbands.append(0)
+				# print(data[band[j]][i[0]][i[1]])
+			else:
+				allbands.append(1)
+		if 1 not in allbands:
+			newCoords.append(i)
+
+	return newCoords
+
+#Function that finds compatibility coordinates within a certain tolerance.
+#Works as follows:
+#Check if E1 is within tolerance, add (x,bpf) coords to list
+#Check the same for E2, etc.
+#Then only keep the coordinates that appear in all of the energy bands
+def paramFinderJ(data,band,E,tolerance,comp):
+
+	print('\nParameter search for: ',' Compound: ', comp, ' with %0.3f tolerance.' %tolerance)
 	coords = []
 	#The first part that only care about individual energy band and toleranc 
 	for i in range(len(E)):
@@ -345,33 +453,24 @@ def convertCMtomeV(e):
 		converted.append(i/8.065)
 	return converted
 
-# contour plotting function for all energy bands
-def plotContours(data,EList,E,LSName):
-	plt.figure()
-	numplots = len(EList)
-	if (numplots%2 == 0):
-		snum = np.sqrt(numplots)
-	else:
-		snum = np.sqrt(numplots) + 1
-	for i in range(1,numplots+1):
-		ax = plt.subplot(snum,snum,i)
-		mapp = ax.contourf(data['X'][0],data['B'][0],data[EList[i-1]])
-		# print(np.shape(data[EList[i-1]]))
-		ax.set(xlabel = 'Ratio of B60/B40', ylabel = 'B Prefactor', title = EList[i-1])
-		cbar = plt.colorbar(mapp,ax = ax)
-		cbar.set_label('Energy (meV)')
 
-	plt.tight_layout(h_pad = -1, w_pad = -2)
-	plt.suptitle(LSName)
-	# plt.show()
-	return	
 
 # for checking eigenvalues (and hence energies) at a given (x,bpf) coordinate
-def printPCFEigens(x,bpf, LS):
+def printPCFEigensLS(x,bpf, LS):
 	Stev={'B40': bpf, 'B60': x*bpf}
 	Stev['B44'] = 5*Stev['B40']
 	Stev['B64'] = -21*Stev['B60']
 	Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling=LS)
+	Pr.diagonalize()
+	Pr.printEigenvectors()
+	return
+
+# for checking eigenvalues (and hence energies) at a given (x,bpf) coordinate
+def printPCFEigensJ(x,bpf):
+	Stev={'B40': bpf, 'B60': x*bpf}
+	Stev['B44'] = 5*Stev['B40']
+	Stev['B64'] = -21*Stev['B60']
+	Pr = cef.CFLevels.Bdict(Bdict=Stev, ion = 'Ce3+')
 	Pr.diagonalize()
 	Pr.printEigenvectors()
 	return
