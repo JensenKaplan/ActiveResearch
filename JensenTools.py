@@ -47,7 +47,7 @@ def saveMatrixPar(xmin,xmax,numx,bpfmin,bpfmax,numbpf,LSList,runDir,numlevels):
 		sio.savemat(runDir+'LS_%i.mat'%LSList[j], savedict)
 	return
 
-def energyCalcKPar(x,bpf,LSValue, numlevels, L = 3, S = 0.5, LS = True, ion = 'Ce3+'):
+def energyCalcKPar(x,bpf, numlevels, **kwargs):
 	numlevels = numlevels
 	Stev = {}
 
@@ -55,11 +55,13 @@ def energyCalcKPar(x,bpf,LSValue, numlevels, L = 3, S = 0.5, LS = True, ion = 'C
 	Stev['B60'] = x*bpf
 	Stev['B44'] = 5*Stev['B40']
 	Stev['B64'] = -21*Stev['B60']
-	if LS:
-		Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling=LSValue)
+	if kwargs['LS_on']:
+		kwargs['LSValue']
+		Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=kwargs['L'], S= kwargs['S'], SpinOrbitCoupling= kwargs['LSValue'])
 		Pr.diagonalize()
 		e = kmeansSort(Pr.eigenvalues,numlevels)
 	else:
+		ion = kwargs['ion']
 		Pr = cef.CFLevels.Bdict(Bdict = Stev,ion = ion)
 		Pr.diagonalize()
 		e = Pr.eigenvalues
@@ -163,27 +165,29 @@ def plotContoursJ(data,EList):
 	return	
 
 
-def saveMatrixParJ(xmin,xmax,numx,bpfmin,bpfmax,numbpf,runDir,gridname,numlevels,LSValue = 0, LS = True):
+def saveMatrixParJ(xmin,xmax,numx,bpfmin,bpfmax,numbpf,numlvls, runDir,gridname,**kwargs):
 	x = np.linspace(xmin,xmax,numx)
 	bpf = np.linspace(bpfmin,bpfmax,numx)
+
 	print('Xmin = %0.3f to Xmax = %.3f\nBPFmin = %.3f to BPFmax = %.3f \nwith number of steps in X = %s, Bpf = %s'%(xmin,xmax,bpfmin,bpfmax,numx,numbpf))
 	savedict = {'X': x, 'B': bpf}
+
 	if (os.path.exists(runDir) == False):
 		os.makedirs(runDir)
-	if LS:
+	if kwargs['LS_on']:
 		with mp.Pool() as P:
-			E = P.starmap(partial(energyCalcKPar, numlevels = numlevels, LSValue = LSValue, LS = True),product(x,bpf))
+			E = P.starmap(partial(energyCalcKPar, numlvls,),product(x,bpf))
 			E = np.reshape(E,(numx,-1,numlevels))
 			# P.close()
 	else:
 		with mp.Pool() as P:
-			E = P.starmap(partial(energyCalcKPar, numlevels = numlevels, LSValue = LSValue, LS =  False),product(x,bpf))
+			E = P.starmap(partial(energyCalcKPar,numlvls, **kwargs),product(x,bpf))
 			print(len(E))
 			E = np.reshape(E,(numx,numbpf,-1))
 
-		for i in range(np.shape(E)[2]):
-			savedict['E%i'%(i+1)] = E[:,:,i]
-		sio.savemat(runDir+gridname, savedict)
+	for i in range(np.shape(E)[2]):
+		savedict['E%i'%(i+1)] = E[:,:,i]
+	sio.savemat(runDir+gridname, savedict)
 
 	return
 # This function loads my .mat files for analyzing, plotting, finding compatibilities.
