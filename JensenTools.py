@@ -138,6 +138,31 @@ def plotContoursLS(data,EList,E,LSName):
 	return	
 
 
+# contour plotting function for all energy bands
+def plotContoursJ(data,EList):
+	plt.figure()
+	numplots = len(EList)
+	if(numplots == 2):
+		snum = 2
+	elif (numplots%2 == 0):
+		snum = np.ceil(np.sqrt(numplots))
+	else:
+		snum = np.sqrt(numplots) + 1
+
+	print(snum)
+	for i in range(1,numplots+1):
+		ax = plt.subplot(snum,snum,i)
+		mapp = ax.contourf(data['X'][0],data['B'][0],data[EList[i-1]])
+		# print(np.shape(data[EList[i-1]]))
+		ax.set(xlabel = 'Ratio of B60/B40', ylabel = 'B Prefactor', title = EList[i-1])
+		cbar = plt.colorbar(mapp,ax = ax)
+		cbar.set_label('Energy (meV)')
+
+	plt.tight_layout(h_pad = -1, w_pad = -2)
+	# plt.show()
+	return	
+
+
 def saveMatrixParJ(xmin,xmax,numx,bpfmin,bpfmax,numbpf,runDir,gridname,numlevels,LSValue = 0, LS = True):
 	x = np.linspace(xmin,xmax,numx)
 	bpf = np.linspace(bpfmin,bpfmax,numx)
@@ -176,30 +201,6 @@ def loadMatrixJ(runDir):
 		dataList.append(data)
 		EList.append(E)
 	return E, data
-
-# contour plotting function for all energy bands
-def plotContoursJ(data,EList):
-	plt.figure()
-	numplots = len(EList)
-	if(numplots == 2):
-		snum = 2
-	elif (numplots%2 == 0):
-		snum = np.sqrt(numplots)
-	else:
-		snum = np.sqrt(numplots) + 1
-
-	print(snum)
-	for i in range(1,numplots+1):
-		ax = plt.subplot(snum,snum,i)
-		mapp = ax.contourf(data['X'][0],data['B'][0],data[EList[i-1]])
-		# print(np.shape(data[EList[i-1]]))
-		ax.set(xlabel = 'Ratio of B60/B40', ylabel = 'B Prefactor', title = EList[i-1])
-		cbar = plt.colorbar(mapp,ax = ax)
-		cbar.set_label('Energy (meV)')
-
-	plt.tight_layout(h_pad = -1, w_pad = -2)
-	# plt.show()
-	return	
 
 def saveEvsLS(E,LS,runDir):
 	savedict = {'LS': LS}

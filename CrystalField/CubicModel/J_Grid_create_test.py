@@ -11,15 +11,15 @@
 import sys
 sys.path.append('../../')
 from JensenTools import *
-saveDir = getSaveDir()
-dataMat ='cubic_matrix_J/'
-grid = 'J_Grid_test.mat'
-saveDir = saveDir + dataMat + grid
+saveDir = getSaveDir('w')
+saveDir =saveDir + 'cubic_matrix_J/'
+grid = 'J_Grid_test_6lvls.mat'
+# saveDir = saveDir + grid
 
 # In[2]:
 
 
-numlevels = 0 #PCF produces a number of eigenvalues by diagonalizing the CF Hamiltonian. I specify the number of unique levels to cluster.
+numlevels = 6 #PCF produces a number of eigenvalues by diagonalizing the CF Hamiltonian. I specify the number of unique levels to cluster.
 xmin, xmax = -1,1
 bpfmin, bpfmax =  -1,1
 numx, numbpf = 800, 800

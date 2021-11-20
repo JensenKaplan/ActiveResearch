@@ -17,10 +17,10 @@ import os
 import scipy.io as sio
 from functools import reduce
 # import time
-saveDir = getSaveDir()
-dataMat ='cubic_matrix_J/'
-grid = 'J_Grid_test.mat'
-saveDir = saveDir + dataMat + grid
+saveDir = getSaveDir('w')
+saveDir = saveDir + 'cubic_matrix_J/'
+grid = 'J_Grid_test_6lvls.mat'
+saveDir = saveDir + grid
 
 
 # ### Define the measured energy levels (from INS data) and define an allowable tolerance between calculated and measured energy.
@@ -39,7 +39,7 @@ comp = 'Sr2PrO4' #Compound name
 
 print('Energies as measured by paper (meV):  ', Emeas)
 
-EList, data = loadMatrixJ(saveDir + grid) #Load in all created 800x800 grids
+EList, data = loadMatrixJ(saveDir) #Load in all created 800x800 grids
  
 
 
@@ -52,4 +52,4 @@ plotContoursJ(data,EList)
 
 # plotContoursJ(data,EList) #Contour plotting for 4 E levels
 
-
+plt.show()
