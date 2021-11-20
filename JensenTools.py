@@ -12,28 +12,19 @@ from itertools import product
 from functools import partial
 import pandas as pd 
 
-def getSaveDir(name = 'mac', project = 'Sr2PrO4'):
-	if name == 'mac':
+def getSaveDir(name = 'm', project = 'Sr2PrO4'):
+	if name == 'm':
 		return '/Users/jensenkaplan/Dropbox (GaTech)/Jensen/{}/'.format(project)
-	else:
+	elif name =='w':
 		return "C:/Users/jense/Dropbox (GaTech)/Jensen/{}/".format(project)
+	else:
+		"ERROR: Please use 'w' for Windows, 'm' for Mac." 
+
 	
 
 #Self made functions for grid search calculations
 #####################################################################################################################################################################
-def saveMatrix(xmin,xmax,numx,bpfmin,bpfmax,numbpf,LSList,runDir,comp):
-	x = np.linspace(xmin,xmax,numx)
-	bpf = np.linspace(bpfmin,bpfmax,numx)
-	print('Xmin = %0.3f to Xmax = %.3f\nBPFmin = %.3f to BPFmax = %.3f \nwith number of steps in X = %s, Bpf = %s'%(xmin,xmax,bpfmin,bpfmax,numx,numbpf))
-	for j in  range(len(LSList)):
-		E = energyCalcK(x,bpf,LSList[j],comp)
-		savedict = {'X': x, 'B': bpf, 'LS': LSList[j]}
-		if (os.path.exists(runDir) == False):
-			os.makedirs(runDir)
-		for i in range(np.shape(E)[2]):
-			savedict['E%i'%(i+1)] = E[:,:,i]
-		sio.savemat(runDir+'LS_%i.mat'%LSList[j], savedict)
-	return
+
 
 def saveMatrixPar(xmin,xmax,numx,bpfmin,bpfmax,numbpf,LSList,runDir,numlevels):
 	x = np.linspace(xmin,xmax,numx)
@@ -56,7 +47,7 @@ def saveMatrixPar(xmin,xmax,numx,bpfmin,bpfmax,numbpf,LSList,runDir,numlevels):
 		sio.savemat(runDir+'LS_%i.mat'%LSList[j], savedict)
 	return
 
-def energyCalcKPar(x,bpf,LS, numlevels):
+def energyCalcKPar(x,bpf,LSValue, numlevels, L = 3, S = 0.5, LS = True, ion = 'Ce3+'):
 	numlevels = numlevels
 	Stev = {}
 
@@ -64,11 +55,29 @@ def energyCalcKPar(x,bpf,LS, numlevels):
 	Stev['B60'] = x*bpf
 	Stev['B44'] = 5*Stev['B40']
 	Stev['B64'] = -21*Stev['B60']
-
-	Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling=LS)
-	Pr.diagonalize()
-	e = kmeansSort(Pr.eigenvalues,numlevels)
+	if LS:
+		Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling=LSValue)
+		Pr.diagonalize()
+		e = kmeansSort(Pr.eigenvalues,numlevels)
+	else:
+		Pr = cef.CFLevels.Bdict(Bdict = Stev,ion = ion)
+		Pr.diagonalize()
+		e = Pr.eigenvalues
 	return e
+
+# def energyCalcKParJ(x,bpf, numlevels):
+# 	numlevels = numlevels
+# 	Stev = {}
+
+# 	Stev['B40'] = bpf
+# 	Stev['B60'] = x*bpf
+# 	Stev['B44'] = 5*Stev['B40']
+# 	Stev['B64'] = -21*Stev['B60']
+
+# 	Pr = cef.CFLevels.Bdict(Bdict=Stev, ion ='Ce3+')
+# 	Pr.diagonalize()
+# 	e = kmeansSort(Pr.eigenvalues,numlevels)
+# 	return e
 
 # This function loads my .mat files for analyzing, plotting, finding compatibilities.
 #THIS WORKS since it can properly use my previously generated PrO2 data.
@@ -128,38 +137,29 @@ def plotContoursLS(data,EList,E,LSName):
 	# plt.show()
 	return	
 
-def energyCalcKParJ(x,bpf, numlevels):
-	numlevels = numlevels
-	Stev = {}
 
-	Stev['B40'] = bpf
-	Stev['B60'] = x*bpf
-	Stev['B44'] = 5*Stev['B40']
-	Stev['B64'] = -21*Stev['B60']
-
-	Pr = cef.CFLevels.Bdict(Bdict=Stev, ion ='Ce3+')
-	Pr.diagonalize()
-	e = kmeansSort(Pr.eigenvalues,numlevels)
-	return e
-
-def saveMatrixParJ(xmin,xmax,numx,bpfmin,bpfmax,numbpf,runDir,numlevels):
+def saveMatrixParJ(xmin,xmax,numx,bpfmin,bpfmax,numbpf,runDir,gridname,numlevels,LSValue = 0, LS = True):
 	x = np.linspace(xmin,xmax,numx)
 	bpf = np.linspace(bpfmin,bpfmax,numx)
 	print('Xmin = %0.3f to Xmax = %.3f\nBPFmin = %.3f to BPFmax = %.3f \nwith number of steps in X = %s, Bpf = %s'%(xmin,xmax,bpfmin,bpfmax,numx,numbpf))
-
 	savedict = {'X': x, 'B': bpf}
-	# if __name__ == '__main__':
-	with mp.Pool() as P:
-		E = P.starmap(partial(energyCalcKParJ, numlevels = numlevels),product(x,bpf))
-		# print(E[0])
-		E = np.reshape(E,(numx,-1,numlevels))
-		# P.close()
-
 	if (os.path.exists(runDir) == False):
 		os.makedirs(runDir)
-	for i in range(np.shape(E)[2]):
-		savedict['E%i'%(i+1)] = E[:,:,i]
-	sio.savemat(runDir+'J_grid.mat', savedict)
+	if LS:
+		with mp.Pool() as P:
+			E = P.starmap(partial(energyCalcKPar, numlevels = numlevels, LSValue = LSValue, LS = True),product(x,bpf))
+			E = np.reshape(E,(numx,-1,numlevels))
+			# P.close()
+	else:
+		with mp.Pool() as P:
+			E = P.starmap(partial(energyCalcKPar, numlevels = numlevels, LSValue = LSValue, LS =  False),product(x,bpf))
+			print(len(E))
+			E = np.reshape(E,(numx,numbpf,-1))
+
+		for i in range(np.shape(E)[2]):
+			savedict['E%i'%(i+1)] = E[:,:,i]
+		sio.savemat(runDir+gridname, savedict)
+
 	return
 # This function loads my .mat files for analyzing, plotting, finding compatibilities.
 #THIS WORKS since it can properly use my previously generated PrO2 data.
@@ -188,6 +188,7 @@ def plotContoursJ(data,EList):
 	else:
 		snum = np.sqrt(numplots) + 1
 
+	print(snum)
 	for i in range(1,numplots+1):
 		ax = plt.subplot(snum,snum,i)
 		mapp = ax.contourf(data['X'][0],data['B'][0],data[EList[i-1]])
@@ -197,7 +198,7 @@ def plotContoursJ(data,EList):
 		cbar.set_label('Energy (meV)')
 
 	plt.tight_layout(h_pad = -1, w_pad = -2)
-	plt.show()
+	# plt.show()
 	return	
 
 def saveEvsLS(E,LS,runDir):
@@ -527,6 +528,20 @@ def getMass(filename):
 
 #Deprecated
 #####################################################################################################################################################################
+# def saveMatrix(xmin,xmax,numx,bpfmin,bpfmax,numbpf,LSList,runDir,comp):
+# 	x = np.linspace(xmin,xmax,numx)
+# 	bpf = np.linspace(bpfmin,bpfmax,numx)
+# 	print('Xmin = %0.3f to Xmax = %.3f\nBPFmin = %.3f to BPFmax = %.3f \nwith number of steps in X = %s, Bpf = %s'%(xmin,xmax,bpfmin,bpfmax,numx,numbpf))
+# 	for j in  range(len(LSList)):
+# 		E = energyCalcK(x,bpf,LSList[j],comp)
+# 		savedict = {'X': x, 'B': bpf, 'LS': LSList[j]}
+# 		if (os.path.exists(runDir) == False):
+# 			os.makedirs(runDir)
+# 		for i in range(np.shape(E)[2]):
+# 			savedict['E%i'%(i+1)] = E[:,:,i]
+# 		sio.savemat(runDir+'LS_%i.mat'%LSList[j], savedict)
+# 	return
+
 # def plotContours(data,EList,E,LSName):
 # 	fig, axs = plt.subplots(2, 2)
 # 	row = 0
