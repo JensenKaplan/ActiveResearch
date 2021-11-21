@@ -24,31 +24,38 @@ def getSaveDir(name = 'm', project = 'Sr2PrO4'):
 
 #Self made functions for grid search calculations
 #####################################################################################################################################################################
-
-
-def saveMatrixPar(xmin,xmax,numx,bpfmin,bpfmax,numbpf,LSList,runDir,numlevels):
+def saveMatrixPar(xmin,xmax,numx,bpfmin,bpfmax,numbpf, runDir,**kwargs):
 	x = np.linspace(xmin,xmax,numx)
 	bpf = np.linspace(bpfmin,bpfmax,numx)
+
 	print('Xmin = %0.3f to Xmax = %.3f\nBPFmin = %.3f to BPFmax = %.3f \nwith number of steps in X = %s, Bpf = %s'%(xmin,xmax,bpfmin,bpfmax,numx,numbpf))
+	savedict = {'X': x, 'B': bpf}
 
-	for j in range(len(LSList)):
-		savedict = {'X': x, 'B': bpf, 'LS': LSList[j]}
-		# if __name__ == '__main__':
+	if (os.path.exists(runDir) == False):
+		os.makedirs(runDir)
+
+	if kwargs['LS_on']:
+		LSList = kwargs['LSList']
+		for j in range(len(LSList)):
+			savedict['LS'] = LSList[j]
+			with mp.Pool() as P:
+				E = P.starmap(partial(energyCalcKPar,LSValue = LSList[j], **kwargs),product(x,bpf))
+				E = np.reshape(E,(numx,-1,kwargs['numlvls']))
+				# P.close()
+				for i in range(np.shape(E)[2]):
+					savedict['E%i'%(i+1)] = E[:,:,i]
+			sio.savemat(runDir+'LS_%i.mat'%LSList[j], savedict)	
+	else:
 		with mp.Pool() as P:
-			E = P.starmap(partial(energyCalcKPar,LS = LSList[j], numlevels = numlevels),product(x,bpf))
-			print(E[0])
-			E = np.reshape(E,(numx,-1,numlevels))
-			# P.close()
+			E = P.starmap(partial(energyCalcKPar, **kwargs),product(x,bpf))
+			# print(len(E))
+			E = np.reshape(E,(numx,numbpf,-1))
 
-		if (os.path.exists(runDir) == False):
-			os.makedirs(runDir)
 		for i in range(np.shape(E)[2]):
 			savedict['E%i'%(i+1)] = E[:,:,i]
-		sio.savemat(runDir+'LS_%i.mat'%LSList[j], savedict)
-	return
+		sio.savemat(runDir+kwargs['grid'], savedict)	
 
-def energyCalcKPar(x,bpf, numlevels, **kwargs):
-	numlevels = numlevels
+def energyCalcKPar(x,bpf, **kwargs):
 	Stev = {}
 
 	Stev['B40'] = bpf
@@ -59,63 +66,121 @@ def energyCalcKPar(x,bpf, numlevels, **kwargs):
 		kwargs['LSValue']
 		Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=kwargs['L'], S= kwargs['S'], SpinOrbitCoupling= kwargs['LSValue'])
 		Pr.diagonalize()
-		e = kmeansSort(Pr.eigenvalues,numlevels)
+		e = kmeansSort(Pr.eigenvalues,kwargs['numlvls'])
 	else:
-		ion = kwargs['ion']
-		Pr = cef.CFLevels.Bdict(Bdict = Stev,ion = ion)
+		Pr = cef.CFLevels.Bdict(Bdict = Stev,ion = kwargs['ion'])
 		Pr.diagonalize()
 		e = Pr.eigenvalues
 	return e
 
-# def energyCalcKParJ(x,bpf, numlevels):
-# 	numlevels = numlevels
-# 	Stev = {}
-
-# 	Stev['B40'] = bpf
-# 	Stev['B60'] = x*bpf
-# 	Stev['B44'] = 5*Stev['B40']
-# 	Stev['B64'] = -21*Stev['B60']
-
-# 	Pr = cef.CFLevels.Bdict(Bdict=Stev, ion ='Ce3+')
-# 	Pr.diagonalize()
-# 	e = kmeansSort(Pr.eigenvalues,numlevels)
-# 	return e
+# This function loads my .mat files for analyzing, plotting, finding compatibilities.
+#THIS WORKS since it can properly use my previously generated PrO2 data.
+def loadMatrixJ(runDir,grid, **kwargs):
+	#Where to save and load the energy data for contours
+	data = sio.loadmat(runDir+grid)
+	dataList = []
+	EList = []
+	E = []
+	# print(data.keys())
+	for i in data.keys():
+		if 'E' in i:
+			E.append(i)
+		dataList.append(data)
+		EList.append(E)
+	return E, data
 
 # This function loads my .mat files for analyzing, plotting, finding compatibilities.
 #THIS WORKS since it can properly use my previously generated PrO2 data.
-def loadMatrixLS(runDir):
-	#Where to save and load the energy data for contours
+def loadMatrix(runDir, **kwargs):
 	matList = os.listdir(runDir) #The different LS calculations
-	LSNames = [] #Saving the LS names for plotting
-	for i in matList:
-		s = i.split('.')[0].split('_')
-		LSNames.append((s[0]+ ' = ' + s[1] + ' meV'))
-	dataList = []
-	EList = []
-	#List for storing energy level names, as taken from .mat file, helps keep track of which energy band we are talking about
-	for c in range(len(matList)):
-		data = sio.loadmat(runDir+matList[c])
+	if kwargs['LS_on']:
+		#Where to save and load the energy data for contours
+		matList = os.listdir(runDir) #The different LS calculations
+		LSNames = [] #Saving the LS names for plotting
+		for i in matList:
+			s = i.split('.')[0].split('_')
+			LSNames.append((s[0]+ ' = ' + s[1] + ' meV'))
+		dataList = []
+		EList = []
+
+		for i in matList:
+			data = sio.loadmat(runDir + i)
+			E = []
+			for i in data.keys():
+				if 'E' in i:
+					E.append(i)
+			dataList.append(data)
+			EList.append(E)
+
+		return LSNames, EList, dataList
+
+	else:
+		# print(matList)
+		data = sio.loadmat(runDir+matList[2])
+		dataList = []
+		EList = []
 		E = []
+		# print(data.keys())
 		for i in data.keys():
 			if 'E' in i:
 				E.append(i)
 		dataList.append(data)
 		EList.append(E)
-
-	return LSNames, EList, dataList
-
+		return EList, data		
 
 
-	#List for storing energy level names, as taken from .mat file, helps keep track of which energy band we are talking about
-	for c in range(len(matList)):
-		E = []
-		for i in data.keys():
-			if 'E' in i:
-				E.append(i)
-		dataList.append(data)
-		EList.append(E)
 
-	return EList, dataList
+	# #List for storing energy level names, as taken from .mat file, helps keep track of which energy band we are talking about
+	# for c in range(len(matList)):
+	# 	E = []
+	# 	for i in data.keys():
+	# 		if 'E' in i:
+	# 			E.append(i)
+	# 	dataList.append(data)
+	# 	EList.append(E)
+
+	# return EList, dataList
+
+
+# contour plotting function for all energy bands
+def plotContours(data,EList,**kwargs):
+
+	numplots = len(EList)
+	# print()
+	if(numplots == 2):
+		snum = 2
+	elif (numplots%2 == 0):
+		snum = np.ceil(np.sqrt(numplots))
+	else:
+		snum = np.sqrt(numplots) + 1
+
+	if kwargs['LS_on']:
+		plt.figure()
+		for i in range(1,numplots+1):
+			ax = plt.subplot(snum,snum,i)
+			# print(data['X'])
+			mapp = ax.contourf(data['X'][0],data['B'][0],data[EList[i-1]])
+			# print(np.shape(data[EList[i-1]]))
+			ax.set(xlabel = 'Ratio of B60/B40', ylabel = 'B Prefactor', title = EList[i-1])
+			cbar = plt.colorbar(mapp,ax = ax)
+			cbar.set_label('Energy (meV)')
+
+		plt.tight_layout(h_pad = -1, w_pad = -2)
+		plt.suptitle(kwargs['LSName'])
+
+	else:
+		plt.figure()
+		for i in range(1,numplots+1):
+			ax = plt.subplot(snum,snum,i)
+			# print((data[EList[0]]))
+			mapp = ax.contourf(data['X'][0],data['B'][0],data[EList[i-1]])
+			# print(np.shape(data[EList[i-1]]))
+			ax.set(xlabel = 'Ratio of B60/B40', ylabel = 'B Prefactor', title = EList[i-1])
+			cbar = plt.colorbar(mapp,ax = ax)
+			cbar.set_label('Energy (meV)')
+		plt.tight_layout(h_pad = -1, w_pad = -2)
+	# plt.show()
+	return	
 
 # contour plotting function for all energy bands
 def plotContoursLS(data,EList,E,LSName):
@@ -140,71 +205,8 @@ def plotContoursLS(data,EList,E,LSName):
 	return	
 
 
-# contour plotting function for all energy bands
-def plotContoursJ(data,EList):
-	plt.figure()
-	numplots = len(EList)
-	if(numplots == 2):
-		snum = 2
-	elif (numplots%2 == 0):
-		snum = np.ceil(np.sqrt(numplots))
-	else:
-		snum = np.sqrt(numplots) + 1
-
-	print(snum)
-	for i in range(1,numplots+1):
-		ax = plt.subplot(snum,snum,i)
-		mapp = ax.contourf(data['X'][0],data['B'][0],data[EList[i-1]])
-		# print(np.shape(data[EList[i-1]]))
-		ax.set(xlabel = 'Ratio of B60/B40', ylabel = 'B Prefactor', title = EList[i-1])
-		cbar = plt.colorbar(mapp,ax = ax)
-		cbar.set_label('Energy (meV)')
-
-	plt.tight_layout(h_pad = -1, w_pad = -2)
-	# plt.show()
-	return	
 
 
-def saveMatrixParJ(xmin,xmax,numx,bpfmin,bpfmax,numbpf,numlvls, runDir,gridname,**kwargs):
-	x = np.linspace(xmin,xmax,numx)
-	bpf = np.linspace(bpfmin,bpfmax,numx)
-
-	print('Xmin = %0.3f to Xmax = %.3f\nBPFmin = %.3f to BPFmax = %.3f \nwith number of steps in X = %s, Bpf = %s'%(xmin,xmax,bpfmin,bpfmax,numx,numbpf))
-	savedict = {'X': x, 'B': bpf}
-
-	if (os.path.exists(runDir) == False):
-		os.makedirs(runDir)
-	if kwargs['LS_on']:
-		with mp.Pool() as P:
-			E = P.starmap(partial(energyCalcKPar, numlvls,),product(x,bpf))
-			E = np.reshape(E,(numx,-1,numlevels))
-			# P.close()
-	else:
-		with mp.Pool() as P:
-			E = P.starmap(partial(energyCalcKPar,numlvls, **kwargs),product(x,bpf))
-			print(len(E))
-			E = np.reshape(E,(numx,numbpf,-1))
-
-	for i in range(np.shape(E)[2]):
-		savedict['E%i'%(i+1)] = E[:,:,i]
-	sio.savemat(runDir+gridname, savedict)
-
-	return
-# This function loads my .mat files for analyzing, plotting, finding compatibilities.
-#THIS WORKS since it can properly use my previously generated PrO2 data.
-def loadMatrixJ(runDir):
-	#Where to save and load the energy data for contours
-	data = sio.loadmat(runDir)
-	dataList = []
-	EList = []
-	E = []
-	# print(data.keys())
-	for i in data.keys():
-		if 'E' in i:
-			E.append(i)
-		dataList.append(data)
-		EList.append(E)
-	return E, data
 
 def saveEvsLS(E,LS,runDir):
 	savedict = {'LS': LS}
@@ -389,9 +391,14 @@ def kmeansSort(e,numlevels):
 #Check if E1 is within tolerance, add (x,bpf) coords to list
 #Check the same for E2, etc.
 #Then only keep the coordinates that appear in all of the energy bands
-def paramFinderLS(data,band,E,tolerance,comp,LSName):
+def paramFinder(data,band,E,tolerance,comp,**kwargs):
 
-	print('\nParameter search for: ',' Compound: ', comp, ' at ', LSName, 'with %0.3f tolerance.' %tolerance)
+	if kwargs['LS_on']:
+		LSName = kwargs['LSName']
+		print('\nParameter search for: ',' Compound: ', comp, ' at ', LSName, 'with %0.3f tolerance.' %tolerance)
+	else:
+		print('\nParameter search for: ',' Compound: ', comp, ' with %0.3f tolerance.' %tolerance)
+
 	coords = []
 	#The first part that only care about individual energy band and toleranc 
 	for i in range(len(E)):
@@ -462,11 +469,14 @@ def convertCMtomeV(e):
 
 
 # for checking eigenvalues (and hence energies) at a given (x,bpf) coordinate
-def printPCFEigensLS(x,bpf, LS):
+def printPCFEigens(x,bpf, **kwargs):
 	Stev={'B40': bpf, 'B60': x*bpf}
 	Stev['B44'] = 5*Stev['B40']
 	Stev['B64'] = -21*Stev['B60']
-	Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling=LS)
+	if kwargs['LS_on']:
+		Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling=kwargs['LS'])
+	else:
+		Pr = cef.CFLevels.Bdict(Bdict = stev, ion = kwargs['ion'])
 	Pr.diagonalize()
 	Pr.printEigenvectors()
 	return
@@ -533,6 +543,42 @@ def getMass(filename):
 
 #Deprecated
 #####################################################################################################################################################################
+# def saveMatrixPar(xmin,xmax,numx,bpfmin,bpfmax,numbpf,LSList,runDir,numlevels):
+# 	x = np.linspace(xmin,xmax,numx)
+# 	bpf = np.linspace(bpfmin,bpfmax,numx)
+# 	print('Xmin = %0.3f to Xmax = %.3f\nBPFmin = %.3f to BPFmax = %.3f \nwith number of steps in X = %s, Bpf = %s'%(xmin,xmax,bpfmin,bpfmax,numx,numbpf))
+
+# 	for j in range(len(LSList)):
+# 		savedict = {'X': x, 'B': bpf, 'LS': LSList[j]}
+# 		# if __name__ == '__main__':
+# 		with mp.Pool() as P:
+# 			E = P.starmap(partial(energyCalcKPar,LS = LSList[j], numlevels = numlevels),product(x,bpf))
+# 			print(E[0])
+# 			E = np.reshape(E,(numx,-1,numlevels))
+# 			# P.close()
+
+# 		if (os.path.exists(runDir) == False):
+# 			os.makedirs(runDir)
+# 		for i in range(np.shape(E)[2]):
+# 			savedict['E%i'%(i+1)] = E[:,:,i]
+# 		sio.savemat(runDir+'LS_%i.mat'%LSList[j], savedict)
+# 	return
+
+
+# def energyCalcKParJ(x,bpf, numlevels):
+# 	numlevels = numlevels
+# 	Stev = {}
+
+# 	Stev['B40'] = bpf
+# 	Stev['B60'] = x*bpf
+# 	Stev['B44'] = 5*Stev['B40']
+# 	Stev['B64'] = -21*Stev['B60']
+
+# 	Pr = cef.CFLevels.Bdict(Bdict=Stev, ion ='Ce3+')
+# 	Pr.diagonalize()
+# 	e = kmeansSort(Pr.eigenvalues,numlevels)
+# 	return e
+
 # def saveMatrix(xmin,xmax,numx,bpfmin,bpfmax,numbpf,LSList,runDir,comp):
 # 	x = np.linspace(xmin,xmax,numx)
 # 	bpf = np.linspace(bpfmin,bpfmax,numx)
