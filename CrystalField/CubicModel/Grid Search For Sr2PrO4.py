@@ -19,11 +19,23 @@ import scipy.io as sio
 from functools import reduce
 # import time
 
-LSDir = 'cubic_matrix_LS/' 
-JDir = 'cubic_matrix_J/' 
-# saveDir = getSaveDir() + LSDir
-saveDir = getSaveDir() + JDir
+
 LS_on = False
+saveDir = getSaveDir('m')
+
+tol = .025 #tolerance allowed between measured and calculated energy.
+Emeas = [168, 335,385] # Our measured levels of Sr2PrO4
+comp = 'Sr2PrO4' #Compound name
+
+
+LSDir = 'cubic_matrix_LS/' 
+JDir = 'cubic_matrix_J/'
+
+if LS_on: 
+    saveDir = saveDir + LSDir
+else:
+    saveDir = saveDir + JDir
+
 
 
 # ### Define the measured energy levels (from INS data) and define an allowable tolerance between calculated and measured energy.
@@ -31,9 +43,6 @@ LS_on = False
 # In[8]:
 
 
-tol = .025 #tolerance allowed between measured and calculated energy.
-Emeas = [168, 335,385] # Our measured levels of Sr2PrO4
-comp = 'Sr2PrO4' #Compound name
 
 
 # ### In the following section we scan through all LS grids and find the (x,bpf) points that create matching energy levels.
@@ -98,13 +107,12 @@ if(LS_on):
 
 else:
     EList, data = loadMatrix(saveDir, LS_on = LS_on)
-    print(EList[0])
-    # print(EList)
+
     #Loading the x,bpf, and LS of each file.
     x = data['X'][0]
     bpf = data['B'][0]
-    # print(EList[0])
-    plotContours(data,EList[0], LS_on = LS_on) #Contour plotting for 4 E levels
+
+    plotContours(data,EList, LS_on = LS_on) #Contour plotting for 4 E levels
 
 
     #Choose which bands to look for compatibilities.
@@ -114,7 +122,7 @@ else:
     EListindex = []
     for i in index:
         Eindex.append(Emeas[i-1])
-        EListindex.append(EList[0][i-1])
+        EListindex.append(EList[i-1])
     print(Eindex)
     print(EListindex)
     # print(EListindex[0])
