@@ -12,15 +12,19 @@ import sys
 sys.path.append('../../')
 from JensenTools import *
 
+
+LS_on = False
 saveDir = getSaveDir('m')
 
-
-# JDir = 'cubic_matrix_J/'
-# saveDir = saveDir + JDir
-# grid = 'J_Grid_test_6lvls.mat'
-
 LSDir = 'cubic_matrix_LS_test/'
-saveDir = saveDir + LSDir
+JDir = 'cubic_matrix_J/'
+if LS_on:
+	saveDir = saveDir + LSDir
+else:
+	saveDir = saveDir + JDir
+
+grid = 'J_Grid_test_6lvls.mat'
+
 # grid = 'LS_100.mat'
 LS = [100,110]
 
@@ -37,5 +41,5 @@ numx, numbpf = 20, 20
 
 
 if __name__ == '__main__':
-		saveMatrixPar(xmin,xmax,numx,bpfmin,bpfmax,numbpf,saveDir,LS_on = True, LSList = LS, numlvls = numlevels,  L = 3, S = .5)
+		saveMatrixPar(xmin,xmax,numx,bpfmin,bpfmax,numbpf,saveDir,LS_on = LS_on, LSList = LS, numlvls = numlevels,  L = 3, S = .5)
 
