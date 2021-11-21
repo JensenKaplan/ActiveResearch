@@ -14,7 +14,7 @@ from JensenTools import *
 
 
 LS_on = False
-saveDir = getSaveDir('m')
+saveDir = getSaveDir('m', dataType = 'grid')
 
 LSDir = 'cubic_matrix_LS_test/'
 JDir = 'cubic_matrix_J/'
