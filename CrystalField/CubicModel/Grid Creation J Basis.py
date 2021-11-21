@@ -13,20 +13,20 @@ sys.path.append('../../')
 from JensenTools import *
 saveDir = getSaveDir()
 dataMat ='cubic_matrix_J/'
-grid = 'J_Grid.mat'
-saveDir = saveDir + dataMat + grid
+grid = 'J_Grid_6lvls.mat'
+saveDir = saveDir + dataMat
 
 # In[2]:
 
-
+numlvls = 6
+LS = 100
 xmin, xmax = -1,1
 bpfmin, bpfmax =  -1,1
-numx, numbpf = 200,200
+numx, numbpf = 20,20
 
 
 # In[3]:
 
-
-
-saveMatrixParJ(xmin,xmax,numx,bpfmin,bpfmax,numbpf,saveDir,numlevels, LS = False)
+if __name__ == '__main__':
+	saveMatrixPar(xmin,xmax,numx,bpfmin,bpfmax,numbpf,saveDir,grid, numlvls = numlvls, LS_on = False, ion = 'Ce3+', L = 3, S = .5, LSValue = 0)
 

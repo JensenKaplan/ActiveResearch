@@ -17,10 +17,18 @@ import os
 import scipy.io as sio
 from functools import reduce
 # import time
-saveDir = getSaveDir('w')
-saveDir = saveDir + 'cubic_matrix_J/'
-grid = 'J_Grid_test_6lvls.mat'
-saveDir = saveDir + grid
+
+
+saveDir = getSaveDir('m')
+JDir = 'cubic_matrix_J/'
+
+# saveDir = saveDir + JDir
+# grid = 'J_Grid_test_6lvls.mat'
+
+LSDir = 'cubic_matrix_LS_test/'
+saveDir = saveDir + LSDir
+grid = 'LS_100.mat'
+# saveDir = saveDir + grid
 
 
 # ### Define the measured energy levels (from INS data) and define an allowable tolerance between calculated and measured energy.
@@ -39,17 +47,22 @@ comp = 'Sr2PrO4' #Compound name
 
 print('Energies as measured by paper (meV):  ', Emeas)
 
-EList, data = loadMatrixJ(saveDir) #Load in all created 800x800 grids
- 
+LSNames,EList, data = loadMatrix(saveDir, grid, LS_on = True) #Load in all created 800x800 grids
+LSName = '100meV' 
 
-
+print(type(data[0]))
 #Loading the x,bpf, and LS of each file.
-x = data['X'][0]
-bpf = data['B'][0]
+x = data[0]['X'][0]
+bpf = data[0]['B'][0]
 print('Size is: {} x {}'.format(len(x),len(bpf)))
 print('Print the bands {}'.format(EList))
-plotContoursJ(data,EList)
-
-# plotContoursJ(data,EList) #Contour plotting for 4 E levels
-
+plotContours(data,EList, LS_on = True, LSName = LSName)
 plt.show()
+
+# def abc (**kwargs):
+# 	print(kwargs['LS'])
+# 	return
+# abc(LS = 100)
+
+
+
