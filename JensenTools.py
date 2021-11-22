@@ -396,6 +396,9 @@ def getData(magrun, dataDir, who  = 'Arun', dataType = 'MH'):
 	elif who == 'PPMS':
 		name = magrun.split('_')[4].split('.')[0]
 		name = name.replace('P','.')
+		mass = getMass(magrun)
+		measType = magrun.split('_')[5].split('.')[0]
+		print(mass)
 		df = pd.read_csv(dataDir + magrun)
 		df.dropna(inplace = True)
 		T = np.array(df['Temperature (K)'])
@@ -430,7 +433,7 @@ def oeToTesla(H):
     return newH
 
 def getMass(filename):
-	mass = filename.split('_')[3]
+	mass = filename.split('_')[2]
 	mass = mass.replace('P','.')
 	mass = mass[:-2]
 	mass = float(mass)
