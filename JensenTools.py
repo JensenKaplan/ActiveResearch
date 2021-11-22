@@ -367,7 +367,9 @@ def printPCFEigens(x,bpf, **kwargs):
 # field, moment, and error are returned as np arrays
 # name is returned as a string
 ## Note that the name handling is hardcoded for how my lab conventionally names our files.
-def getData(magrun, dataDir, who  = 'Arun', dataType = 'MH'):
+def getData(magrun, dataDir,**kwargs):
+	who = kwargs['who']
+	dataType = kwargs['dataType']
 	if who == 'Arun':
 	    name = magrun.split('_')[-1].split('.')[0]
 	    mass = magrun.split('_')[3]
@@ -385,7 +387,7 @@ def getData(magrun, dataDir, who  = 'Arun', dataType = 'MH'):
 	    H = np.array(df['Magnetic Field (Oe)'])
 	    E = np.array(df['M. Std. Err. (emu)'])
 	    M = np.array(df['Moment (emu)'])
-	    mass = getMass(magrun)
+	    mass = getMass(magrun, **kwargs)
 	    measType = magrun.split('_')[-1].split('.')[0]
 	    # print(measType)
 	    if dataType == 'MH':
@@ -396,6 +398,8 @@ def getData(magrun, dataDir, who  = 'Arun', dataType = 'MH'):
 	elif who == 'PPMS':
 		name = magrun.split('_')[4].split('.')[0]
 		name = name.replace('P','.')
+		mass = getMass(magrun,**kwargs)
+		print(mass)
 		df = pd.read_csv(dataDir + magrun)
 		df.dropna(inplace = True)
 		T = np.array(df['Temperature (K)'])
@@ -406,6 +410,7 @@ def getData(magrun, dataDir, who  = 'Arun', dataType = 'MH'):
 		if dataType == 'MH':
 			return H, M, E, name
 		if dataType == 'MT':
+			measType = magrun.split('_')[5].split('.')[0]
 			return M,H,T,E, mass, measType
 
 
@@ -429,17 +434,25 @@ def oeToTesla(H):
     newH = H/10000
     return newH
 
-def getMass(filename):
-	mass = filename.split('_')[3]
-	mass = mass.replace('P','.')
+def getMass(filename,**kwargs):
+	if kwargs['who'] == 'Arun':
+		mass = filename.split('_')[3]
+		mass = mass.replace('P','.')
+	else:
+		mass = filename.split('_')[2]
+		mass = mass.replace('P','.')		
 	mass = mass[:-2]
 	mass = float(mass)
 	mass = mass/1000
 	return mass
-def getTemp(filename):
-    temp = filename.split('_')[-1].split('.')[0][:-1]
-    temp = float(temp)
-    return temp
+def getTemp(filename,**kwargs):
+	if kwargs['who'] == 'Arun':
+	    temp = filename.split('_')[-1].split('.')[0][:-1]
+	    temp = float(temp)
+	else:
+	    temp = filename.split('_')[-1].split('.')[0][:-1].replace('P','.')
+	    temp = float(temp)		
+	return temp
 
 
     
