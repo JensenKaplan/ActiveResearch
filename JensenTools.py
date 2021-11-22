@@ -12,13 +12,24 @@ from itertools import product
 from functools import partial
 import pandas as pd 
 
-def getSaveDir(name = 'm', project = 'Sr2PrO4'):
+def getSaveDir(name = 'm', comp = 'Sr2PrO4', dataType = None):
 	if name == 'm':
-		return '/Users/jensenkaplan/Dropbox (GaTech)/Jensen/{}/'.format(project)
+		dataDir = '/Users/jensenkaplan/Dropbox (GaTech)/Jensen/{}/'.format(comp)		
 	elif name =='w':
-		return "C:/Users/jense/Dropbox (GaTech)/Jensen/{}/".format(project)
+		dataDir =  "C:/Users/jense/Dropbox (GaTech)/Jensen/{}/".format(comp)
 	else:
 		"ERROR: Please use 'w' for Windows, 'm' for Mac." 
+		return
+
+	if dataType == 'grid':
+		dataDir = dataDir + 'CubicGridSearch'
+	elif dataType =='MH':
+		dataDir = dataDir + 'MVSH/'
+	elif dataType == 'MT':
+		dataDir = dataDir + 'MVST/'
+	else:
+		return dataDir
+	return dataDir
 
 	
 
@@ -356,23 +367,48 @@ def printPCFEigens(x,bpf, **kwargs):
 # field, moment, and error are returned as np arrays
 # name is returned as a string
 ## Note that the name handling is hardcoded for how my lab conventionally names our files.
-def getDataArun(magrun, dataDir):
-    name = magrun.split('_')[-1].split('.')[0]
-    mass = magrun.split('_')[3]
-    mass = mass.replace('P','.')
-    mass = mass[:-2]
-    measType = magrun.split('_')[-1].split('.')[0]
-    
-    f = open(dataDir + magrun)
-    while f.readline().strip() != '[Data]':
-        pass
-    df = pd.read_csv(f)
-    df.dropna(subset = ['Magnetic Field (Oe)','M. Std. Err. (emu)'],inplace = True)
-    T = np.array(df['Temperature (K)'])
-    H = np.array(df['Magnetic Field (Oe)'])
-    E = np.array(df['M. Std. Err. (emu)'])
-    Mom = np.array(df['Moment (emu)']) 
-    return H, Mom, E, name
+def getData(magrun, dataDir, who  = 'Arun', dataType = 'MH'):
+	if who == 'Arun':
+	    name = magrun.split('_')[-1].split('.')[0]
+	    mass = magrun.split('_')[3]
+	    mass = mass.replace('P','.')
+	    mass = mass[:-2]
+	    measType = magrun.split('_')[-1].split('.')[0]
+	    
+
+	    f = open(dataDir + magrun)
+	    while f.readline().strip() != '[Data]':
+	        pass
+	    df = pd.read_csv(f)
+	    df.dropna(subset = ['Magnetic Field (Oe)','M. Std. Err. (emu)'],inplace = True)
+	    T = np.array(df['Temperature (K)'])
+	    H = np.array(df['Magnetic Field (Oe)'])
+	    E = np.array(df['M. Std. Err. (emu)'])
+	    M = np.array(df['Moment (emu)'])
+	    mass = getMass(magrun)
+	    measType = magrun.split('_')[-1].split('.')[0]
+	    # print(measType)
+	    if dataType == 'MH':
+	    	return H, M, E, name
+	    if dataType == 'MT':
+	    	return M,H,T,E, mass, measType
+
+	elif who == 'PPMS':
+		name = magrun.split('_')[4].split('.')[0]
+		name = name.replace('P','.')
+		df = pd.read_csv(dataDir + magrun)
+		df.dropna(inplace = True)
+		T = np.array(df['Temperature (K)'])
+		H = np.array(df['Magnetic Field (Oe)'])
+		E = np.array(df['M. Std. Err. (emu)'])
+		M = np.array(df['Moment (emu)'])
+
+		if dataType == 'MH':
+			return H, M, E, name
+		if dataType == 'MT':
+			return M,H,T,E, mass, measType
+
+
 
 #Takes a list of moments (in emu), sample mass, and molecular weight
 #Returns list of moments (in Bohr Magnetons)
@@ -400,7 +436,13 @@ def getMass(filename):
 	mass = float(mass)
 	mass = mass/1000
 	return mass
+def getTemp(filename):
+    temp = filename.split('_')[-1].split('.')[0][:-1]
+    temp = float(temp)
+    return temp
 
+
+    
 #Deprecated
 #####################################################################################################################################################################
 # # for checking eigenvalues (and hence energies) at a given (x,bpf) coordinate
