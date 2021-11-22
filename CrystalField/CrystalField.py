@@ -16,7 +16,7 @@ def paramPrint(fittedparams):
 		# print(i, ' = ', i.value)
 		print(i, ' = ',fittedparams[i].value )
 
-def energyFit(B40,B60, B44, B64, B20, **kwargs ):
+def energyFit(B40,B60, B44, B64, B20, numlevels, LS, **kwargs ):
 	numlevels = numlevels
 	Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
 	Stev['B20'] = B20
@@ -26,18 +26,18 @@ def energyFit(B40,B60, B44, B64, B20, **kwargs ):
 	Stev['B64'] = B64
 
 	if kwargs['LS_on']:
-		Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling = kwargs['LSValue']) #Create CF_Levels obejct wtih the given coefficients.
+		Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling = LS) #Create CF_Levels obejct wtih the given coefficients.
 		Pr.diagonalize()
 		if kwargs['Kmeans']:
-			e = JT.kmeansSort(Pr.eigenvalues,numlevels)[:3] #Excluding the highest mode which we did not detect in our INS runs
-			e.append(e[2]/e[1]) #The aforementioned ratio
+			e = kmeansSort(Pr.eigenvalues,numlevels)[:3] #Excluding the highest mode which we did not detect in our INS runs
+			# e.append(e[2]/e[1]) #The aforementioned ratio
 		else: 
 			e = Pr.eigenvalues
 	else:
 		Pr = cef.CFLevels.Bdict(Bdict = Stev, ion = kwargs['ion'])
 		Pr.diagonalize()
 		if kwargs['Kmeans']:   	
-			e = JT.kmeansSort(Pr.eigenvalues,numlevels) #Excluding the highest mode which we did not detect in our INS runs
+			e = kmeansSort(Pr.eigenvalues,numlevels) #Excluding the highest mode which we did not detect in our INS runs
 		else:
 			e =  Pr.eigenvalues
 	return e
@@ -49,7 +49,7 @@ def energyFit(B40,B60, B44, B64, B20, **kwargs ):
 comp = 'Sr2PrO4'
 ion = 'Ce3+'
 who = 'Arun'
-LS_on = False
+LS_on = True
 Kmeans = True
 LSValue = 100
 numlevels = 4
@@ -79,7 +79,7 @@ MTDir = getSaveDir('m',comp = comp, dataType = 'MT')
 #####################################################################################################################################################################
 
 #####################################################################################################################################################################
-eModel = Model(energyCalcKFit, independent_vars = ['numlevels'])
+eModel = Model(energyFit, independent_vars = ['numlevels'])
 params = eModel.make_params()
 B40  =  -0.6568663783690575
 B60  =  -0.02328250024945387
@@ -91,7 +91,7 @@ B20  =  0.4858075931009187
 params['B20'].set(value = B20, vary = True)
 params['B40'].set(value=B40, vary=True)
 params['B60'].set(value=B60, vary=True)
-params['B44'].set(value = B44, vary = True )
+params['B44'].set(value = B44, vary = False )
 params['B64'].set(value = B64, vary = False )
 params['LS'].set(value=LS, vary=False)
 #Fit model to data
@@ -136,12 +136,12 @@ for i in os.listdir(MHDir):
     if i.endswith('.DAT'): #This was a safeguard against a situation arising at an earlier implementation of my code.
         runs.append(i)
 
-mass = getMass(runs[0])
+mass = getMass(runs[0],who = who)
 molweight = 380.15
 MHdata = {}
 # plt.figure()
 for i in runs:
-    H, M, Err, T = getData(i,MHDir,who = 'Arun')
+    H, M, Err, T = getData(i,MHDir,who = who, dataType = 'MH')
     M = emuToBohr(M,mass,molweight)
     H = oeToTesla(H)
     Err = emuToBohr(Err,mass,molweight)
@@ -151,7 +151,7 @@ for i in runs:
 T = '20K'
 
 # samplemass = getMass(MHdata[T][3])
-Temp = getTemp(MHdata[T][3])
+Temp = getTemp(MHdata[T][3], who = who)
 H, M, Err, filename = MHdata[T]
 
 
@@ -160,8 +160,10 @@ magCalc = []
 fieldT = np.linspace(0.01,14,1000)
 
 for i in H:
-	magCalc.append(Pr.magnetization( Temp = Temp, Field = [0, 0, i], ion = ion)[2])
-
+	if LS_on:
+		magCalc.append(Pr.magnetization( Temp = Temp, Field = [0, 0, i])[2])		
+	else:
+		magCalc.append(Pr.magnetization( Temp = Temp, Field = [0, 0, i], ion = ion)[2])
 
 plt.plot(H,magCalc)
 plt.xlabel('Field (T)')
@@ -200,7 +202,10 @@ suscCalc = []
 Temp = np.linspace(.1,400,1000)
 fieldT = 0.01
 deltaField = 0.0001
-suscCalc = Pr.susceptibility(Temps = Temp, Field = fieldT, deltaField = deltaField, ion = ion)
+if LS_on:
+	suscCalc = Pr.susceptibility(Temps = Temp, Field = fieldT, deltaField = deltaField)
+else:
+	suscCalc = Pr.susceptibility(Temps = Temp, Field = fieldT, deltaField = deltaField, ion = ion)
 # for i in Temp:
 	# suscCalc.append(Pr.susceptibility(i,fieldT,deltaField))
 
