@@ -111,7 +111,7 @@ def loadMatrix(runDir, **kwargs):
 
 	else:
 		# print(matList)
-		data = sio.loadmat(runDir+matList[2])
+		data = sio.loadmat(runDir+kwargs['grid'])
 		E = []
 		# print(data.keys())
 		for i in data.keys():
@@ -476,7 +476,7 @@ def printPCFEigens(x,bpf, **kwargs):
 	Pr.printEigenvectors()
 	return
 
-
+#####################################################################################################################################################################
 #Takes a list of moments (in emu), sample mass, and molecular weight
 #Returns list of moments (in Bohr Magnetons)
 def emuToBohr(emuM,mass,molweight):
@@ -484,17 +484,98 @@ def emuToBohr(emuM,mass,molweight):
     bohr = 9.274e-21 #emu / Bohr magneton = erg/G/Bohrmag
     if (isinstance(emuM,list)):
         bohrM = []
-        for i in M:
+        for i in emuM:
             bohrM.append(i/(mass/molweight*avo*bohr))
     else:
         bohrM = emuM/(mass/molweight*avo*bohr)
     return bohrM
+
+#Takes in magnetization list/float (either bohr magnetons or emu)
+#Returns magnetization list/float normalized to per spin
+def normalizeSpin(M,mass,molweight):
+    avo =6.0221409e+23 #spin/mol
+    if (isinstance(M,list) or isinstance(M, np.ndarray)):
+        normM = []
+        for i in M:
+            normM.append(i*molweight/mass*avo)
+    else:
+        normM = (M*molweight/mass*avo)
+    return normM
+
+#Takes in magnetization list/float (either bohr magnetons or emu)
+#Returns magnetization list/float normalized to per spin
+def normalizeMol(M,mass,molweight):
+    avo =6.0221409e+23 #spin/mol
+    if (isinstance(M,list) or isinstance(M, np.ndarray)):
+        normM = []
+        for i in M:
+            normM.append(i*molweight/mass)
+    else:
+        normM = (M*molweight/mass)
+    return normM	
+
+
+#Takes a list of moments (in emu), sample mass, and molecular weight
+#Returns list of moments (in Bohr Magnetons)
+def bohrToEmu(bohrM,mass,molweight):
+    avo =6.0221409e+23 #spin/mol
+    bohr = 9.274e-21 #emu / Bohr magneton = erg/G/Bohrmag
+    if (isinstance(bohrM,list) or isinstance(bohrM, np.ndarray)):
+        emuM = []
+        for i in bohrM:
+            emuM.append((mass/molweight*avo*bohr)*i)
+    else:
+        emuM = (mass/molweight*avo*bohr)*bohrM
+    return emuM
+
+#Takes a list/float of moments (in emu)
+#Returns list/float of moments (in Bohr Magnetons)
+#Not normalized to Mol
+def bohrToEmu2(bohrM):
+    bohr = 9.274e-21 #emu / bohr magneton
+    # bohr = 1/bohr #bohr mag / emu
+    if (isinstance(bohrM,list)or isinstance(bohrM, np.ndarray)):
+        emuM = []
+        for i in bohrM:
+            emuM.append(bohr*i)
+    elif  (isinstance(bohrM,float)):
+        emuM = (bohr*bohrM)
+    else:
+    	print('Not List or Float')
+    	return -1
+    return emuM
+
+#Takes a list/float of moments (in emu)
+#Returns list/float of moments (in Bohr Magnetons)
+#Not normalized to Mol
+def emuToBohr2(bohrM):
+    bohr = 9.274e-21 #emu / bohr magneton
+    bohr = 1/bohr #bohr mag / emu
+    if (isinstance(bohrM,list)or isinstance(bohrM, np.ndarray)):
+        emuM = []
+        for i in bohrM:
+            emuM.append(bohr*i)
+    elif  (isinstance(bohrM,float)):
+        emuM = (bohr*bohrM)
+    else:
+    	print('Not List or Float')
+    	return -1
+    return emuM
+#####################################################################################################################################################################
+
 
 #Takes in a list of magnetic field (in Oe)
 #Returns a list of magnetic fields (in Tesla)
 def oeToTesla(H):
     newH = H/10000
     return newH
+
+#Takes in a list of magnetic field (in Oe)
+#Returns a list of magnetic fields (in Tesla)
+def teslaToOe(H):
+    newH = H*10000
+    return newH
+
 
 def getMass(filename,**kwargs):
 	if kwargs['who'] == 'Arun':
