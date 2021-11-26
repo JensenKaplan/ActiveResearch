@@ -148,7 +148,7 @@ def getData(magrun, dataDir,**kwargs):
 	    measType = magrun.split('_')[-1].split('.')[0]
 	    # print(measType)
 	    if dataType == 'MH':
-	    	return H, M, E, name
+	    	return M, H, E, mass, name
 	    if dataType == 'MT':
 	    	return M,H,T,E, mass, measType
 
@@ -165,7 +165,7 @@ def getData(magrun, dataDir,**kwargs):
 		M = np.array(df['Moment (emu)'])
 
 		if dataType == 'MH':
-			return H, M, E, name
+			return  M, H, E, mass, name
 		if dataType == 'MT':
 			measType = magrun.split('_')[-1].split('.')[0]
 			return M,H,T,E, mass, measType
@@ -498,6 +498,7 @@ def normalizeSpin(M,mass,molweight):
         normM = []
         for i in M:
             normM.append(i*molweight/mass/avo)
+        normM = np.array(normM)
     else:
         normM = (M*molweight/mass/avo)
     return normM
@@ -510,6 +511,7 @@ def normalizeMol(M,mass,molweight):
         normM = []
         for i in M:
             normM.append(i*molweight/mass)
+        normM = np.array(normM)
     else:
         normM = (M*molweight/mass)
     return normM	
@@ -524,6 +526,7 @@ def bohrToEmu(bohrM,mass,molweight):
         emuM = []
         for i in bohrM:
             emuM.append((mass/molweight*avo*bohr)*i)
+        emuM = np.array(emuM)
     else:
         emuM = (mass/molweight*avo*bohr)*bohrM
     return emuM
@@ -534,10 +537,11 @@ def bohrToEmu(bohrM,mass,molweight):
 def bohrToEmu2(bohrM):
     bohr = 9.274e-21 #emu / bohr magneton
     # bohr = 1/bohr #bohr mag / emu
-    if (isinstance(bohrM,list)or isinstance(bohrM, np.ndarray)):
+    if (isinstance(bohrM,list) or isinstance(bohrM, np.ndarray)):
         emuM = []
         for i in bohrM:
             emuM.append(bohr*i)
+        emuM = np.array(emuM)
     elif  (isinstance(bohrM,float)):
         emuM = (bohr*bohrM)
     else:
@@ -548,19 +552,20 @@ def bohrToEmu2(bohrM):
 #Takes a list/float of moments (in emu)
 #Returns list/float of moments (in Bohr Magnetons)
 #Not normalized to Mol
-def emuToBohr2(bohrM):
+def emuToBohr2(emuM):
     bohr = 9.274e-21 #emu / bohr magneton
     bohr = 1/bohr #bohr mag / emu
-    if (isinstance(bohrM,list)or isinstance(bohrM, np.ndarray)):
-        emuM = []
-        for i in bohrM:
-            emuM.append(bohr*i)
-    elif  (isinstance(bohrM,float)):
-        emuM = (bohr*bohrM)
+    if (isinstance(emuM,list) or isinstance(emuM, np.ndarray)):
+        bohrM = []
+        for i in emuM:
+            bohrM.append(bohr*i)
+        bohrM = np.array(bohrM)
+    elif  (isinstance(emuM,float)):
+        bohrM = (bohr*bohrM)
     else:
     	print('Not List or Float')
     	return -1
-    return emuM
+    return bohrM
 #####################################################################################################################################################################
 
 
@@ -588,6 +593,7 @@ def getMass(filename,**kwargs):
 	mass = float(mass)
 	mass = mass/1000
 	return mass
+
 def getTemp(filename,**kwargs):
 	if kwargs['who'] == 'Arun':
 	    temp = filename.split('_')[-1].split('.')[0][:-1]
