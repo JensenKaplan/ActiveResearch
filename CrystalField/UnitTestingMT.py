@@ -31,7 +31,6 @@ B64  =  0.504906552605772
 LS  =  100.00007580463522
 
 saveDir = getSaveDir('m',comp = comp) #General Directory for the project
-# MHDir = getSaveDir('m',comp = comp, dataType = 'MH') #MvsH data
 MTDir = getSaveDir('m',comp = comp, dataType = 'MT') #MvsT data
 
 stev = { 'B20' :B20, 'B40': B40, 'B44' : B44, 'B60': B60, 'B64' : B64 }
@@ -62,6 +61,7 @@ M,H,T,MErr,mass = MTdata['FC']
 #####################################################################################################################################################################
 
 # Use PCF to calculate Susceptibility (uB/T)
+# Also do unit conversions
 #####################################################################################################################################################################
 fieldT = 0.1 #To match Arun's measurements
 deltaField = .00001
@@ -89,7 +89,7 @@ XiBohr = 1/np.array(XBohr)
 
 
 # Plot inverse susceptibility for:
-# Calculated and measured: (in uB^-1 Oe Mol) and (emu^-1 Oe Mol)
+# Calculated and measured: in (uB^-1 Oe Mol) and (emu^-1 Oe Mol)
 #####################################################################################################################################################################
 plt.figure()
 plt.errorbar(T,XiEmu, yerr = XiErrEmu, label = 'Measured')
