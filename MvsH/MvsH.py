@@ -7,8 +7,8 @@ import sys
 sys.path.append('..')
 from JensenTools import *
 
-comp = 'ErOI'
-who = 'PPMS'
+comp = 'Sr2PrO4'
+who = 'Arun'
 dataType = 'MH'
 dataDir = getSaveDir('m', comp = comp, dataType = 'MH')
 
@@ -59,9 +59,9 @@ data = {}
 plt.figure()
 for i in runs:
     H, M, Err, name = getData(i,dataDir, who = who, dataType = dataType)
-    M = emuToBohr(M,mass,molweight)
-    H = oeToTesla(H)
-    Err = emuToBohr(Err,mass,molweight)
+    MBohr = emuToBohr(M,mass,molweight)
+    HTes = oeToTesla(H)
+    ErrBohr = emuToBohr(Err,mass,molweight)
     data[name] = [H,M,Err]
     plt.errorbar(H,M, yerr = Err, label = name)
 
@@ -78,12 +78,17 @@ plt.show()
 # In[77]:
 
 # print(data.keys())
-temp = '20.0K'
+temp = '20K'
 curRun = data[temp] #loading the data from my current run
 H = curRun[0]
 M = curRun[1]
 Err = curRun[2]
 
+
+
+M = normalizeSpin(M,mass,molweight)
+Err = normalizeSpin(Err,mass,molweight)
+HTes = oeToTesla(H)
 
 # # Choose your field range to fit over.
 # ## The saturation magnetization is a linear fit and should be fitted within a reasonable magnetic field range that makes sense for the system.
@@ -91,12 +96,12 @@ Err = curRun[2]
 # In[78]:
 
 
-fieldRange = [0,14]
+fieldRange = [12,14]
 newH = []
 newM = []
 newErr = []
 for i in range(len(curRun[0])):
-    if (H[i] >= fieldRange[0] and H[i] <= fieldRange[1]):
+    if (HTes[i] >= fieldRange[0] and HTes[i] <= fieldRange[1]):
         newH.append(H[i])
         newM.append(M[i])
         newErr.append(Err[i])
@@ -128,9 +133,9 @@ for i in H:
 
 
 plt.plot(H,M, label = temp)
-plt.plot(H,MLine, linestyle = '--', label = 'Fitted')
-plt.xlabel('Field (T)')
-plt.ylabel('Magnetization (bohr magneton)')
+# plt.plot(H,MLine, linestyle = '--', label = 'Fitted')
+plt.xlabel('Field (oe)')
+plt.ylabel('Magnetization (emu mol^-1)')
 plt.legend()
 plt.title(comp)
 plt.show()

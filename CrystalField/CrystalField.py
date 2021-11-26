@@ -136,28 +136,26 @@ for i in os.listdir(MHDir):
     if i.endswith('.DAT'): #This was a safeguard against a situation arising at an earlier implementation of my code.
         runs.append(i)
 
-mass = getMass(runs[0],who = who)
+# mass = getMass(runs[0],who = who)
 molweight = 380.15
 MHdata = {}
 # plt.figure()
 for i in runs:
-    H, M, Err, T = getData(i,MHDir,who = who, dataType = 'MH')
+    M, H, Err,  mass, T = getData(i,MHDir,who = who, dataType = 'MH')
     M = emuToBohr(M,mass,molweight)
     H = oeToTesla(H)
     Err = emuToBohr(Err,mass,molweight)
-    MHdata[T] = [H,M,Err,i]
+    MHdata[T] = [M,H,Err,mass,i]
     # plt.errorbar(H,M, yerr = Err, label = name)
 
 T = '20K'
-
-# samplemass = getMass(MHdata[T][3])
-Temp = getTemp(MHdata[T][3], who = who)
-H, M, Err, filename = MHdata[T]
+Temp = getTemp(MHdata[T][-1], who = who)
+M, H, Err, mass, filename = MHdata[T]
 
 
 #Generate a magnetization curve for comparing results to experiment
 magCalc = []
-fieldT = np.linspace(0.01,14,1000)
+# fieldT = np.linspace(0.01,14,1000)
 
 for i in H:
 	if LS_on:
@@ -165,10 +163,10 @@ for i in H:
 	else:
 		magCalc.append(Pr.magnetization( Temp = Temp, Field = [0, 0, i], ion = ion)[2])
 
-plt.plot(H,magCalc)
-plt.xlabel('Field (T)')
-plt.ylabel('Magnetization \N{GREEK SMALL LETTER MU}B')
-plt.title('PCF Magnetization at {} K'.format(Temp))
+# plt.plot(H,magCalc)
+# plt.xlabel('Field (T)')
+# plt.ylabel('Magnetization \N{GREEK SMALL LETTER MU}B')
+# plt.title('PCF Magnetization at {} K'.format(Temp))
 
 plt.figure()
 plt.plot(H,-1.*np.array(magCalc), label = 'PCF Calculated')
@@ -177,7 +175,16 @@ plt.xlabel('Field (T)')
 plt.ylabel('Magnetization \N{GREEK SMALL LETTER MU}B')
 plt.title('Magnetization at {} K'.format(Temp))
 plt.legend()
-# plt.show()
+plt.show()
+
+plt.figure()
+plt.plot(H,-1.*np.array(magCalc), label = 'PCF Calculated')
+plt.errorbar(H,M, yerr = Err, label = 'Measured')
+plt.xlabel('Field (T)')
+plt.ylabel('Magnetization \N{GREEK SMALL LETTER MU}B')
+plt.title('Magnetization at {} K'.format(Temp))
+plt.legend()
+plt.show()
 #####################################################################################################################################################################
 
 # ## PCF Susceptibility

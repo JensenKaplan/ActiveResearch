@@ -43,10 +43,10 @@ for i in runs:
 #####################################################################################################################################################################
 
 
-M,H,T,MErr,samplemass = data['ZFC']
+M,H,T,MErr,samplemass = data['FC']
 
 #####################################################################################################################################################################
-X,XErr,Xi,XiErr = normSusc2(M,H,MErr,molweight,samplemass,massErr)
+X,XErr,Xi,XiErr = normSusc(M,H,MErr,molweight,samplemass,massErr)
 
 tr = [1,300] #temprange = [low,high]
 newT = []
@@ -75,7 +75,7 @@ plt.errorbar(T,Xi,yerr = XiErr,label = 'Measured 1/X')
 plt.plot(T,fullLine,'orange', linestyle = '--', label = 'Fitted 1/X')
 plt.title("{} {} fitted over T = [{},{}]".format(comp,measType,tr[0],tr[1]), fontsize = 20)
 plt.xlabel('Temperature (K)', fontsize = 13)
-plt.ylabel('1/X (spin/emu)', fontsize = 13)
+plt.ylabel('1/X (emu mol^-1)', fontsize = 13)
 plt.legend()
 
 print('The Weiss constant = {:.2f} K\nThe Curie constant = {:.3f}'.format(resulti.params['wc'].value,resulti.params['c'].value))
