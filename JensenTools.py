@@ -111,13 +111,65 @@ def loadMatrix(runDir, **kwargs):
 
 	else:
 		# print(matList)
-		data = sio.loadmat(runDir+matList[2])
+		data = sio.loadmat(runDir+kwargs['grid'])
 		E = []
 		# print(data.keys())
 		for i in data.keys():
 			if 'E' in i:
 				E.append(i)
 		return E, data		
+
+# Takes a filename and data directory
+# Returns the field, magnetic moment, error, and name (temperature) of the run
+# field, moment, and error are returned as np arrays
+# name is returned as a string
+## Note that the name handling is hardcoded for how my lab conventionally names our files.
+def getData(magrun, dataDir,**kwargs):
+	who = kwargs['who']
+	dataType = kwargs['dataType']
+	if who == 'Arun':
+	    name = magrun.split('_')[-1].split('.')[0]
+	    mass = magrun.split('_')[3]
+	    mass = mass.replace('P','.')
+	    mass = mass[:-2]
+	    measType = magrun.split('_')[-1].split('.')[0]
+	    
+
+	    f = open(dataDir + magrun)
+	    while f.readline().strip() != '[Data]':
+	        pass
+	    df = pd.read_csv(f)
+	    df.dropna(subset = ['Magnetic Field (Oe)','M. Std. Err. (emu)'],inplace = True)
+	    T = np.array(df['Temperature (K)'])
+	    H = np.array(df['Magnetic Field (Oe)'])
+	    E = np.array(df['M. Std. Err. (emu)'])
+	    M = np.array(df['Moment (emu)'])
+	    mass = getMass(magrun, **kwargs)
+	    measType = magrun.split('_')[-1].split('.')[0]
+	    # print(measType)
+	    if dataType == 'MH':
+	    	return M, H, E, mass, name
+	    if dataType == 'MT':
+	    	return M,H,T,E, mass, measType
+
+	elif who == 'PPMS':
+		name = magrun.split('_')[4].split('.')[0]
+		name = name.replace('P','.')
+		mass = getMass(magrun,**kwargs)
+		# print(mass)
+		df = pd.read_csv(dataDir + magrun)
+		df.dropna(inplace = True)
+		T = np.array(df['Temperature (K)'])
+		H = np.array(df['Magnetic Field (Oe)'])
+		E = np.array(df['M. Std. Err. (emu)'])
+		M = np.array(df['Moment (emu)'])
+
+		if dataType == 'MH':
+			return  M, H, E, mass, name
+		if dataType == 'MT':
+			measType = magrun.split('_')[-1].split('.')[0]
+			return M,H,T,E, mass, measType
+
 
 # contour plotting function for all energy bands
 def plotContours(data,EList,**kwargs):
@@ -198,6 +250,68 @@ def paramFinder(data,band,E,tolerance,comp,**kwargs):
 
 	return newCoords
 
+
+
+#Takes in data, M (emu), H (oe), Merr(oe), molweight (g/mol), samplemass (g), massErr (g)
+def normSusc(M,H,MErr,molweight,samplemass,massErr):
+	XNorm = [] #Normalized susceptibility list
+	XErrNorm = [] #Normalized susceptibility error list
+
+	##THIS MIGHT BE WHERE I'M WRONG
+	#Normalize to emu Oe^-1 Mol^-1
+	for i in range(len(M)):
+	    XNorm.append(M[i]/H[i]*molweight/samplemass/1)
+	    XErrNorm.append(MErr[i]/H[i]*molweight/samplemass + M[i]/H[i]*molweight*massErr/(samplemass**2))
+
+	#Invert susceptibility and susceptibility error with error propagation
+	Xi = 1/np.array(XNorm)
+	XiErr = np.array(XErrNorm)/np.array(XNorm)**2
+
+	return XNorm, XErrNorm, Xi, XiErr
+
+
+# Converting to BohrMag and Tesla first
+def normSusc2(M,H,MErr,molweight,samplemass,massErr):
+	XNorm = [] #Normalized susceptibility list
+	XErrNorm = [] #Normalized susceptibility error list
+
+	#Convert to Bohr Magnetons and Tesla
+	M = emuToBohr(M,mass = samplemass, molweight = molweight)
+	MErr = emuToBohr(MErr,mass = samplemass, molweight = molweight)
+	H = oeToTesla(H)
+
+	##THIS MIGHT BE WHERE I'M WRONG
+	#Normalize to emu Oe^-1 Mol^-1
+	for i in range(len(M)):
+	    XNorm.append(M[i]/H[i])
+	    XErrNorm.append(MErr[i]/H[i] + M[i]/H[i]*massErr/(samplemass))
+
+	#Invert susceptibility and susceptibility error with error propagation
+	Xi = 1/np.array(XNorm)
+	XiErr = np.array(XErrNorm)/np.array(XNorm)**2
+
+	return XNorm, XErrNorm, Xi, XiErr
+
+# Using Allen's PreFactor
+def normSusc3(M,H,MErr,molweight,samplemass,massErr):
+	XNorm = [] #Normalized susceptibility list
+	XErrNorm = [] #Normalized susceptibility error list
+	Na = 6.02214076e23 
+	ScaleFactor = 1/(1.07828221e24/Na) 
+
+	##THIS MIGHT BE WHERE I'M WRONG
+	#Normalize to emu Oe^-1 Mol^-1
+	for i in range(len(M)):
+	    XNorm.append(M[i]/H[i]*molweight/samplemass/1)
+	    XErrNorm.append(MErr[i]/H[i]*molweight/samplemass + M[i]/H[i]*molweight*massErr/(samplemass**2))
+
+	XNorm = 1/ScaleFactor*np.array(XNorm)
+	XErrNorm = 1/ScaleFactor*np.array(XErrNorm)
+	#Invert susceptibility and susceptibility error with error propagation
+	Xi = 1/np.array(XNorm)
+	XiErr = np.array(XErrNorm)/np.array(XNorm)**2
+
+	return XNorm, XErrNorm, Xi, XiErr
 
 def saveEvsLS(E,LS,runDir):
 	savedict = {'LS': LS}
@@ -362,59 +476,7 @@ def printPCFEigens(x,bpf, **kwargs):
 	Pr.printEigenvectors()
 	return
 
-# Takes a filename and data directory
-# Returns the field, magnetic moment, error, and name (temperature) of the run
-# field, moment, and error are returned as np arrays
-# name is returned as a string
-## Note that the name handling is hardcoded for how my lab conventionally names our files.
-def getData(magrun, dataDir,**kwargs):
-	who = kwargs['who']
-	dataType = kwargs['dataType']
-	if who == 'Arun':
-	    name = magrun.split('_')[-1].split('.')[0]
-	    mass = magrun.split('_')[3]
-	    mass = mass.replace('P','.')
-	    mass = mass[:-2]
-	    measType = magrun.split('_')[-1].split('.')[0]
-	    
-
-	    f = open(dataDir + magrun)
-	    while f.readline().strip() != '[Data]':
-	        pass
-	    df = pd.read_csv(f)
-	    df.dropna(subset = ['Magnetic Field (Oe)','M. Std. Err. (emu)'],inplace = True)
-	    T = np.array(df['Temperature (K)'])
-	    H = np.array(df['Magnetic Field (Oe)'])
-	    E = np.array(df['M. Std. Err. (emu)'])
-	    M = np.array(df['Moment (emu)'])
-	    mass = getMass(magrun, **kwargs)
-	    measType = magrun.split('_')[-1].split('.')[0]
-	    # print(measType)
-	    if dataType == 'MH':
-	    	return H, M, E, name
-	    if dataType == 'MT':
-	    	return M,H,T,E, mass, measType
-
-	elif who == 'PPMS':
-		name = magrun.split('_')[4].split('.')[0]
-		name = name.replace('P','.')
-		mass = getMass(magrun,**kwargs)
-		print(mass)
-		df = pd.read_csv(dataDir + magrun)
-		df.dropna(inplace = True)
-		T = np.array(df['Temperature (K)'])
-		H = np.array(df['Magnetic Field (Oe)'])
-		E = np.array(df['M. Std. Err. (emu)'])
-		M = np.array(df['Moment (emu)'])
-
-		if dataType == 'MH':
-			return H, M, E, name
-		if dataType == 'MT':
-			measType = magrun.split('_')[5].split('.')[0]
-			return M,H,T,E, mass, measType
-
-
-
+#####################################################################################################################################################################
 #Takes a list of moments (in emu), sample mass, and molecular weight
 #Returns list of moments (in Bohr Magnetons)
 def emuToBohr(emuM,mass,molweight):
@@ -422,17 +484,103 @@ def emuToBohr(emuM,mass,molweight):
     bohr = 9.274e-21 #emu / Bohr magneton = erg/G/Bohrmag
     if (isinstance(emuM,list)):
         bohrM = []
-        for i in M:
+        for i in emuM:
             bohrM.append(i/(mass/molweight*avo*bohr))
     else:
         bohrM = emuM/(mass/molweight*avo*bohr)
     return bohrM
+
+#Takes in magnetization list/float (either bohr magnetons or emu)
+#Returns magnetization list/float normalized to per spin
+def normalizeSpin(M,mass,molweight):
+    avo =6.0221409e+23 #spin/mol
+    if (isinstance(M,list) or isinstance(M, np.ndarray)):
+        normM = []
+        for i in M:
+            normM.append(i*molweight/mass/avo)
+        normM = np.array(normM)
+    else:
+        normM = (M*molweight/mass/avo)
+    return normM
+
+#Takes in magnetization list/float (either bohr magnetons or emu)
+#Returns magnetization list/float normalized to per spin
+def normalizeMol(M,mass,molweight):
+    avo =6.0221409e+23 #spin/mol
+    if (isinstance(M,list) or isinstance(M, np.ndarray)):
+        normM = []
+        for i in M:
+            normM.append(i*molweight/mass)
+        normM = np.array(normM)
+    else:
+        normM = (M*molweight/mass)
+    return normM	
+
+
+#Takes a list of moments (in emu), sample mass, and molecular weight
+#Returns list of moments (in Bohr Magnetons)
+def bohrToEmu(bohrM,mass,molweight):
+    avo =6.0221409e+23 #spin/mol
+    bohr = 9.274e-21 #emu / Bohr magneton = erg/G/Bohrmag
+    if (isinstance(bohrM,list) or isinstance(bohrM, np.ndarray)):
+        emuM = []
+        for i in bohrM:
+            emuM.append((mass/molweight*avo*bohr)*i)
+        emuM = np.array(emuM)
+    else:
+        emuM = (mass/molweight*avo*bohr)*bohrM
+    return emuM
+
+#Takes a list/float of moments (in emu)
+#Returns list/float of moments (in Bohr Magnetons)
+#Not normalized to Mol
+def bohrToEmu2(bohrM):
+    bohr = 9.274e-21 #emu / bohr magneton
+    # bohr = 1/bohr #bohr mag / emu
+    if (isinstance(bohrM,list) or isinstance(bohrM, np.ndarray)):
+        emuM = []
+        for i in bohrM:
+            emuM.append(bohr*i)
+        emuM = np.array(emuM)
+    elif  (isinstance(bohrM,float)):
+        emuM = (bohr*bohrM)
+    else:
+    	print('Not List or Float')
+    	return -1
+    return emuM
+
+#Takes a list/float of moments (in emu)
+#Returns list/float of moments (in Bohr Magnetons)
+#Not normalized to Mol
+def emuToBohr2(emuM):
+    bohr = 9.274e-21 #emu / bohr magneton
+    bohr = 1/bohr #bohr mag / emu
+    if (isinstance(emuM,list) or isinstance(emuM, np.ndarray)):
+        bohrM = []
+        for i in emuM:
+            bohrM.append(bohr*i)
+        bohrM = np.array(bohrM)
+    elif  (isinstance(emuM,float)):
+        bohrM = (bohr*bohrM)
+    else:
+    	print('Not List or Float')
+    	return -1
+    return bohrM
+#####################################################################################################################################################################
+
 
 #Takes in a list of magnetic field (in Oe)
 #Returns a list of magnetic fields (in Tesla)
 def oeToTesla(H):
     newH = H/10000
     return newH
+
+#Takes in a list of magnetic field (in Oe)
+#Returns a list of magnetic fields (in Tesla)
+def teslaToOe(H):
+    newH = H*10000
+    return newH
+
 
 def getMass(filename,**kwargs):
 	if kwargs['who'] == 'Arun':
@@ -445,6 +593,7 @@ def getMass(filename,**kwargs):
 	mass = float(mass)
 	mass = mass/1000
 	return mass
+
 def getTemp(filename,**kwargs):
 	if kwargs['who'] == 'Arun':
 	    temp = filename.split('_')[-1].split('.')[0][:-1]
