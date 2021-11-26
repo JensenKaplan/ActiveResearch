@@ -156,7 +156,7 @@ def getData(magrun, dataDir,**kwargs):
 		name = magrun.split('_')[4].split('.')[0]
 		name = name.replace('P','.')
 		mass = getMass(magrun,**kwargs)
-		print(mass)
+		# print(mass)
 		df = pd.read_csv(dataDir + magrun)
 		df.dropna(inplace = True)
 		T = np.array(df['Temperature (K)'])
@@ -167,7 +167,7 @@ def getData(magrun, dataDir,**kwargs):
 		if dataType == 'MH':
 			return H, M, E, name
 		if dataType == 'MT':
-			measType = magrun.split('_')[5].split('.')[0]
+			measType = magrun.split('_')[-1].split('.')[0]
 			return M,H,T,E, mass, measType
 
 
@@ -497,9 +497,9 @@ def normalizeSpin(M,mass,molweight):
     if (isinstance(M,list) or isinstance(M, np.ndarray)):
         normM = []
         for i in M:
-            normM.append(i*molweight/mass*avo)
+            normM.append(i*molweight/mass/avo)
     else:
-        normM = (M*molweight/mass*avo)
+        normM = (M*molweight/mass/avo)
     return normM
 
 #Takes in magnetization list/float (either bohr magnetons or emu)
