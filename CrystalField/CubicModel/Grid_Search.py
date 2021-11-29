@@ -1,13 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# # Here is a real use of the cubic grid search. I use the grid to find starting parameters for the compound Sr2PrO4 which has tetragonal symmetry. The starting parameters will then be used in the file "Crystal Field Analysis".
-
-# In[7]:
-
-
-# get_ipython().run_line_magic('reload_ext', 'autoreload')
-# get_ipython().run_line_magic('autoreload', '2')
 import sys
 sys.path.append('../../')
 from JensenTools import *
@@ -21,37 +11,24 @@ from functools import reduce
 
 
 LS_on = False
-saveDir = getSaveDir('m')
+ion = 'Ce3+'
+saveDir = getSaveDir('m', dataType = 'grid')
 
-tol = .025 #tolerance allowed between measured and calculated energy.
+tol = .1 #tolerance allowed between measured and calculated energy.
 Emeas = [168, 335,385] # Our measured levels of Sr2PrO4
 comp = 'Sr2PrO4' #Compound name
 
 
-LSDir = 'cubic_matrix_LS/' 
-JDir = 'cubic_matrix_J/'
-
+LSDir = '/cubic_matrix_LS/' 
+JDir = '/cubic_matrix_J/'
 if LS_on: 
     saveDir = saveDir + LSDir
 else:
     saveDir = saveDir + JDir
 
-
-
-# ### Define the measured energy levels (from INS data) and define an allowable tolerance between calculated and measured energy.
-
-# In[8]:
-
-
-
-
-# ### In the following section we scan through all LS grids and find the (x,bpf) points that create matching energy levels.
-
-# In[9]:
-
+grid = 'J_Grid_3_levels.mat'
 
 print('Energies as measured by paper (meV):  ', Emeas)
-
 # LSNames, EList, data = loadMatrix(saveDir, LS_on = LS_on) #Load in all created 800x800 grids
 # EList, data = loadMatrix(saveDir, LS_on = LS_on)
 # LSNames = [LSNames[0]]
@@ -106,12 +83,12 @@ if(LS_on):
             printPCFEigens(x[xind],bpf[bind],LS = LS, LS_on = LS_on)
 
 else:
-    EList, data = loadMatrix(saveDir, LS_on = LS_on)
+    EList, data = loadMatrix(saveDir, LS_on = LS_on, grid = grid)
 
     #Loading the x,bpf, and LS of each file.
     x = data['X'][0]
     bpf = data['B'][0]
-
+    print("Length of x = {}, length of bpf = {}".format(len(x),len(bpf)))
     plotContours(data,EList, LS_on = LS_on) #Contour plotting for 4 E levels
 
 
@@ -128,6 +105,20 @@ else:
     # print(EListindex[0])
     # print(data[EListindex[0][0]])
     # print(data[EListindex[Eindex[0]]])
+
+    bI = bpf[572]
+    xI = x[560]
+
+    B40 = bI
+    B60 = xI*bI
+    B44 = 5*B40
+    B64 = -21*B60
+    stev = {'B40' : B40, 'B44' : B44, 'B60' : B60, 'B64' : B64}
+    Pr = cef.CFLevels.Bdict(Bdict = stev, ion = ion)
+    Pr.diagonalize()
+    print('#####################################################################################################################################################################')
+    Pr.printEigenvectors()
+    print('#####################################################################################################################################################################')
     #Function call that searches for compatible (x,bpf) coordinates.
     coords = paramFinder(data,EListindex,Eindex,tol,comp,LS_on = LS_on)
 
@@ -153,6 +144,11 @@ else:
         print('\nFor ', comp, ' at x[%i] = %.4f and bpf[%i] = %.4f'%(xind,x[xind],bind,bpf[bind]))
         print('Using these values lets construct the CF Hamiltonian\n')
         printPCFEigens(x[xind],bpf[bind],LS = LS, LS_on = LS_on)
+
+
+plt.show()
+
+
 
 # ### We find results for LS = 60 and LS = 100. Since Sr2PrO4 has the central ion Pr4+ which has a reported LS value of ~107meV, I decide to use the results from the LS = 100 run as my starting point for Crystal Field fitting.
 # 

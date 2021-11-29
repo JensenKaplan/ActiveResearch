@@ -517,6 +517,29 @@ def normalizeMol(M,mass,molweight):
     return normM	
 
 
+#Takes in magnetization list/float (either bohr magnetons or emu)
+#Returns magnetization list/float normalized to per spin
+def normalize(M,mass,molweight, per):
+	avo =6.0221409e+23 #spin/mol
+	if (per == 'mol'):
+		if (isinstance(M,list) or isinstance(M, np.ndarray)):
+			normM = []
+			for i in M:
+				normM.append(i*molweight/mass)
+			normM = np.array(normM)
+		else:
+			normM = (M*molweight/mass)
+	else:
+	    if (isinstance(M,list) or isinstance(M, np.ndarray)):
+	        normM = []
+	        for i in M:
+	            normM.append(i*molweight/mass/avo)
+	        normM = np.array(normM)
+	    else:
+	        normM = (M*molweight/mass/avo)
+	    return normM		
+	return normM
+
 #Takes a list of moments (in emu), sample mass, and molecular weight
 #Returns list of moments (in Bohr Magnetons)
 def bohrToEmu(bohrM,mass,molweight):
