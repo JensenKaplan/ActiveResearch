@@ -10,32 +10,16 @@ from JensenTools import *
 who = 'Arun'
 comp = 'Sr2PrO4'
 MHDir = getSaveDir('m', comp = comp, dataType = 'MH')
-
-
-# # Load the M vs H data files
-# ## Manually name the sample in the variable "comp"
-# ## Manually enter the molecular weight (g/mol)
-# ## Load the sample mass (grams) as read in by one of the data files' name
-# 
-# Molecular weight calculated by https://www.lenntech.com/calculators/molecular/molecular-weight-calculator.htm
-
-# In[74]:
-
+molweight = 380.15
 
 runs = [] #A list of all the data file names
 for i in os.listdir(MHDir):
     if i.endswith('.DAT'): #This was a safeguard against a situation arising at an earlier implementation of my code.
         runs.append(i)
 
-molweight = 380.15
+
 mass = getMass(runs[0], who = who)
 T = getTemp(runs[0], who = who)
-
-
-# # Order the files by temperature
-# This guarantees nicer plotting
-
-# In[75]:
 
 
 temp = [] #The newly sorted list
@@ -46,35 +30,45 @@ temp = np.argsort([int(i) for i in temp]) #Sort by temperature
 runs = [runs[i] for i in temp]
 
 
-
-# This dictionary easily allows me to access the data from a specific run
-## {'Temperature': [H,M,Err]} 
 MHdata = {}
 plt.figure()
 for i in runs:
     M, H, Err, mass, T = getData(i,MHDir,who = who, dataType = 'MH')
-    M = emuToBohr(M,mass,molweight)
-    H = oeToTesla(H)
-    Err = emuToBohr(Err,mass,molweight)
+    # M = emuToBohr(M,mass,molweight)
+    # H = oeToTesla(H)
+    # Err = emuToBohr(Err,mass,molweight)
+    M = normalize(M,mass,molweight,'spin')
+    Err = normalize(Err,mass,molweight,'spin')
     MHdata[T] = [M,H,Err,mass,i]
-    plt.errorbar(H,M, yerr = Err, label = T)
+    plt.errorbar(H, M, yerr = Err, label = T)
+plt.title(comp)
+plt.ylabel('Moment (emu) spin^-1')
+plt.xlabel('Field (Oe)')
+plt.legend()
+# plt.show()
 
-# MHData = {}
-# for i in runs:
-#     M, H, Err, mass, T = getData(i,MHDir,who = who, dataType = 'MH')
-#     MHdata[T] = [M,H,Err,mass,i]
+plt.figure()
+for i in MHdata.keys():
+    M,H,Err,Mass,T = MHdata[i]
+    # M= normalize(M,mass,molweight,'spin')
+    M = emuToBohr2(M)
+    H = oeToTesla(H)
+    Err = emuToBohr2(Err)
+    plt.errorbar(H,M, yerr = Err,label = i)
 
 plt.title(comp)
-plt.ylabel('Moment (\N{GREEK SMALL LETTER MU}B)')
+plt.ylabel('Moment (\N{GREEK SMALL LETTER MU}B) spin^-1')
 plt.xlabel('Field (T)')
 plt.legend()
 plt.show()
 
 
-temp = '20K'
+
+temp = '20.0K'
 curRun = MHdata[temp] #loading the data from my current run
-H = curRun[0]
-M = curRun[1]
+
+M = curRun[0]
+H = curRun[1]
 Err = curRun[2]
 
 
