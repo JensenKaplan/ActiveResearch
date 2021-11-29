@@ -7,10 +7,10 @@ import sys
 sys.path.append('..')
 from JensenTools import *
 
-who = 'Arun'
-comp = 'Sr2PrO4'
+who = 'PPMS'
+comp = 'ErOI'
 MHDir = getSaveDir('m', comp = comp, dataType = 'MH')
-molweight = 380.15
+molweight = 310.16
 
 runs = [] #A list of all the data file names
 for i in os.listdir(MHDir):
@@ -34,9 +34,6 @@ MHdata = {}
 plt.figure()
 for i in runs:
     M, H, Err, mass, T = getData(i,MHDir,who = who, dataType = 'MH')
-    # M = emuToBohr(M,mass,molweight)
-    # H = oeToTesla(H)
-    # Err = emuToBohr(Err,mass,molweight)
     M = normalize(M,mass,molweight,'spin')
     Err = normalize(Err,mass,molweight,'spin')
     MHdata[T] = [M,H,Err,mass,i]
@@ -70,14 +67,16 @@ curRun = MHdata[temp] #loading the data from my current run
 M = curRun[0]
 H = curRun[1]
 Err = curRun[2]
+M = emuToBohr2(M)
+H = oeToTesla(H)
+Err = emuToBohr2(Err)
 
 
-
-fieldRange = [0,14]
+fieldRange = [10,14]
 newH = []
 newM = []
 newErr = []
-for i in range(len(curRun[0])):
+for i in range(len(M)):
     if (H[i] >= fieldRange[0] and H[i] <= fieldRange[1]):
         newH.append(H[i])
         newM.append(M[i])
