@@ -2,22 +2,30 @@ import sys
 sys.path.append('../../')
 from JensenTools import *
 
-
+#Kwargs
+#####################################################################################################################################################################
 comp = 'Sr2PrO4'
 LS_on = False
-numlevels = 1
+Kmeans = True
+if LS_on:
+	numlevels = 4
+else:
+	numlevels = 1
 saveDir = getSaveDir('m',dataType = 'grid', comp = comp)
 ion = 'Ce3+'
-Kmeans = True
+#####################################################################################################################################################################
 
+# Getting correct directory
+#####################################################################################################################################################################
 LSDir = '/cubic_matrix_LS_test/'
 JDir = '/cubic_matrix_J/'
 if LS_on:
 	saveDir = saveDir + LSDir
 else:
 	saveDir = saveDir + JDir
+grid = 'J_Grid_2_levels.mat' # grid name, needed for JBasis
+#####################################################################################################################################################################
 
-grid = 'J_Grid_2_levels.mat'
 
 # grid = 'LS_100.mat'
 LS = [100,110]

@@ -12,21 +12,22 @@ tol = .01 #tolerance allowed between measured and calculated energy.
 Emeas = [168, 335,385] # Our measured levels of Sr2PrO4
 #####################################################################################################################################################################
 
-
+# Getting correct directory
+#####################################################################################################################################################################
 LSDir = '/cubic_matrix_LS/' 
 JDir = '/cubic_matrix_J/'
 if LS_on: 
     saveDir = saveDir + LSDir
 else:
     saveDir = saveDir + JDir
-grid = 'J_Grid_2_levels.mat'
+grid = 'J_Grid_2_levels.mat' # grid name, needed for JBasis
+#####################################################################################################################################################################
 
+# Param Searching
+#####################################################################################################################################################################
 print('Energies as measured by paper (meV):  ', Emeas)
-# LSNames, EList, data = loadMatrix(saveDir, LS_on = LS_on) #Load in all created 800x800 grids
-# EList, data = loadMatrix(saveDir, LS_on = LS_on)
-# LSNames = [LSNames[0]]
-# EList = [EList[0]]
-# data = [data[0]]
+# LS Basis
+#####################################################################################################################################################################
 if(LS_on):
     LSNames, EList, data = loadMatrix(saveDir, LS_on = LS_on) #Load in all created 800x800 grids
 
@@ -37,7 +38,7 @@ if(LS_on):
         bpf = data[c]['B'][0]
         LS = data[c]['LS'][0][0]
 
-        plotContours(data[c],EList[c], LS_on = LS_on, LSName =LSNames[c]) #Contour plotting for 4 E levels
+        # plotContours(data[c],EList[c], LS_on = LS_on, LSName =LSNames[c]) #Contour plotting for 4 E levels
 
 
         #Choose which bands to look for compatibilities.
@@ -75,6 +76,8 @@ if(LS_on):
             print('Using these values lets construct the CF Hamiltonian\n')
             printPCFEigens(x[xind],bpf[bind],LS = LS, LS_on = LS_on)
 
+# J Basis
+#####################################################################################################################################################################
 else:
     EList, data = loadMatrix(saveDir, LS_on = LS_on, grid = grid)
     print(EList)
@@ -82,7 +85,7 @@ else:
     x = data['X'][0]
     bpf = data['B'][0]
     print("Length of x = {}, length of bpf = {}".format(len(x),len(bpf)))
-    plotContours(data,EList, LS_on = LS_on) #Contour plotting for 4 E levels
+    # plotContours(data,EList, LS_on = LS_on) #Contour plotting for 4 E levels
 
 
     #Choose which bands to look for compatibilities.
@@ -93,26 +96,7 @@ else:
     for i in index:
         Eindex.append(Emeas[i-1])
         EListindex.append(EList[i-1])
-    print(Eindex)
-    print(EListindex)
-    # print(EListindex[0])
-    # print(data[EListindex[0][0]])
-    # print(data[EListindex[Eindex[0]]])
 
-    # bI = bpf[572]
-    # xI = x[560]
-
-    # B40 = bI
-    # B60 = xI*bI
-    # B44 = 5*B40
-    # B64 = -21*B60
-    # stev = {'B40' : B40, 'B44' : B44, 'B60' : B60, 'B64' : B64}
-    # Pr = cef.CFLevels.Bdict(Bdict = stev, ion = ion)
-    # Pr.diagonalize()
-    # print('#####################################################################################################################################################################')
-    # Pr.printEigenvectors()
-    # print('#####################################################################################################################################################################')
-    # #Function call that searches for compatible (x,bpf) coordinates.
     coords = paramFinder(data,EListindex,Eindex,tol,comp,LS_on = LS_on)
 
     #Printing results
@@ -137,12 +121,6 @@ else:
         print('\nFor ', comp, ' at x[%i] = %.4f and bpf[%i] = %.4f'%(xind,x[xind],bind,bpf[bind]))
         print('Using these values lets construct the CF Hamiltonian\n')
         printPCFEigens(x[xind],bpf[bind], LS_on = LS_on, ion = ion)
-
+#####################################################################################################################################################################
 
 plt.show()
-
-
-
-# ### We find results for LS = 60 and LS = 100. Since Sr2PrO4 has the central ion Pr4+ which has a reported LS value of ~107meV, I decide to use the results from the LS = 100 run as my starting point for Crystal Field fitting.
-# 
-# LS = 100, x = 0.03629536921151444, and bpf = -0.6570713391739674
