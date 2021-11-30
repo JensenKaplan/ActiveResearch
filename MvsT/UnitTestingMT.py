@@ -1,9 +1,7 @@
 import sys
 sys.path.append('..')
 from JensenTools import *
-import PyCrystalField as cef
-import numpy as np
-import matplotlib.pyplot as plt
+
 
 # kwargs
 #####################################################################################################################################################################
