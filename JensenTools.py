@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import PyCrystalField as cef
 import os
 from lmfit import Model
+from lmfit.models import *
 import scipy.io as sio
 from functools import reduce
 import time
@@ -11,6 +12,10 @@ import multiprocessing as mp
 from itertools import product
 from functools import partial
 import pandas as pd 
+
+
+molweight = { 'Sr2PrO4' : 380.15, 'Li8PrO2' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16 } 
+
 
 def getSaveDir(name = 'm', comp = 'Sr2PrO4', dataType = None):
 	if name == 'm':
