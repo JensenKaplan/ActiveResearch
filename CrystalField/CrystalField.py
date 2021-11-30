@@ -29,7 +29,7 @@ def energyFit(B40,B60, B44, B64, B20, numlevels, LS, **kwargs ):
 		Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling = LS) #Create CF_Levels obejct wtih the given coefficients.
 		Pr.diagonalize()
 		if kwargs['Kmeans']:
-			e = kmeansSort(Pr.eigenvalues,numlevels)[:3] #Excluding the highest mode which we did not detect in our INS runs
+			e = kmeansSort(Pr.eigenvalues,numlevels)[:numlevels-1] #Excluding the highest mode which we did not detect in our INS runs
 			# e.append(e[2]/e[1]) #The aforementioned ratio
 		else: 
 			e = Pr.eigenvalues
@@ -37,65 +37,111 @@ def energyFit(B40,B60, B44, B64, B20, numlevels, LS, **kwargs ):
 		Pr = cef.CFLevels.Bdict(Bdict = Stev, ion = kwargs['ion'])
 		Pr.diagonalize()
 		if kwargs['Kmeans']:   	
-			e = kmeansSort(Pr.eigenvalues,numlevels) #Excluding the highest mode which we did not detect in our INS runs
+			e = kmeansSort(Pr.eigenvalues,numlevels)[:numlevels-1] #Excluding the highest mode which we did not detect in our INS runs
+			e.append(e[1]/e[0]) #The aforementioned ratio
 		else:
 			e =  Pr.eigenvalues
 	return e
 
 #####################################################################################################################################################################
 
+
 #Define important things
 #####################################################################################################################################################################
 comp = 'Sr2PrO4'
 ion = 'Ce3+'
 who = 'Arun'
-LS_on = True
+LS_on = False
 Kmeans = True
+molweight = molweight[comp]
 LSValue = 100
-numlevels = 4
+if LS_on:
+	numlevels = 4
+	Emeas = [168, 335,385] #The measured INS magnetic modes
+else:
+	numlevels = 3
+	Emeas = [168, 335, 335/168] #The measured INS magnetic modes, only first 2 for J basis
 # The L,S values are as follows for the Pr4+ ion
 L = 3
 S = 0.5
-Emeas = [168, 335,385] #The measured INS magnetic modes. The last entry being a ratio
+
 #####################################################################################################################################################################
 
 saveDir = getSaveDir('m',comp = comp)
 MHDir = getSaveDir('m',comp = comp, dataType = 'MH')
 MTDir = getSaveDir('m',comp = comp, dataType = 'MT')
 
-#From GridSearch For LS
+# From GridSearch For LS
 #####################################################################################################################################################################
-# LS = LSValue
-# x =  0.03629536921151444
-# bpf = -0.6570713391739674
-# # Assigning the coefficients from grid search
-# # Enforcing cubic constraints as a start
-# # and including the B20 term which is needed for tetragonal symmetry
-# B40 = bpf
-# B60 = x*bpf
-# B44 = 5*B40
-# B64 = -21*B60
-# B20 = 0
+if LS_on:
+	LS = LSValue
+	x =  0.03629536921151444
+	bpf = -0.6570713391739674
+	# Assigning the coefficients from grid search
+	# Enforcing cubic constraints as a start
+	# and including the B20 term which is needed for tetragonal symmetry
+	B40 = bpf
+	B60 = x*bpf
+	B44 = 5*B40
+	B64 = -21*B60
+	B20 = 0
+#####################################################################################################################################################################
+
+# From GridSearch For J
+#####################################################################################################################################################################
+if not LS_on:
+	x = -1.0000
+	bpf = -0.4673
+	B40 = bpf
+	B60 = x*bpf
+	B44 = 5*B40
+	B64 = -21*B60
+	B20 = 0
+#####################################################################################################################################################################
+
+#Best Fit LS
+#####################################################################################################################################################################
+if LS_on:	
+	B40  =  -0.6568663783690575
+	B60  =  -0.02328250024945387
+	LS  =  100.00007580463522
+	B44  =  -3.1415463304732714
+	B64  =  0.504906552605772
+	B20  =  0.4858075931009187
+#####################################################################################################################################################################
+
+# Best Fit J
+#####################################################################################################################################################################
+if not LS_on:
+	# Red Chi = ~5
+	B40  =  -0.5572886105373519
+	B60  =  0.4673
+	B44  =  -3.0342208316734602
+	B64  =  -9.8133
+	B20  =  12.606195910392971
+
+	# # Red Chi = ~.01
+	B40  =  -0.5572886105373519
+	B60  =  0.4673
+	B44  =  -3.0946858584804335
+	B64  =  -9.8133
+	B20  =  12.606195720794622
 #####################################################################################################################################################################
 
 #####################################################################################################################################################################
 eModel = Model(energyFit, independent_vars = ['numlevels'])
 params = eModel.make_params()
-B40  =  -0.6568663783690575
-B60  =  -0.02328250024945387
-LS  =  100.00007580463522
-B44  =  -3.1415463304732714
-B64  =  0.504906552605772
-B20  =  0.4858075931009187
+
 # Since we only have 4 training points, only 4 parameters can vary at once.
-params['B20'].set(value = B20, vary = True)
-params['B40'].set(value=B40, vary=True)
-params['B60'].set(value=B60, vary=True)
+params['B20'].set(value = B20, vary = False)
+params['B40'].set(value=B40, vary=False)
+params['B60'].set(value=B60, vary=False)
 params['B44'].set(value = B44, vary = False )
 params['B64'].set(value = B64, vary = False )
-params['LS'].set(value=LS, vary=False)
+if LS_on:
+	params['LS'].set(value=LS, vary=False)
 #Fit model to data
-fitted = eModel.fit(Emeas,params, numlevels = 4 , LS_on = LS_on, Kmeans = Kmeans)
+fitted = eModel.fit(Emeas,params, numlevels = numlevels, LS_on = LS_on, Kmeans = Kmeans, ion = ion)
 #Create a dictionary of the fitted parameters (stevens coefficients)
 stev = {'B40': fitted.params['B40'].value, 'B60': fitted.params['B60'].value, 'B44' : fitted.params['B44'].value, 'B64' : fitted.params['B64'].value, 'B20' :fitted.params['B20'].value }
 #####################################################################################################################################################################
@@ -107,7 +153,7 @@ print('\nReduced Chi Sqr = {}'.format(fitted.result.redchi))
 #Uncomment to print out in easy copy paste format
 paramPrint(fitted.params)
 
-#CF Analysis
+# CF Analysis
 #####################################################################################################################################################################
 #Create the CFLevels object and diagonalize it
 if LS_on:
@@ -137,7 +183,7 @@ for i in os.listdir(MHDir):
         runs.append(i)
 
 # mass = getMass(runs[0],who = who)
-molweight = 380.15
+
 MHdata = {}
 # plt.figure()
 for i in runs:
@@ -177,14 +223,14 @@ plt.title('Magnetization at {} K'.format(Temp))
 plt.legend()
 plt.show()
 
-plt.figure()
-plt.plot(H,-1.*np.array(magCalc), label = 'PCF Calculated')
-plt.errorbar(H,M, yerr = Err, label = 'Measured')
-plt.xlabel('Field (T)')
-plt.ylabel('Magnetization \N{GREEK SMALL LETTER MU}B')
-plt.title('Magnetization at {} K'.format(Temp))
-plt.legend()
-plt.show()
+# plt.figure()
+# plt.plot(H,-1.*np.array(magCalc), label = 'PCF Calculated')
+# plt.errorbar(H,M, yerr = Err, label = 'Measured')
+# plt.xlabel('Field (T)')
+# plt.ylabel('Magnetization \N{GREEK SMALL LETTER MU}B')
+# plt.title('Magnetization at {} K'.format(Temp))
+# plt.legend()
+# plt.show()
 #####################################################################################################################################################################
 
 # ## PCF Susceptibility
@@ -207,7 +253,7 @@ M,H,T,Err,samplemass = MTdata['ZFC']
 
 suscCalc = []
 Temp = np.linspace(.1,400,1000)
-fieldT = 0.01
+fieldT = 0.1
 deltaField = 0.0001
 if LS_on:
 	suscCalc = Pr.susceptibility(Temps = Temp, Field = fieldT, deltaField = deltaField)
@@ -220,17 +266,17 @@ suscCalcI = []
 for i in suscCalc:
 	suscCalcI.append(1/i)
 plt.figure()
-plt.plot(Temp,suscCalc)
+plt.plot(Temp,-1*np.array(suscCalc))
 plt.xlabel('Temperature (K)')
-plt.ylabel('Susceptibility (unsure unit)')
+plt.ylabel('X (uB T^-1 Spin^-1)')
 plt.title('PCF Susceptibility with Scalar {} T field'.format(fieldT))
 
 plt.figure()
-plt.plot(Temp,suscCalcI)
+plt.plot(Temp,-1*np.array(suscCalcI))
 plt.xlabel('Temperature (K)')
-plt.ylabel('1/Susceptibility (unsure unit)')
+plt.ylabel('1/X (uB ^-1 T Spin)')
 plt.title('PCF Inverse Susceptibility with Scalar {} T field'.format(fieldT))
-plt.show()
+# plt.show()
 #####################################################################################################################################################################
 
 
@@ -251,6 +297,9 @@ plt.xlabel('Energy (meV)')
 plt.title('PCF Spectrum: Ei = {}meV, Temp = {}K, Res = {}'.format(Ei,Temp,res))
 plt.show()
 #####################################################################################################################################################################
+
+print()
+Pr.printLaTexEigenvectors()
 
 # wyb = cef.StevensToWybourne('Ce3+',stev, LS=True)
 # print(wyb)
