@@ -86,7 +86,7 @@ def energyCalcKPar(x,bpf, **kwargs):
 	else:
 		Pr = cef.CFLevels.Bdict(Bdict = Stev,ion = kwargs['ion'])
 		Pr.diagonalize()
-		e = Pr.eigenvalues
+		e = kmeansSort(Pr.eigenvalues,kwargs['numlvls'])
 	return e
 
 # This function loads my .mat files for analyzing, plotting, finding compatibilities.
@@ -476,7 +476,7 @@ def printPCFEigens(x,bpf, **kwargs):
 	if kwargs['LS_on']:
 		Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling=kwargs['LS'])
 	else:
-		Pr = cef.CFLevels.Bdict(Bdict = stev, ion = kwargs['ion'])
+		Pr = cef.CFLevels.Bdict(Bdict = Stev, ion = kwargs['ion'])
 	Pr.diagonalize()
 	Pr.printEigenvectors()
 	return
