@@ -14,7 +14,7 @@ from functools import partial
 import pandas as pd 
 
 
-molweight = { 'Sr2PrO4' : 380.15, 'Li8PrO2' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16 } 
+molweight = { 'Sr2PrO4' : 380.15, 'Li8PrO6' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16 } 
 
 
 def getSaveDir(name = 'm', comp = 'Sr2PrO4', dataType = None):

@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 
 # kwargs
 #####################################################################################################################################################################
-comp = 'Li8PrO6'
+comp = 'Sr2PrO4'
 ion = 'Ce3+'
-who = 'PPMS'
+who = 'Arun'
 LS_on = True
 Kmeans = True
 LSValue = 100
