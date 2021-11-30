@@ -42,7 +42,6 @@ def energyFit(B40,B60, B44, B64, B20, numlevels, LS, **kwargs ):
 		else:
 			e =  Pr.eigenvalues
 	return e
-
 #####################################################################################################################################################################
 
 
@@ -64,7 +63,6 @@ else:
 # The L,S values are as follows for the Pr4+ ion
 L = 3
 S = 0.5
-
 #####################################################################################################################################################################
 
 saveDir = getSaveDir('m',comp = comp)
@@ -92,6 +90,9 @@ if LS_on:
 if not LS_on:
 	x = -1.0000
 	bpf = -0.4673
+	# Assigning the coefficients from grid search
+	# Enforcing cubic constraints as a start
+	# and including the B20 term which is needed for tetragonal symmetry	
 	B40 = bpf
 	B60 = x*bpf
 	B44 = 5*B40
@@ -114,11 +115,11 @@ if LS_on:
 #####################################################################################################################################################################
 if not LS_on:
 	# Red Chi = ~5
-	B40  =  -0.5572886105373519
-	B60  =  0.4673
-	B44  =  -3.0342208316734602
-	B64  =  -9.8133
-	B20  =  12.606195910392971
+	# B40  =  -0.5572886105373519
+	# B60  =  0.4673
+	# B44  =  -3.0342208316734602
+	# B64  =  -9.8133
+	# B20  =  12.606195910392971
 
 	# # Red Chi = ~.01
 	B40  =  -0.5572886105373519
@@ -128,6 +129,8 @@ if not LS_on:
 	B20  =  12.606195720794622
 #####################################################################################################################################################################
 
+# Make LMFIT model and fit
+# Create stevens coefficients dictionary from fitted parameters
 #####################################################################################################################################################################
 eModel = Model(energyFit, independent_vars = ['numlevels'])
 params = eModel.make_params()
@@ -140,22 +143,24 @@ params['B44'].set(value = B44, vary = False )
 params['B64'].set(value = B64, vary = False )
 if LS_on:
 	params['LS'].set(value=LS, vary=False)
-#Fit model to data
+# Fit model to data
 fitted = eModel.fit(Emeas,params, numlevels = numlevels, LS_on = LS_on, Kmeans = Kmeans, ion = ion)
-#Create a dictionary of the fitted parameters (stevens coefficients)
+# Create a dictionary of the fitted parameters (stevens coefficients)
 stev = {'B40': fitted.params['B40'].value, 'B60': fitted.params['B60'].value, 'B44' : fitted.params['B44'].value, 'B64' : fitted.params['B64'].value, 'B20' :fitted.params['B20'].value }
 #####################################################################################################################################################################
 
-#Print the parameters and reduced chi sqr value
+# Print the parameters and reduced chi sqr value
+#####################################################################################################################################################################
 print('\n\nFitted parameters:')
 fitted.params.pretty_print()
 print('\nReduced Chi Sqr = {}'.format(fitted.result.redchi))
 #Uncomment to print out in easy copy paste format
 paramPrint(fitted.params)
+#####################################################################################################################################################################
 
 # CF Analysis
 #####################################################################################################################################################################
-#Create the CFLevels object and diagonalize it
+# Create the CFLevels object and diagonalize it
 if LS_on:
 	Pr = cef.LS_CFLevels.Bdict(Bdict = stev, L = L, S = S, SpinOrbitCoupling=fitted.params['LS'].value)
 	Pr.diagonalize()
@@ -164,11 +169,11 @@ else:
 	Pr.diagonalize()
 	
 
-#Print final matrix
+# Print final matrix
 print('\n\nEnergy values as measured by INS (meV): {}'.format(Emeas[:-1]))
 Pr.printEigenvectors()
 
-#Calculate and neatly print G-Tensor using Pandas
+# Calculate and neatly print G-Tensor using Pandas
 gt = Pr.gtensor()
 rows = ['gx','gy','gz']
 df = pd.DataFrame(gt, columns = rows, index = rows)
@@ -188,31 +193,26 @@ MHdata = {}
 # plt.figure()
 for i in runs:
     M, H, Err,  mass, T = getData(i,MHDir,who = who, dataType = 'MH')
-    M = emuToBohr(M,mass,molweight)
-    H = oeToTesla(H)
-    Err = emuToBohr(Err,mass,molweight)
+    M = normalize(M,mass,molweight, 'spin')
+    Err = normalize(Err,mass,molweight, 'spin')
     MHdata[T] = [M,H,Err,mass,i]
     # plt.errorbar(H,M, yerr = Err, label = name)
 
 T = '20K'
 Temp = getTemp(MHdata[T][-1], who = who)
 M, H, Err, mass, filename = MHdata[T]
-
+M = emuToBohr2(M)
+Err = emuToBohr2(Err)
+H = oeToTesla(H)
 
 #Generate a magnetization curve for comparing results to experiment
 magCalc = []
-# fieldT = np.linspace(0.01,14,1000)
-
 for i in H:
 	if LS_on:
 		magCalc.append(Pr.magnetization( Temp = Temp, Field = [0, 0, i])[2])		
 	else:
 		magCalc.append(Pr.magnetization( Temp = Temp, Field = [0, 0, i], ion = ion)[2])
 
-# plt.plot(H,magCalc)
-# plt.xlabel('Field (T)')
-# plt.ylabel('Magnetization \N{GREEK SMALL LETTER MU}B')
-# plt.title('PCF Magnetization at {} K'.format(Temp))
 
 plt.figure()
 plt.plot(H,-1.*np.array(magCalc), label = 'PCF Calculated')
@@ -222,33 +222,28 @@ plt.ylabel('Magnetization \N{GREEK SMALL LETTER MU}B')
 plt.title('Magnetization at {} K'.format(Temp))
 plt.legend()
 plt.show()
-
-# plt.figure()
-# plt.plot(H,-1.*np.array(magCalc), label = 'PCF Calculated')
-# plt.errorbar(H,M, yerr = Err, label = 'Measured')
-# plt.xlabel('Field (T)')
-# plt.ylabel('Magnetization \N{GREEK SMALL LETTER MU}B')
-# plt.title('Magnetization at {} K'.format(Temp))
-# plt.legend()
-# plt.show()
 #####################################################################################################################################################################
 
 # ## PCF Susceptibility
 #####################################################################################################################################################################
 runs = []
 for i in os.listdir(MTDir):
-    if i.endswith('.DAT'): #This was a safeguard against a situation arising at an earlier implementation of my code.
+    if i.endswith('.DAT') or i.endswith('.dat'): #This was a safeguard against a situation arising at an earlier implementation of my code.
         runs.append(i)
-
 
 MTdata = {}
 # plt.figure()
 for i in runs:
     M,H,T,Err,samplemass,measType = getData(i,MTDir, who = who, dataType = 'MT')
+    M = normalize(M,mass,molweight, 'spin')
+    Err = normalize(Err,mass,molweight, 'spin')    
     MTdata[measType] = [M,H,T,Err,samplemass]
     # plt.errorbar(H,M, yerr = Err, label = name)
 
 M,H,T,Err,samplemass = MTdata['ZFC']
+M = emuToBohr2(M)
+Err = emuToBohr2(Err)
+H = oeToTesla(H)
 # samplemass = JT.getMass(MHdata['ZFC'][4])
 
 suscCalc = []
@@ -262,9 +257,8 @@ else:
 # for i in Temp:
 	# suscCalc.append(Pr.susceptibility(i,fieldT,deltaField))
 
-suscCalcI = []
-for i in suscCalc:
-	suscCalcI.append(1/i)
+suscCalcI = 1/suscCalc
+
 plt.figure()
 plt.plot(Temp,-1*np.array(suscCalc))
 plt.xlabel('Temperature (K)')
@@ -283,10 +277,10 @@ plt.title('PCF Inverse Susceptibility with Scalar {} T field'.format(fieldT))
 
 # ## PCF Neutron Spectrum
 #####################################################################################################################################################################
-energy = np.linspace(.01,700,1000)
 Ei = 700
 Temp = 4.82
 res = 9
+energy = np.linspace(.01,Ei,1000)
 
 CalculatedSpectrum = Pr.neutronSpectrum(energy, Temp=Temp, Ei=Ei, ResFunc = lambda x: res )
 # ResFunc = lambda x: 9 if (energy < 200) else 21
