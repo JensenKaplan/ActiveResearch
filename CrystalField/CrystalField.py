@@ -1,21 +1,16 @@
 import sys
 sys.path.append('..')
 from JensenTools import *
-from lmfit import Model
-import PyCrystalField as cef
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-
 
 #####################################################################################################################################################################
-#Simple function for pritting my parameters after fitting so that I can copy paste the values from output for further iterations
+# Simple function for pritting my parameters after fitting so that I can copy paste the values from output for further iterations.
 def paramPrint(fittedparams):
 	print()
 	for i in fittedparams:
 		# print(i, ' = ', i.value)
 		print(i, ' = ',fittedparams[i].value )
 
+# Function to be made into an LMFIT model.
 def energyFit(B40,B60, B44, B64, B20, numlevels, LS, **kwargs ):
 	numlevels = numlevels
 	Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
@@ -44,22 +39,23 @@ def energyFit(B40,B60, B44, B64, B20, numlevels, LS, **kwargs ):
 	return e
 #####################################################################################################################################################################
 
-
-#Define important things
+# Define important things
 #####################################################################################################################################################################
 comp = 'Sr2PrO4'
 ion = 'Ce3+'
 who = 'Arun'
-LS_on = False
+LS_on = True
 Kmeans = True
 molweight = molweight[comp]
 LSValue = 100
+
 if LS_on:
 	numlevels = 4
-	Emeas = [168, 335,385] #The measured INS magnetic modes
+	Emeas = [168, 335,385] # The measured INS magnetic modes
 else:
 	numlevels = 3
-	Emeas = [168, 335, 335/168] #The measured INS magnetic modes, only first 2 for J basis
+	Emeas = [168, 335, 335/168] # The measured INS magnetic modes, only first 2 for J basis
+    
 # The L,S values are as follows for the Pr4+ ion
 L = 3
 S = 0.5
@@ -141,8 +137,10 @@ params['B40'].set(value=B40, vary=False)
 params['B60'].set(value=B60, vary=False)
 params['B44'].set(value = B44, vary = False )
 params['B64'].set(value = B64, vary = False )
+
 if LS_on:
 	params['LS'].set(value=LS, vary=False)
+    
 # Fit model to data
 fitted = eModel.fit(Emeas,params, numlevels = numlevels, LS_on = LS_on, Kmeans = Kmeans, ion = ion)
 # Create a dictionary of the fitted parameters (stevens coefficients)
@@ -241,39 +239,63 @@ for i in runs:
     # plt.errorbar(H,M, yerr = Err, label = name)
 
 M,H,T,Err,samplemass = MTdata['ZFC']
-M = emuToBohr2(M)
-Err = emuToBohr2(Err)
-H = oeToTesla(H)
-# samplemass = JT.getMass(MHdata['ZFC'][4])
+X = M/H
+Xi  = 1/X
 
-suscCalc = []
-Temp = np.linspace(.1,400,1000)
+MBohr = emuToBohr2(M)
+ErrBohr = emuToBohr2(Err)
+HTes = oeToTesla(H)
+
+XBohr = MBohr/HTes
+XBohrI = 1/XBohr
+
+
+XCalc = []
+# Temp = np.linspace(.001,T,1000)
 fieldT = 0.1
 deltaField = 0.0001
 if LS_on:
-	suscCalc = Pr.susceptibility(Temps = Temp, Field = fieldT, deltaField = deltaField)
+	XCalc = Pr.susceptibility(Temps = T, Field = fieldT, deltaField = deltaField)
 else:
-	suscCalc = Pr.susceptibility(Temps = Temp, Field = fieldT, deltaField = deltaField, ion = ion)
-# for i in Temp:
-	# suscCalc.append(Pr.susceptibility(i,fieldT,deltaField))
-
-suscCalcI = 1/suscCalc
+	XCalc = Pr.susceptibility(Temps = T, Field = fieldT, deltaField = deltaField, ion = ion)
+XCalcI = 1/XCalc
+    
+XCalcEmu = bohrToEmu2(XCalc)/10000
+XCalcEmuI = 1/XCalcEmu
 
 plt.figure()
-plt.plot(Temp,-1*np.array(suscCalc))
+plt.plot(T,-1*np.array(XCalc), label = 'PCF')
+plt.plot(T,XBohr, label = 'Masured')
 plt.xlabel('Temperature (K)')
 plt.ylabel('X (uB T^-1 Spin^-1)')
-plt.title('PCF Susceptibility with Scalar {} T field'.format(fieldT))
-
+plt.title('Susceptibility with Scalar {} T field'.format(fieldT))
+plt.legend()
 plt.figure()
-plt.plot(Temp,-1*np.array(suscCalcI))
+
+plt.plot(T, -1*np.array(XCalcI), label = 'PCF')
+plt.plot(T, XBohrI, label = 'Measured')
 plt.xlabel('Temperature (K)')
 plt.ylabel('1/X (uB ^-1 T Spin)')
-plt.title('PCF Inverse Susceptibility with Scalar {} T field'.format(fieldT))
+plt.title('Inverse Susceptibility with Scalar {} T field'.format(fieldT))
+plt.legend()
+plt.figure()
+
+plt.plot(T, -1*np.array(XCalcEmu), label = 'PCF')
+plt.plot(T,X, label = 'Measured')
+plt.xlabel('Temperature (K)')
+plt.ylabel('X (emu oe^-1 Spin^-1)')
+plt.title('Susceptibility with Scalar {} T field'.format(fieldT))
+plt.legend()
+plt.figure()
+
+plt.plot(T, -1*np.array(XCalcEmuI),label = 'PCF')
+plt.plot(T, Xi, label = 'Measured')
+plt.xlabel('Temperature (K)')
+plt.ylabel('1/X (emu ^-1 Oe Spin)')
+plt.title('Inverse Susceptibility with Scalar {} T field'.format(fieldT))
+plt.legend()
 # plt.show()
 #####################################################################################################################################################################
-
-
 
 # ## PCF Neutron Spectrum
 #####################################################################################################################################################################
@@ -294,7 +316,8 @@ plt.show()
 
 print()
 Pr.printLaTexEigenvectors()
+print()
 
-# wyb = cef.StevensToWybourne('Ce3+',stev, LS=True)
-# print(wyb)
-
+wyb = cef.StevensToWybourne('Ce3+',stev, LS=True)
+print("Fitted coefficients in Wybourne's")
+print(wyb)
