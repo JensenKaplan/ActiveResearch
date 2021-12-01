@@ -495,32 +495,6 @@ def emuToBohr(emuM,mass,molweight):
         bohrM = emuM/(mass/molweight*avo*bohr)
     return bohrM
 
-#Takes in magnetization list/float (either bohr magnetons or emu)
-#Returns magnetization list/float normalized to per spin
-def normalizeSpin(M,mass,molweight):
-    avo =6.0221409e+23 #spin/mol
-    if (isinstance(M,list) or isinstance(M, np.ndarray)):
-        normM = []
-        for i in M:
-            normM.append(i*molweight/mass/avo)
-        normM = np.array(normM)
-    else:
-        normM = (M*molweight/mass/avo)
-    return normM
-
-#Takes in magnetization list/float (either bohr magnetons or emu)
-#Returns magnetization list/float normalized to per spin
-def normalizeMol(M,mass,molweight):
-    avo =6.0221409e+23 #spin/mol
-    if (isinstance(M,list) or isinstance(M, np.ndarray)):
-        normM = []
-        for i in M:
-            normM.append(i*molweight/mass)
-        normM = np.array(normM)
-    else:
-        normM = (M*molweight/mass)
-    return normM	
-
 
 #Takes in magnetization list/float (either bohr magnetons or emu)
 #Returns magnetization list/float normalized to per spin
@@ -635,6 +609,33 @@ def getTemp(filename,**kwargs):
     
 #Deprecated
 #####################################################################################################################################################################
+
+# #Takes in magnetization list/float (either bohr magnetons or emu)
+# #Returns magnetization list/float normalized to per spin
+# def normalizeSpin(M,mass,molweight):
+#     avo =6.0221409e+23 #spin/mol
+#     if (isinstance(M,list) or isinstance(M, np.ndarray)):
+#         normM = []
+#         for i in M:
+#             normM.append(i*molweight/mass/avo)
+#         normM = np.array(normM)
+#     else:
+#         normM = (M*molweight/mass/avo)
+#     return normM
+
+# #Takes in magnetization list/float (either bohr magnetons or emu)
+# #Returns magnetization list/float normalized to per spin
+# def normalizeMol(M,mass,molweight):
+#     avo =6.0221409e+23 #spin/mol
+#     if (isinstance(M,list) or isinstance(M, np.ndarray)):
+#         normM = []
+#         for i in M:
+#             normM.append(i*molweight/mass)
+#         normM = np.array(normM)
+#     else:
+#         normM = (M*molweight/mass)
+#     return normM	
+
 # # for checking eigenvalues (and hence energies) at a given (x,bpf) coordinate
 # def printPCFEigensJ(x,bpf):
 # 	Stev={'B40': bpf, 'B60': x*bpf}
