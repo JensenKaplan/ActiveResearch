@@ -14,7 +14,7 @@ This approach of beginning with a cubic model and then lifting restraints was in
 ## Cubic Grid Creation
 Create_Grid.py is used to create .mat files that contain the eigenvalues calculated by PCF, enforcing cubic constraints, for all (x,bpf).
 
-1) Define the bounds of x and bpf as well as the number of steps between.
+1) Define the bounds of x and bpf as well as the number of steps between.\
 	a) x = \[-1,1\] and bpf = \[-1,1\] with 200 steps each
 2) Choose LS or J basis. If using LS Basis, provide LS value.
 3) Create all possible (x,bpf) coordinates.
@@ -33,11 +33,11 @@ In the LS basis for Pr<sup>4+</sup> there are 14 eigenvalues. I see by experimen
 
 
 ## Cubic Grid Search
-1. Declare the crystal field energy levels as measured by inelastic neutron scattering.
+1. Declare the crystal field energy levels as measured by inelastic neutron scattering.\
 	a) It's crucical to make this list in ascending order.
-2. Declare an allowed tolerance between measured levels and calculated levels.
-	a) For my 200x200 grid I was able to find good starting points with 2.5% tolerance.
-	b) This tolerance may need to be bigger if the grid of (x,bpf) is not as fine. 
+2. Declare an allowed tolerance between measured levels and calculated levels.\
+	a) For my 200x200 grid I was able to find good starting points with 2.5% tolerance.\
+	b) This tolerance may need to be bigger if the grid of (x,bpf) is not as fine. \
 3. Eigenvalues and measured levels are matched within that tolerance level. If "compatible coordinates" are found that produce matching eigenvalues they are printed and these can be used as starting points for the given compound.
 
 Grid_Search.py is used to find the starting point Stevens' Coefficients to be used for fitting. It uses the previously generated .mat file(s) to scan through each level and make sure it's within a certain allowed tolerance of that energy level as measured by inelastic neutron scattering. If compatible coordinates are found the output will be one pair of compatible (x,bpf) coordinates, as well as the diagonalized Hamiltonian as produced by the coordinates. If no compatible coordinates are found, then try increasing the tolerance level or create a finer mesh grid (more x and bpf points). It's okay if the match isn't great,  we just need decent starting points that we will later let vary.
