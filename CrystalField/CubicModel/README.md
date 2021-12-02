@@ -17,3 +17,11 @@ I use x = \[-1,1\] and bpf = \[-1,1\].
 
 I parallelized the process for eigenvalue calculation; however, I use K-Means sorting to keep track of the eigenvalues (crystal field levels), which is a bit intensive so this could take a while to run depending on size of x/bpf arrays. The idea is to only need to run this once to create the data, then the same files can be read to find good starting points for coefficients for a given compound.
 
+Unique, non-zero eigenvalues for all (x,bpf) combinations are stored. The number of unique levels is given by the user, and this should be determined before hand. For example in the J basis for Pr<sup>4+</sup> 6 eigenvalues are produced. With cubic constraints, either a groundstate quartet with a doublet excited state or a doublet groundstate with a quartet excited state are calculated. I define the number of levels to be 1. PCF is used to calculate the eigenvalues and K-means is implemented to track the energy levels.
+
+## Cubic Grid Search
+Grid_Search.py is used to find the starting point Stevens Coefficients to be used for fitting.
+
+1. The user declares the crystal field energy levels as measured by inelastic neutron scattering.
+2. The user declares an allowed tolerance between measured levels and calculated levels. This tolerance may need to be bigger if the grid of (x,bpf) is not so fine. 
+3. Eigenvalues and measured levels are matched within that tolerance level. If "compatible coordinates" are found that produce matching eigenvalues they are printed and these can be used as starting points for the given compound.
