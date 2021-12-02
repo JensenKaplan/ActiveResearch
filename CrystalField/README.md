@@ -4,7 +4,7 @@ Use inelastic neutron scattering (INS) data to calculate the crystal field Hamil
 
 ## The Proccess
 1. Use the simplest model, the cubic model, to find a good starting point for the Stevens' Coefficients.
-2. Lift cubic constraints, introduce the coefficients expected for the material's structure, and fit the model to measured INS data. [Here's A Link To A Table With Coefficients For Each Structure][https://docs.mantidproject.org/nightly/concepts/CrystalField.html#jensenmackintosh91]
+2. Lift cubic constraints, introduce the coefficients expected for the material's structure, and fit the model to measured INS data. [Here's A Link To A Table With Coefficients For Each Structure](https://docs.mantidproject.org/nightly/concepts/CrystalField.html#jensenmackintosh91)
 3. Using fitted coefficients, create and diagonalize a CF Hamiltonian.
 4. Predict thermodynamic properties (Magnetization and Susceptibility) and confirm the predictions with experiment.
 
