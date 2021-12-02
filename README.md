@@ -23,19 +23,24 @@ There are some common measurements we use to characterize our crystalline system
 I've been implementing changes that allows all of my scripts to be more general. As well as adjusting the scripts in this repo I have conventionalized how I handle data in my DropBox. There are a few important kwargs that should be defined in every script so that the proper JensenTools functions are called.
 
 1. "LS_on" a boolean. If True then all calculations done in LS basis; if False then calculations performed in J basis.
-2. "comp" a string. This allows the script to find the proper data in my Dropbox.
-3. "ion" a string. This is needed if working the J basis. Not necessary for LS basis. This is due to how PCF handles LS vs J calculations.
-4. "KMeans" a boolean. If True then Kmeans sorting will be used to handle the eigenvalues; if False then all eigenvalues as produced by PCF will be stored.
-5. "numlevels" an int. Works in conjunction with "KMeans". If KMeans is True then the number of levels to be calculated/stored is given by this variable.
+1. "comp" a string. This allows the script to find the proper data in my Dropbox.
+2. "ion" a string. This is needed if working the J basis. Not necessary for LS basis. This is due to how PCF handles LS vs J calculations.
+3. "KMeans" a boolean. If True then Kmeans sorting will be used to handle the eigenvalues; if False then all eigenvalues as produced by PCF will be stored.
+4. "LSValue" a float. The LS coupling strength of the ion in meV.
+5. "numlevels" an int. The number of excited states expected for the system. Works in conjunction with "KMeans". If KMeans is True then the number of levels to be calculated/stored is given by this variable.
 6. "who" a string. Etiher 'Arun' or 'PPMS' this determines how M vs H / M vs T data is read and stored as well as how filenames are read. This is due to a difference in convention between Arun's filenaming and measurement files / PPMS filenaming and measurement files.
+7. "molweight" is a float. It is the molarweight of the given compound. This is retrieved from a hardcoded dictionary imported from JensenTools.py
+8. "per" is a string. Either "mol" or "spin" for normalizing measured thermodynamic data. We tend to look at data normalized per mol; PCF calculations are done per spin, therefore for comparing data you would use "spin".
 
 Below is a codeblock example of what should be near the top of each script.
 ```
 comp = 'Sr2PrO4'
 ion = 'Ce3+'
-who = 'Arun'
 LS_on = True
 Kmeans = True
 LSValue = 100
 numlevels = 4
+who = 'Arun'
+molweight = molweight[comp]
+per = 'spin'
 ```
