@@ -605,7 +605,59 @@ def getTemp(filename,**kwargs):
 	    temp = float(temp)		
 	return temp
 
+def thermoDiagnostic(Pr, TX, HX, TM, HM, **kwargs):
+	ion = kwargs['ion']
+	Mx = []
+	My = []
+	Mz = []
+	Xx = []
+	Xy = []
+	Xz = []
+	dF = .0001
+	if kwargs['LS_on']:
+		basis = 'LS'
+		for i in HM:
+			Mx.append(Pr.magnetization(Temp = TM, Field = [i, 0, 0])[0])
+			My.append(Pr.magnetization(Temp = TM, Field = [0, i, 0])[1])
+			Mz.append(Pr.magnetization(Temp = TM, Field = [0, 0, i])[2])
+		for i in TX:
+			Xx.append(Pr.susceptibility(Temps = i, Field = [HX, 0, 0], deltaField = dF)[0])
+			Xy.append(Pr.susceptibility(Temps = i, Field = [0, HX, 0], deltaField = dF)[1])
+			Xz.append(Pr.susceptibility(Temps = i, Field = [0, 0, HX], deltaField = dF)[2])
+	else:
+		basis = 'J'
+		for i in HM:
+			Mx.append(Pr.magnetization(Temp = TM, Field = [i, 0, 0], ion = ion)[0])
+			My.append(Pr.magnetization(Temp = TM, Field = [0, i, 0], ion = ion)[1])
+			Mz.append(Pr.magnetization(Temp = TM, Field = [0, 0, i], ion = ion)[2])
+		for i in TX:
+			Xx.append(Pr.susceptibility(Temps = i, Field = [HX, 0, 0], deltaField = dF, ion = ion)[0])
+			Xy.append(Pr.susceptibility(Temps = i, Field = [0, HX, 0], deltaField = dF, ion = ion)[1])
+			Xz.append(Pr.susceptibility(Temps = i, Field = [0, 0, HX], deltaField = dF, ion = ion)[2])
+	Mx = -1*np.array(Mx)
+	My = -1*np.array(My)
+	Mz = -1*np.array(Mz)
+	Xx = -1/np.array(Xx)
+	Xy = -1/np.array(Xy)
+	Xz = -1/np.array(Xz)	
 
+	fig, (Max, Xax) = plt.subplots(2, 3, sharey = 'row')
+	Max[0].plot(HM,Mx)
+	Max[1].plot(HM,My)
+	Max[2].plot(HM,Mz)
+	Max[0].set(xlabel = 'Field (T)', ylabel = 'Moment (uB)', title = 'Mx at {} K'.format(TM))
+	Max[1].set(xlabel = 'Field (T)', title = 'My at {} K'.format(TM))
+	Max[2].set(xlabel = 'Field (T)', title = 'Mz at {} K'.format(TM))
+	Xax[0].plot(TX,Xx)
+	Xax[1].plot(TX,Xy)
+	Xax[2].plot(TX,Xz)
+	Xax[0].set(xlabel = 'Temperature (K)', ylabel = 'X^-1 (uB^-1 T spin)', title = 'Xx^-1 with {} T'.format(HX))
+	Xax[1].set(xlabel = 'Temperature (K)', title = 'Xy^-1 with {} T'.format(HX))
+	Xax[2].set(xlabel = 'Temperature (K)', title = 'Xz^-1 with {} T'.format(HX))
+	fig.suptitle('Thermodynamic Diagnostic For {} {} Basis'.format(kwargs['comp'],basis))
+	plt.tight_layout()
+	plt.show()
+	return
     
 #Deprecated
 #####################################################################################################################################################################
