@@ -12,7 +12,7 @@ import multiprocessing as mp
 from itertools import product
 from functools import partial
 import pandas as pd 
-
+from scipy import integrate
 
 # Moleuclar weight dictionary for our compounds.
 molweight = { 'Sr2PrO4' : 380.15, 'Li8PrO6' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16 } 

@@ -1,5 +1,5 @@
 from JensenTools import *
-from scipy import integrate
+
 
 # Define important things
 #####################################################################################################################################################################
@@ -76,17 +76,17 @@ HTes = oeToTesla(H)
 
 
 
-TX = np.linspace(0,300,100)
-HX = .1
-TM = 20
-HM = np.linspace(0,14,100)
+# TX = np.linspace(0,300,100)
+# HX = .1
+# TM = 20
+# HM = np.linspace(0,14,100)
 # M,X = thermoDiagnostic(Pr,TX,HX,TM,HM, LS_on = LS_on, ion = ion, comp = comp )
 
 
 
 MPowder = []
 for i in HTes:
-	MPowder.append(powder_average(i,10,Pr,TM))
+	MPowder.append(powder_average(i,10,Pr,Temp))
 
 
 #Generate a magnetization curve for comparing results to experiment
