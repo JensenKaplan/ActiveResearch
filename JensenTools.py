@@ -14,9 +14,73 @@ from functools import partial
 import pandas as pd 
 
 
+# Moleuclar weight dictionary for our compounds.
 molweight = { 'Sr2PrO4' : 380.15, 'Li8PrO6' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16 } 
 
+# Thermo diagnostic function.
+# Uses PCF object
+# Plots M vs H and X^-1 vs T in each direction
+def thermoDiagnostic(Pr, TX, HX, TM, HM, **kwargs):
+	ion = kwargs['ion']
+	Mx = []
+	My = []
+	Mz = []
+	Xx = []
+	Xy = []
+	Xz = []
+	dF = .0001
+	if kwargs['LS_on']:
+		basis = 'LS'
+		for i in HM:
+			Mx.append(Pr.magnetization(Temp = TM, Field = [i, 0, 0])[0])
+			My.append(Pr.magnetization(Temp = TM, Field = [0, i, 0])[1])
+			Mz.append(Pr.magnetization(Temp = TM, Field = [0, 0, i])[2])
+		for i in TX:
+			Xx.append(Pr.susceptibility(Temps = i, Field = [HX, 0, 0], deltaField = dF)[0])
+			Xy.append(Pr.susceptibility(Temps = i, Field = [0, HX, 0], deltaField = dF)[1])
+			Xz.append(Pr.susceptibility(Temps = i, Field = [0, 0, HX], deltaField = dF)[2])
+	else:
+		basis = 'J'
+		for i in HM:
+			Mx.append(Pr.magnetization(Temp = TM, Field = [i, 0, 0], ion = ion)[0])
+			My.append(Pr.magnetization(Temp = TM, Field = [0, i, 0], ion = ion)[1])
+			Mz.append(Pr.magnetization(Temp = TM, Field = [0, 0, i], ion = ion)[2])
+		for i in TX:
+			Xx.append(Pr.susceptibility(Temps = i, Field = [HX, 0, 0], deltaField = dF, ion = ion)[0])
+			Xy.append(Pr.susceptibility(Temps = i, Field = [0, HX, 0], deltaField = dF, ion = ion)[1])
+			Xz.append(Pr.susceptibility(Temps = i, Field = [0, 0, HX], deltaField = dF, ion = ion)[2])
+	Mx = -1*np.array(Mx)
+	My = -1*np.array(My)
+	Mz = -1*np.array(Mz)
+	Xx = -1/np.array(Xx)
+	Xy = -1/np.array(Xy)
+	Xz = -1/np.array(Xz)	
 
+	fig, (Max, Xax) = plt.subplots(2, 3, sharey = 'row')
+	Max[0].plot(HM,Mx)
+	Max[1].plot(HM,My)
+	Max[2].plot(HM,Mz)
+	Max[0].set(xlabel = 'Field (T)', ylabel = 'Moment (uB)', title = 'Mx at {} K'.format(TM))
+	Max[1].set(xlabel = 'Field (T)', title = 'My at {} K'.format(TM))
+	Max[2].set(xlabel = 'Field (T)', title = 'Mz at {} K'.format(TM))
+	Xax[0].plot(TX,Xx)
+	Xax[1].plot(TX,Xy)
+	Xax[2].plot(TX,Xz)
+	Xax[0].set(xlabel = 'Temperature (K)', ylabel = 'X^-1 (uB^-1 T spin)', title = 'Xx^-1 with {} T'.format(HX))
+	Xax[1].set(xlabel = 'Temperature (K)', title = 'Xy^-1 with {} T'.format(HX))
+	Xax[2].set(xlabel = 'Temperature (K)', title = 'Xz^-1 with {} T'.format(HX))
+	fig.suptitle('Thermodynamic Diagnostic For {} {} Basis'.format(kwargs['comp'],basis))
+	plt.tight_layout()
+	plt.show()
+	return [Mx,My,Mz], [Xx,Xy,Xz]
+
+
+# Data grabbing functions
+#####################################################################################################################################################################
+# Function for getting save directory for a given compound
+# Can leave data type blank for the general directory of the compound
+# Or can specify the type of data: MH = magnetization, MT = susceptibility
+# These work as long as I follow data handling conventions well.
 def getSaveDir(name = 'm', comp = 'Sr2PrO4', dataType = None):
 	if name == 'm':
 		dataDir = '/Users/jensenkaplan/Dropbox (GaTech)/Jensen/{}/'.format(comp)		
@@ -35,94 +99,6 @@ def getSaveDir(name = 'm', comp = 'Sr2PrO4', dataType = None):
 	else:
 		return dataDir
 	return dataDir
-
-	
-
-#Self made functions for grid search calculations
-#####################################################################################################################################################################
-def saveMatrixPar(xmin,xmax,numx,bpfmin,bpfmax,numbpf, runDir,**kwargs):
-	x = np.linspace(xmin,xmax,numx)
-	bpf = np.linspace(bpfmin,bpfmax,numx)
-
-	print('Xmin = %0.3f to Xmax = %.3f\nBPFmin = %.3f to BPFmax = %.3f \nwith number of steps in X = %s, Bpf = %s'%(xmin,xmax,bpfmin,bpfmax,numx,numbpf))
-	savedict = {'X': x, 'B': bpf}
-
-	if (os.path.exists(runDir) == False):
-		os.makedirs(runDir)
-
-	if kwargs['LS_on']:
-		LSList = kwargs['LSList']
-		for j in range(len(LSList)):
-			savedict['LS'] = LSList[j]
-			with mp.Pool() as P:
-				E = P.starmap(partial(energyCalcKPar,LSValue = LSList[j], **kwargs),product(x,bpf))
-				E = np.reshape(E,(numx,-1,kwargs['numlvls']))
-				# P.close()
-				for i in range(np.shape(E)[2]):
-					savedict['E%i'%(i+1)] = E[:,:,i]
-			sio.savemat(runDir+'LS_%i.mat'%LSList[j], savedict)	
-	else:
-		with mp.Pool() as P:
-			E = P.starmap(partial(energyCalcKPar, **kwargs),product(x,bpf))
-			# print(len(E))
-			E = np.reshape(E,(numx,numbpf,-1))
-
-		for i in range(np.shape(E)[2]):
-			savedict['E%i'%(i+1)] = E[:,:,i]
-		sio.savemat(runDir+kwargs['grid'], savedict)	
-
-def energyCalcKPar(x,bpf, **kwargs):
-	Stev = {}
-
-	Stev['B40'] = bpf
-	Stev['B60'] = x*bpf
-	Stev['B44'] = 5*Stev['B40']
-	Stev['B64'] = -21*Stev['B60']
-	if kwargs['LS_on']:
-		kwargs['LSValue']
-		Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=kwargs['L'], S= kwargs['S'], SpinOrbitCoupling= kwargs['LSValue'])
-		Pr.diagonalize()
-		e = kmeansSort(Pr.eigenvalues,kwargs['numlvls'])
-	else:
-		Pr = cef.CFLevels.Bdict(Bdict = Stev,ion = kwargs['ion'])
-		Pr.diagonalize()
-		e = kmeansSort(Pr.eigenvalues,kwargs['numlvls'])
-	return e
-
-# This function loads my .mat files for analyzing, plotting, finding compatibilities.
-# THIS WORKS since it can properly use my previously generated PrO2 data.
-def loadMatrix(runDir, **kwargs):
-	matList = os.listdir(runDir) #The different LS calculations
-	if kwargs['LS_on']:
-		#Where to save and load the energy data for contours
-		matList = os.listdir(runDir) #The different LS calculations
-		LSNames = [] #Saving the LS names for plotting
-		for i in matList:
-			s = i.split('.')[0].split('_')
-			LSNames.append((s[0]+ ' = ' + s[1] + ' meV'))
-		dataList = []
-		EList = []
-
-		for i in matList:
-			data = sio.loadmat(runDir + i)
-			E = []
-			for i in data.keys():
-				if 'E' in i:
-					E.append(i)
-			dataList.append(data)
-			EList.append(E)
-
-		return LSNames, EList, dataList
-
-	else:
-		# print(matList)
-		data = sio.loadmat(runDir+kwargs['grid'])
-		E = []
-		# print(data.keys())
-		for i in data.keys():
-			if 'E' in i:
-				E.append(i)
-		return E, data		
 
 # Takes a filename and data directory
 # Returns the field, magnetic moment, error, and name (temperature) of the run
@@ -175,8 +151,140 @@ def getData(magrun, dataDir,**kwargs):
 			measType = magrun.split('_')[-1].split('.')[0]
 			return M,H,T,E, mass, measType
 
+# Get mass from filename and return in grams
+def getMass(filename,**kwargs):
+	if kwargs['who'] == 'Arun':
+		mass = filename.split('_')[3]
+		mass = mass.replace('P','.')
+	else:
+		mass = filename.split('_')[2]
+		mass = mass.replace('P','.')		
+	mass = mass[:-2]
+	mass = float(mass)
+	mass = mass/1000
+	return mass
 
-# contour plotting function for all energy bands
+# Get temp from filename and return as a float
+def getTemp(filename,**kwargs):
+	if kwargs['who'] == 'Arun':
+	    temp = filename.split('_')[-1].split('.')[0][:-1]
+	    temp = float(temp)
+	else:
+	    temp = filename.split('_')[-1].split('.')[0][:-1].replace('P','.')
+	    temp = float(temp)		
+	return temp
+#####################################################################################################################################################################
+
+# Zhilling's Powder Averaging Functions
+#####################################################################################################################################################################
+# Integrating over solid angle.
+def f(phi, theta, B, Pr, T):
+    if B==0:  B+= 1e-13
+    Hx,Hy,Hz=[B*np.sin(theta)*np.cos(phi),B*np.sin(theta)*np.sin(phi),B*np.cos(theta)]
+    VecH=np.array([Hx,Hy,Hz])
+    UnitVecH=VecH/np.sqrt(np.sum(VecH**2))
+    # M=self.Magnetization(Temperature, VecH, Weiss_field)
+    M = Pr.magnetization(Temp = T, Field = VecH, ion = 'Ce3+')                  
+    return UnitVecH.dot(M)*np.sin(theta)/4/np.pi  #sin(theta)/4/pi due to solid angle interation
+# Choose  step intergration,Number of point = 4step^2
+def powder_average(B, step, Pr, T):
+    Theta=np.linspace(0, np.pi, step)
+    Phi=np.linspace(0, 2*np.pi, 2*step)
+    f_M=np.zeros((step,2*step))
+    for i,theta in enumerate(Theta):
+        for j, phi in enumerate(Phi):
+            f_M[i][j]=f(phi,theta,B,Pr,T)
+    return integrate.simps(integrate.simps(f_M, Phi), Theta)
+#####################################################################################################################################################################
+
+# Self made functions for grid search calculations
+#####################################################################################################################################################################
+def saveMatrixPar(xmin,xmax,numx,bpfmin,bpfmax,numbpf, runDir,**kwargs):
+	x = np.linspace(xmin,xmax,numx)
+	bpf = np.linspace(bpfmin,bpfmax,numx)
+
+	print('Xmin = %0.3f to Xmax = %.3f\nBPFmin = %.3f to BPFmax = %.3f \nwith number of steps in X = %s, Bpf = %s'%(xmin,xmax,bpfmin,bpfmax,numx,numbpf))
+	savedict = {'X': x, 'B': bpf}
+
+	if (os.path.exists(runDir) == False):
+		os.makedirs(runDir)
+
+	if kwargs['LS_on']:
+		LSList = kwargs['LSList']
+		for j in range(len(LSList)):
+			savedict['LS'] = LSList[j]
+			with mp.Pool() as P:
+				E = P.starmap(partial(energyCalcKPar,LSValue = LSList[j], **kwargs),product(x,bpf))
+				E = np.reshape(E,(numx,-1,kwargs['numlvls']))
+				# P.close()
+				for i in range(np.shape(E)[2]):
+					savedict['E%i'%(i+1)] = E[:,:,i]
+			sio.savemat(runDir+'LS_%i.mat'%LSList[j], savedict)	
+	else:
+		with mp.Pool() as P:
+			E = P.starmap(partial(energyCalcKPar, **kwargs),product(x,bpf))
+			# print(len(E))
+			E = np.reshape(E,(numx,numbpf,-1))
+
+		for i in range(np.shape(E)[2]):
+			savedict['E%i'%(i+1)] = E[:,:,i]
+		sio.savemat(runDir+kwargs['grid'], savedict)	
+
+def energyCalcKPar(x,bpf, **kwargs):
+	Stev = {}
+	Stev['B40'] = bpf
+	Stev['B60'] = x*bpf
+	Stev['B44'] = 5*Stev['B40']
+	Stev['B64'] = -21*Stev['B60']
+	if kwargs['LS_on']:
+		kwargs['LSValue']
+		Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=kwargs['L'], S= kwargs['S'], SpinOrbitCoupling= kwargs['LSValue'])
+		Pr.diagonalize()
+		e = kmeansSort(Pr.eigenvalues,kwargs['numlvls'])
+	else:
+		Pr = cef.CFLevels.Bdict(Bdict = Stev,ion = kwargs['ion'])
+		Pr.diagonalize()
+		e = kmeansSort(Pr.eigenvalues,kwargs['numlvls'])
+	return e
+
+# This function loads my .mat files for analyzing, plotting, finding compatibilities.
+# THIS WORKS since it can properly use my previously generated PrO2 data.
+def loadMatrix(runDir, **kwargs):
+	matList = os.listdir(runDir) #The different LS calculations
+	if kwargs['LS_on']:
+		#Where to save and load the energy data for contours
+		matList = os.listdir(runDir) #The different LS calculations
+		LSNames = [] #Saving the LS names for plotting
+		for i in matList:
+			s = i.split('.')[0].split('_')
+			LSNames.append((s[0]+ ' = ' + s[1] + ' meV'))
+		dataList = []
+		EList = []
+
+		for i in matList:
+			data = sio.loadmat(runDir + i)
+			E = []
+			for i in data.keys():
+				if 'E' in i:
+					E.append(i)
+			dataList.append(data)
+			EList.append(E)
+
+		return LSNames, EList, dataList
+
+	else:
+		# print(matList)
+		data = sio.loadmat(runDir+kwargs['grid'])
+		E = []
+		# print(data.keys())
+		for i in data.keys():
+			if 'E' in i:
+				E.append(i)
+		return E, data		
+
+
+
+# Contour plotting function for all energy bands
 def plotContours(data,EList,**kwargs):
 
 	numplots = len(EList)
@@ -222,7 +330,6 @@ def plotContours(data,EList,**kwargs):
 #Check the same for E2, etc.
 #Then only keep the coordinates that appear in all of the energy bands
 def paramFinder(data,band,E,tolerance,comp,**kwargs):
-
 	if kwargs['LS_on']:
 		LSName = kwargs['LSName']
 		print('\nParameter search for: ',' Compound: ', comp, ' at ', LSName, 'with %0.3f tolerance.' %tolerance)
@@ -255,69 +362,119 @@ def paramFinder(data,band,E,tolerance,comp,**kwargs):
 
 	return newCoords
 
+#New K-Means sorting which uses ML to cluster and track the energy bands.
+def kmeansSort(e,numlevels):
+	km = KMeans(numlevels+1) #5 clusters. One for each excited energy level (4) and one for the ground state.
+	pred_y = km.fit(e.reshape(-1,1))
+	centers = pred_y.cluster_centers_
+	finalEvalList = []
+	for j in centers:
+		data_shift = list(np.abs(e-j))
+		i = data_shift.index(min(list(data_shift)))
+		finalEvalList.append(e[i])
+	finalEvalList = np.sort(finalEvalList).tolist()
+	return finalEvalList[1:] #This excludes the lowest (0 energy) mode
+#####################################################################################################################################################################
 
 
-#Takes in data, M (emu), H (oe), Merr(oe), molweight (g/mol), samplemass (g), massErr (g)
-def normSusc(M,H,MErr,molweight,samplemass,massErr):
-	XNorm = [] #Normalized susceptibility list
-	XErrNorm = [] #Normalized susceptibility error list
+# for checking eigenvalues (and hence energies) at a given (x,bpf) coordinate
+def printPCFEigens(x,bpf, **kwargs):
+	Stev={'B40': bpf, 'B60': x*bpf}
+	Stev['B44'] = 5*Stev['B40']
+	Stev['B64'] = -21*Stev['B60']
+	if kwargs['LS_on']:
+		Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling=kwargs['LS'])
+	else:
+		Pr = cef.CFLevels.Bdict(Bdict = Stev, ion = kwargs['ion'])
+	Pr.diagonalize()
+	Pr.printEigenvectors()
+	return
 
-	##THIS MIGHT BE WHERE I'M WRONG
-	#Normalize to emu Oe^-1 Mol^-1
-	for i in range(len(M)):
-	    XNorm.append(M[i]/H[i]*molweight/samplemass/1)
-	    XErrNorm.append(MErr[i]/H[i]*molweight/samplemass + M[i]/H[i]*molweight*massErr/(samplemass**2))
+# Normalizing and unit conversion functions.
+#####################################################################################################################################################################
+# Takes in magnetization list/float (either bohr magnetons or emu)
+# Returns magnetization list/float normalized to per spin
+def normalize(M,mass,molweight, per):
+	avo =6.0221409e+23 #spin/mol
+	if (per == 'mol'):
+		if (isinstance(M,list) or isinstance(M, np.ndarray)):
+			normM = []
+			for i in M:
+				normM.append(i*molweight/mass)
+			normM = np.array(normM)
+		else:
+			normM = (M*molweight/mass)
+	else:
+	    if (isinstance(M,list) or isinstance(M, np.ndarray)):
+	        normM = []
+	        for i in M:
+	            normM.append(i*molweight/mass/avo)
+	        normM = np.array(normM)
+	    else:
+	        normM = (M*molweight/mass/avo)
+	    return normM		
+	return normM
 
-	#Invert susceptibility and susceptibility error with error propagation
-	Xi = 1/np.array(XNorm)
-	XiErr = np.array(XErrNorm)/np.array(XNorm)**2
+#Takes a list/float of moments (in emu)
+#Returns list/float of moments (in Bohr Magnetons)
+#Not normalized to Mol
+def bohrToEmu2(bohrM):
+    bohr = 9.274e-21 #emu / bohr magneton
+    # bohr = 1/bohr #bohr mag / emu
+    if (isinstance(bohrM,list) or isinstance(bohrM, np.ndarray)):
+        emuM = []
+        for i in bohrM:
+            emuM.append(bohr*i)
+        emuM = np.array(emuM)
+    elif  (isinstance(bohrM,float)):
+        emuM = (bohr*bohrM)
+    else:
+    	print('Not List or Float')
+    	return -1
+    return emuM
 
-	return XNorm, XErrNorm, Xi, XiErr
+#Takes a list/float of moments (in emu)
+#Returns list/float of moments (in Bohr Magnetons)
+#Not normalized to Mol
+def emuToBohr2(emuM):
+    bohr = 9.274e-21 #emu / bohr magneton
+    bohr = 1/bohr #bohr mag / emu
+    if (isinstance(emuM,list) or isinstance(emuM, np.ndarray)):
+        bohrM = []
+        for i in emuM:
+            bohrM.append(bohr*i)
+        bohrM = np.array(bohrM)
+    elif  (isinstance(emuM,float)):
+        bohrM = (bohr*bohrM)
+    else:
+    	print('Not List or Float')
+    	return -1
+    return bohrM
 
 
-# Converting to BohrMag and Tesla first
-def normSusc2(M,H,MErr,molweight,samplemass,massErr):
-	XNorm = [] #Normalized susceptibility list
-	XErrNorm = [] #Normalized susceptibility error list
+#Takes in a list of magnetic field (in Oe)
+#Returns a list of magnetic fields (in Tesla)
+def oeToTesla(H):
+    newH = H/10000
+    return newH
 
-	#Convert to Bohr Magnetons and Tesla
-	M = emuToBohr(M,mass = samplemass, molweight = molweight)
-	MErr = emuToBohr(MErr,mass = samplemass, molweight = molweight)
-	H = oeToTesla(H)
+#Takes in a list of magnetic field (in Oe)
+#Returns a list of magnetic fields (in Tesla)
+def teslaToOe(H):
+    newH = H*10000
+    return newH
 
-	##THIS MIGHT BE WHERE I'M WRONG
-	#Normalize to emu Oe^-1 Mol^-1
-	for i in range(len(M)):
-	    XNorm.append(M[i]/H[i])
-	    XErrNorm.append(MErr[i]/H[i] + M[i]/H[i]*massErr/(samplemass))
+#For converting Popova's optical measurements to meV
+def convertCMtomeV(e):
+	converted = []
+	for i in e:
+		converted.append(i/8.065)
+	return converted
 
-	#Invert susceptibility and susceptibility error with error propagation
-	Xi = 1/np.array(XNorm)
-	XiErr = np.array(XErrNorm)/np.array(XNorm)**2
+    
 
-	return XNorm, XErrNorm, Xi, XiErr
-
-# Using Allen's PreFactor
-def normSusc3(M,H,MErr,molweight,samplemass,massErr):
-	XNorm = [] #Normalized susceptibility list
-	XErrNorm = [] #Normalized susceptibility error list
-	Na = 6.02214076e23 
-	ScaleFactor = 1/(1.07828221e24/Na) 
-
-	##THIS MIGHT BE WHERE I'M WRONG
-	#Normalize to emu Oe^-1 Mol^-1
-	for i in range(len(M)):
-	    XNorm.append(M[i]/H[i]*molweight/samplemass/1)
-	    XErrNorm.append(MErr[i]/H[i]*molweight/samplemass + M[i]/H[i]*molweight*massErr/(samplemass**2))
-
-	XNorm = 1/ScaleFactor*np.array(XNorm)
-	XErrNorm = 1/ScaleFactor*np.array(XErrNorm)
-	#Invert susceptibility and susceptibility error with error propagation
-	Xi = 1/np.array(XNorm)
-	XiErr = np.array(XErrNorm)/np.array(XNorm)**2
-
-	return XNorm, XErrNorm, Xi, XiErr
-
+# E vs LS functions
+#####################################################################################################################################################################
 def saveEvsLS(E,LS,runDir):
 	savedict = {'LS': LS}
 	E1 = []
@@ -433,234 +590,113 @@ def loadEvsLS(runDir):
 	# print(np.shape(E1))
 	return LS, E1, E2, E3, E4
 
-
 def energyCalcKPar14(LS,x = 0.0352 ,bpf = -0.3970, numlevels = 4):
 	numlevels = numlevels
 	Stev = {}
-
 	Stev['B40'] = bpf
 	Stev['B60'] = x*bpf
 	Stev['B44'] = 5*Stev['B40']
 	Stev['B64'] = -21*Stev['B60']
-
 	Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling=LS)
 	Pr.diagonalize()
 	e = Pr.eigenvalues
 	return e
-
-#New K-Means sorting which uses ML to cluster and track the energy bands.
-def kmeansSort(e,numlevels):
-	km = KMeans(numlevels+1) #5 clusters. One for each excited energy level (4) and one for the ground state.
-	pred_y = km.fit(e.reshape(-1,1))
-	centers = pred_y.cluster_centers_
-	finalEvalList = []
-	for j in centers:
-		data_shift = list(np.abs(e-j))
-		i = data_shift.index(min(list(data_shift)))
-		finalEvalList.append(e[i])
-	finalEvalList = np.sort(finalEvalList).tolist()
-	return finalEvalList[1:] #This excludes the lowest (0 energy) mode
-
-#For converting Popova's optical measurements to meV
-def convertCMtomeV(e):
-	converted = []
-	for i in e:
-		converted.append(i/8.065)
-	return converted
-
-# for checking eigenvalues (and hence energies) at a given (x,bpf) coordinate
-def printPCFEigens(x,bpf, **kwargs):
-	Stev={'B40': bpf, 'B60': x*bpf}
-	Stev['B44'] = 5*Stev['B40']
-	Stev['B64'] = -21*Stev['B60']
-	if kwargs['LS_on']:
-		Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling=kwargs['LS'])
-	else:
-		Pr = cef.CFLevels.Bdict(Bdict = Stev, ion = kwargs['ion'])
-	Pr.diagonalize()
-	Pr.printEigenvectors()
-	return
-
-#####################################################################################################################################################################
-#Takes a list of moments (in emu), sample mass, and molecular weight
-#Returns list of moments (in Bohr Magnetons)
-def emuToBohr(emuM,mass,molweight):
-    avo =6.0221409e+23 #part/mol
-    bohr = 9.274e-21 #emu / Bohr magneton = erg/G/Bohrmag
-    if (isinstance(emuM,list)):
-        bohrM = []
-        for i in emuM:
-            bohrM.append(i/(mass/molweight*avo*bohr))
-    else:
-        bohrM = emuM/(mass/molweight*avo*bohr)
-    return bohrM
-
-
-#Takes in magnetization list/float (either bohr magnetons or emu)
-#Returns magnetization list/float normalized to per spin
-def normalize(M,mass,molweight, per):
-	avo =6.0221409e+23 #spin/mol
-	if (per == 'mol'):
-		if (isinstance(M,list) or isinstance(M, np.ndarray)):
-			normM = []
-			for i in M:
-				normM.append(i*molweight/mass)
-			normM = np.array(normM)
-		else:
-			normM = (M*molweight/mass)
-	else:
-	    if (isinstance(M,list) or isinstance(M, np.ndarray)):
-	        normM = []
-	        for i in M:
-	            normM.append(i*molweight/mass/avo)
-	        normM = np.array(normM)
-	    else:
-	        normM = (M*molweight/mass/avo)
-	    return normM		
-	return normM
-
-#Takes a list of moments (in emu), sample mass, and molecular weight
-#Returns list of moments (in Bohr Magnetons)
-def bohrToEmu(bohrM,mass,molweight):
-    avo =6.0221409e+23 #spin/mol
-    bohr = 9.274e-21 #emu / Bohr magneton = erg/G/Bohrmag
-    if (isinstance(bohrM,list) or isinstance(bohrM, np.ndarray)):
-        emuM = []
-        for i in bohrM:
-            emuM.append((mass/molweight*avo*bohr)*i)
-        emuM = np.array(emuM)
-    else:
-        emuM = (mass/molweight*avo*bohr)*bohrM
-    return emuM
-
-#Takes a list/float of moments (in emu)
-#Returns list/float of moments (in Bohr Magnetons)
-#Not normalized to Mol
-def bohrToEmu2(bohrM):
-    bohr = 9.274e-21 #emu / bohr magneton
-    # bohr = 1/bohr #bohr mag / emu
-    if (isinstance(bohrM,list) or isinstance(bohrM, np.ndarray)):
-        emuM = []
-        for i in bohrM:
-            emuM.append(bohr*i)
-        emuM = np.array(emuM)
-    elif  (isinstance(bohrM,float)):
-        emuM = (bohr*bohrM)
-    else:
-    	print('Not List or Float')
-    	return -1
-    return emuM
-
-#Takes a list/float of moments (in emu)
-#Returns list/float of moments (in Bohr Magnetons)
-#Not normalized to Mol
-def emuToBohr2(emuM):
-    bohr = 9.274e-21 #emu / bohr magneton
-    bohr = 1/bohr #bohr mag / emu
-    if (isinstance(emuM,list) or isinstance(emuM, np.ndarray)):
-        bohrM = []
-        for i in emuM:
-            bohrM.append(bohr*i)
-        bohrM = np.array(bohrM)
-    elif  (isinstance(emuM,float)):
-        bohrM = (bohr*bohrM)
-    else:
-    	print('Not List or Float')
-    	return -1
-    return bohrM
 #####################################################################################################################################################################
 
 
-#Takes in a list of magnetic field (in Oe)
-#Returns a list of magnetic fields (in Tesla)
-def oeToTesla(H):
-    newH = H/10000
-    return newH
-
-#Takes in a list of magnetic field (in Oe)
-#Returns a list of magnetic fields (in Tesla)
-def teslaToOe(H):
-    newH = H*10000
-    return newH
 
 
-def getMass(filename,**kwargs):
-	if kwargs['who'] == 'Arun':
-		mass = filename.split('_')[3]
-		mass = mass.replace('P','.')
-	else:
-		mass = filename.split('_')[2]
-		mass = mass.replace('P','.')		
-	mass = mass[:-2]
-	mass = float(mass)
-	mass = mass/1000
-	return mass
 
-def getTemp(filename,**kwargs):
-	if kwargs['who'] == 'Arun':
-	    temp = filename.split('_')[-1].split('.')[0][:-1]
-	    temp = float(temp)
-	else:
-	    temp = filename.split('_')[-1].split('.')[0][:-1].replace('P','.')
-	    temp = float(temp)		
-	return temp
+# Deprecated
+#####################################################################################################################################################################
+# #Takes in data, M (emu), H (oe), Merr(oe), molweight (g/mol), samplemass (g), massErr (g)
+# def normSusc(M,H,MErr,molweight,samplemass,massErr):
+# 	XNorm = [] #Normalized susceptibility list
+# 	XErrNorm = [] #Normalized susceptibility error list
 
-def thermoDiagnostic(Pr, TX, HX, TM, HM, **kwargs):
-	ion = kwargs['ion']
-	Mx = []
-	My = []
-	Mz = []
-	Xx = []
-	Xy = []
-	Xz = []
-	dF = .0001
-	if kwargs['LS_on']:
-		basis = 'LS'
-		for i in HM:
-			Mx.append(Pr.magnetization(Temp = TM, Field = [i, 0, 0])[0])
-			My.append(Pr.magnetization(Temp = TM, Field = [0, i, 0])[1])
-			Mz.append(Pr.magnetization(Temp = TM, Field = [0, 0, i])[2])
-		for i in TX:
-			Xx.append(Pr.susceptibility(Temps = i, Field = [HX, 0, 0], deltaField = dF)[0])
-			Xy.append(Pr.susceptibility(Temps = i, Field = [0, HX, 0], deltaField = dF)[1])
-			Xz.append(Pr.susceptibility(Temps = i, Field = [0, 0, HX], deltaField = dF)[2])
-	else:
-		basis = 'J'
-		for i in HM:
-			Mx.append(Pr.magnetization(Temp = TM, Field = [i, 0, 0], ion = ion)[0])
-			My.append(Pr.magnetization(Temp = TM, Field = [0, i, 0], ion = ion)[1])
-			Mz.append(Pr.magnetization(Temp = TM, Field = [0, 0, i], ion = ion)[2])
-		for i in TX:
-			Xx.append(Pr.susceptibility(Temps = i, Field = [HX, 0, 0], deltaField = dF, ion = ion)[0])
-			Xy.append(Pr.susceptibility(Temps = i, Field = [0, HX, 0], deltaField = dF, ion = ion)[1])
-			Xz.append(Pr.susceptibility(Temps = i, Field = [0, 0, HX], deltaField = dF, ion = ion)[2])
-	Mx = -1*np.array(Mx)
-	My = -1*np.array(My)
-	Mz = -1*np.array(Mz)
-	Xx = -1/np.array(Xx)
-	Xy = -1/np.array(Xy)
-	Xz = -1/np.array(Xz)	
+# 	##THIS MIGHT BE WHERE I'M WRONG
+# 	#Normalize to emu Oe^-1 Mol^-1
+# 	for i in range(len(M)):
+# 	    XNorm.append(M[i]/H[i]*molweight/samplemass/1)
+# 	    XErrNorm.append(MErr[i]/H[i]*molweight/samplemass + M[i]/H[i]*molweight*massErr/(samplemass**2))
 
-	fig, (Max, Xax) = plt.subplots(2, 3, sharey = 'row')
-	Max[0].plot(HM,Mx)
-	Max[1].plot(HM,My)
-	Max[2].plot(HM,Mz)
-	Max[0].set(xlabel = 'Field (T)', ylabel = 'Moment (uB)', title = 'Mx at {} K'.format(TM))
-	Max[1].set(xlabel = 'Field (T)', title = 'My at {} K'.format(TM))
-	Max[2].set(xlabel = 'Field (T)', title = 'Mz at {} K'.format(TM))
-	Xax[0].plot(TX,Xx)
-	Xax[1].plot(TX,Xy)
-	Xax[2].plot(TX,Xz)
-	Xax[0].set(xlabel = 'Temperature (K)', ylabel = 'X^-1 (uB^-1 T spin)', title = 'Xx^-1 with {} T'.format(HX))
-	Xax[1].set(xlabel = 'Temperature (K)', title = 'Xy^-1 with {} T'.format(HX))
-	Xax[2].set(xlabel = 'Temperature (K)', title = 'Xz^-1 with {} T'.format(HX))
-	fig.suptitle('Thermodynamic Diagnostic For {} {} Basis'.format(kwargs['comp'],basis))
-	plt.tight_layout()
-	plt.show()
-	return
+# 	#Invert susceptibility and susceptibility error with error propagation
+# 	Xi = 1/np.array(XNorm)
+# 	XiErr = np.array(XErrNorm)/np.array(XNorm)**2
+
+# 	return XNorm, XErrNorm, Xi, XiErr
+
+
+# # Converting to BohrMag and Tesla first
+# def normSusc2(M,H,MErr,molweight,samplemass,massErr):
+# 	XNorm = [] #Normalized susceptibility list
+# 	XErrNorm = [] #Normalized susceptibility error list
+
+# 	#Convert to Bohr Magnetons and Tesla
+# 	M = emuToBohr(M,mass = samplemass, molweight = molweight)
+# 	MErr = emuToBohr(MErr,mass = samplemass, molweight = molweight)
+# 	H = oeToTesla(H)
+
+# 	##THIS MIGHT BE WHERE I'M WRONG
+# 	#Normalize to emu Oe^-1 Mol^-1
+# 	for i in range(len(M)):
+# 	    XNorm.append(M[i]/H[i])
+# 	    XErrNorm.append(MErr[i]/H[i] + M[i]/H[i]*massErr/(samplemass))
+
+# 	#Invert susceptibility and susceptibility error with error propagation
+# 	Xi = 1/np.array(XNorm)
+# 	XiErr = np.array(XErrNorm)/np.array(XNorm)**2
+
+# 	return XNorm, XErrNorm, Xi, XiErr
+
+# # Using Allen's PreFactor
+# def normSusc3(M,H,MErr,molweight,samplemass,massErr):
+# 	XNorm = [] #Normalized susceptibility list
+# 	XErrNorm = [] #Normalized susceptibility error list
+# 	Na = 6.02214076e23 
+# 	ScaleFactor = 1/(1.07828221e24/Na) 
+
+# 	##THIS MIGHT BE WHERE I'M WRONG
+# 	#Normalize to emu Oe^-1 Mol^-1
+# 	for i in range(len(M)):
+# 	    XNorm.append(M[i]/H[i]*molweight/samplemass/1)
+# 	    XErrNorm.append(MErr[i]/H[i]*molweight/samplemass + M[i]/H[i]*molweight*massErr/(samplemass**2))
+
+# 	XNorm = 1/ScaleFactor*np.array(XNorm)
+# 	XErrNorm = 1/ScaleFactor*np.array(XErrNorm)
+# 	#Invert susceptibility and susceptibility error with error propagation
+# 	Xi = 1/np.array(XNorm)
+# 	XiErr = np.array(XErrNorm)/np.array(XNorm)**2
+
+# 	return XNorm, XErrNorm, Xi, XiErr
+
+# #Takes a list of moments (in emu), sample mass, and molecular weight
+# #Returns list of moments (in Bohr Magnetons)
+# def bohrToEmu(bohrM,mass,molweight):
+#     avo =6.0221409e+23 #spin/mol
+#     bohr = 9.274e-21 #emu / Bohr magneton = erg/G/Bohrmag
+#     if (isinstance(bohrM,list) or isinstance(bohrM, np.ndarray)):
+#         emuM = []
+#         for i in bohrM:
+#             emuM.append((mass/molweight*avo*bohr)*i)
+#         emuM = np.array(emuM)
+#     else:
+#         emuM = (mass/molweight*avo*bohr)*bohrM
+#     return emuM
     
-#Deprecated
-#####################################################################################################################################################################
+# #Takes a list of moments (in emu), sample mass, and molecular weight
+# #Returns list of moments (in Bohr Magnetons)
+# def emuToBohr(emuM,mass,molweight):
+#     avo =6.0221409e+23 #part/mol
+#     bohr = 9.274e-21 #emu / Bohr magneton = erg/G/Bohrmag
+#     if (isinstance(emuM,list)):
+#         bohrM = []
+#         for i in emuM:
+#             bohrM.append(i/(mass/molweight*avo*bohr))
+#     else:
+#         bohrM = emuM/(mass/molweight*avo*bohr)
+#     return bohrM
+
 
 # #Takes in magnetization list/float (either bohr magnetons or emu)
 # #Returns magnetization list/float normalized to per spin
