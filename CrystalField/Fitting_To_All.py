@@ -4,10 +4,10 @@ from JensenTools import *
 
 # Define important things
 #####################################################################################################################################################################
-comp = 'Sr2PrO4'
-ion = 'Ce3+'
-who = 'Arun'
-LS_on = True
+comp = 'Ba2YbNbO6'
+ion = 'Yb3+'
+who = 'PPMS'
+LS_on = False
 per = 'spin'
 molweight = molweight[comp]
 LSValue = 100.5
@@ -16,8 +16,7 @@ LSValue = 100.5
 L = 3
 S = 0.5
 
-
-Emeas = [168, 335, 385] # The measured INS magnetic modes
+# Emeas = [168, 335, 385] # The measured INS magnetic modes
 #####################################################################################################################################################################
 
 #LMFIT Models
@@ -56,11 +55,10 @@ def fullFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs )
     return total
 
 # Fits the concatenated X^-1 and magnetization
-def thermoFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
+def thermoFit(B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
     deltaField = .0001
     
     Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
-    Stev['B20'] = B20
     Stev['B40'] = B40
     Stev['B60'] = B60
     Stev['B44'] = B44
@@ -85,11 +83,10 @@ def thermoFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs
     return total
 
 # Fits X^-1
-def susFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
+def susFit( B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
     deltaField = .0001
     
     Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
-    Stev['B20'] = B20
     Stev['B40'] = B40
     Stev['B60'] = B60
     Stev['B44'] = B44
@@ -136,76 +133,18 @@ def magFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
 #####################################################################################################################################################################
 
 
-#Best Fit LS
-#####################################################################################################################################################################
-if LS_on:	
-	B40  =  -0.6568663783690575
-	B60  =  -0.02328250024945387
-	LS   =  LSValue
-	B44  =  -3.1415463304732714
-	B64  =  0.504906552605772
-	B20  =  0.4858075931009187
-#####################################################################################################################################################################
-
-#Fix B20 to different values, check g tensor 
-
-# Best Fit J
-#####################################################################################################################################################################
-if not LS_on:
-	# Red Chi = ~5
-	# B40  =  -0.5572886105373519
-	# B60  =  0.4673
-	# B44  =  -3.0342208316734602
-	# B64  =  -9.8133
-	# B20  =  12.606195910392971
-
-	# # Red Chi = ~.01
-	B40  =  -0.5572886105373519
-	B60  =  0.4673
-	B44  =  -3.0946858584804335
-	B64  =  -9.8133
-	B20  =  12.606195720794622
-#####################################################################################################################################################################
-
-
-# # From GridSearch For LS
-# #####################################################################################################################################################################
-# if LS_on:
-# 	LS = LSValue
-# 	x =  0.03629536921151444
-# 	bpf = -0.6570713391739674
-# 	# Assigning the coefficients from grid search
-# 	# Enforcing cubic constraints as a start
-# 	# and including the B20 term which is needed for tetragonal symmetry
-# 	B40 = bpf
-# 	B60 = x*bpf
-# 	B44 = 5*B40
-# 	B64 = -21*B60
-# 	B20 = 0
-# #####################################################################################################################################################################
-
-# # From GridSearch For J
-# #####################################################################################################################################################################
-# if not LS_on:
-# 	x = -1.0000
-# 	bpf = -0.4673
-# 	# Assigning the coefficients from grid search
-# 	# Enforcing cubic constraints as a start
-# 	# and including the B20 term which is needed for tetragonal symmetry	
-# 	B40 = bpf
-# 	B60 = x*bpf
-# 	B44 = 5*B40
-# 	B64 = -21*B60
-# 	B20 = 0
-# #####################################################################################################################################################################
-
-
-
 saveDir = getSaveDir('m',comp = comp) #General Directory for the project
+PCOLig, Yb = cef.importCIF(saveDir + 'Ba2YbNbO6.cif','Yb1')
 MTDir = getSaveDir('m',comp = comp, dataType = 'MT') #MvsT data
 MHDir = getSaveDir('m',comp = comp, dataType = 'MH') #MvsT data
 
 
+B40 = Yb.B[0]
+B44 = Yb.B[1]
+B60 = Yb.B[2]
+B64 = Yb.B[3]
+
+# print(MHdata.keys())
 # Loading data for M vs T 
 #####################################################################################################################################################################
 runs = []
@@ -230,6 +169,7 @@ for i in runs:
     M = normalize(M,mass,molweight,per)
     Err = normalize(Err,mass,molweight,per)
     MHdata[T] = [M,H,Err,mass,i]
+
 #####################################################################################################################################################################
 
 #Either 'ZFC' or 'FC'
@@ -239,29 +179,30 @@ HTes = oeToTesla(H)
 X = MBohr/HTes
 Xi = 1/X
 
+
+# print(MHdata.keys())
 # Choosing 20K run
-Tmh = '20K'
+Tmh = 1.8
 TempM = getTemp(MHdata[Tmh][-1], who = who)
 M, FieldM, Err, mass, filename = MHdata[Tmh]
 M = emuToBohr2(M)
 FieldM = oeToTesla(FieldM)
 
-total = np.concatenate((Emeas,Xi,M), axis = None)
+total = np.concatenate((-Xi,-M), axis = None)
 
-ENorm = 1/7/len(Emeas)*np.ones(len(Emeas))
-XiNorm = 3/7/len(Xi)*np.ones(len(Xi))
-MNorm = 3/7/len(M)*np.ones(len(M))
-
-error = np.concatenate((ENorm,XiNorm,MNorm),axis = None)
+# ENorm = 1/7/len(Emeas)*np.ones(len(Emeas))
+# XiNorm = 3/7/len(Xi)*np.ones(len(Xi))
+# MNorm = 3/7/len(M)*np.ones(len(M))
+# error = np.concatenate((ENorm,XiNorm,MNorm),axis = None)
 
 # Make LMFIT model and fit
 # Create stevens coefficients dictionary from fitted parameters
 #####################################################################################################################################################################
-susModel = Model(fullFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM'])
+susModel = Model(thermoFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM'])
 params = susModel.make_params()
 
 # Since we only have 4 training points, only 4 parameters can vary at once.
-params['B20'].set(value = B20, vary = True)
+# params['B20'].set(value = B20, vary = False)
 params['B40'].set(value = B40, vary=True)
 params['B60'].set(value = B60, vary=True)
 params['B44'].set(value = B44, vary = True)
@@ -269,12 +210,13 @@ params['B64'].set(value = B64, vary = True)
 
 if LS_on:
 	params['LS'].set(value=LS, vary=True)
-    
+
+
 # Fit model to data
-fitted = susModel.fit(total,params, TempX = TempX, FieldX = .1, TempM = TempM, FieldM = FieldM, LS_on = LS_on, ion = ion, weights = error)
+fitted = susModel.fit(total,params, TempX = TempX, FieldX = .1, TempM = TempM, FieldM = FieldM, LS_on = LS_on, ion = ion)
 
 # Create a dictionary of the fitted parameters (stevens coefficients)
-stev = {'B40': fitted.params['B40'].value, 'B60': fitted.params['B60'].value, 'B44' : fitted.params['B44'].value, 'B64' : fitted.params['B64'].value, 'B20' :fitted.params['B20'].value }
+stev = {'B40': fitted.params['B40'].value, 'B60': fitted.params['B60'].value, 'B44' : fitted.params['B44'].value, 'B64' : fitted.params['B64'].value}
 
 # Create the CFLevels object and diagonalize it
 if LS_on:
