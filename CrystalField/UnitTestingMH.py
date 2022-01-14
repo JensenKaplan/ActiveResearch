@@ -1,6 +1,10 @@
 import sys
 sys.path.append('..')
 from JensenTools import *
+import PyCrystalField as cef
+import numpy as np
+import matplotlib.pyplot as plt
+
 
 # kwargs
 #####################################################################################################################################################################
@@ -14,8 +18,7 @@ numlevels = 4
 # The L,S values are as follows for the Pr4+ ion
 L = 3
 S = 0.5
-molweight = molweight[comp]
-per = 'spin'
+molweight = 380.15
 #####################################################################################################################################################################
 
 
@@ -63,7 +66,7 @@ M, H, Err, mass, filename = MHdata[T]
 # Use PCF to calculate Magnetization (uB)
 # Also do unit conversions
 #####################################################################################################################################################################
-MEmu = normalize(M,mass,molweight,per)
+MEmu = normalizeSpin(M,mass,molweight)
 MBohr = emuToBohr2(MEmu)
 HTes = oeToTesla(H)
 
@@ -71,11 +74,9 @@ HTes = oeToTesla(H)
 magCalcBohr = []
 for i in HTes:
 	if LS_on:
-		# magCalcBohr.append(Pr.magnetization( Temp = Temp, Field = [0, 0, i])[2])
-		magCalcBohr.append((Pr.magnetization(Temp = Temp, Field = [i, 0, 0])[0] + Pr.magnetization(Temp = Temp, Field = [0, i, 0])[1] + Pr.magnetization(Temp = Temp, Field = [0, 0, i])[2])/3)
+		magCalcBohr.append(Pr.magnetization( Temp = Temp, Field = [0, 0, i])[2])		
 	else:
 		magCalcBohr.append(Pr.magnetization( Temp = Temp, Field = [0, 0, i], ion = ion)[2])
-
 
 magCalcBohr = np.array(magCalcBohr)
 magCalcEmu = bohrToEmu2(magCalcBohr)
@@ -87,7 +88,7 @@ magCalcEmu = bohrToEmu2(magCalcBohr)
 #####################################################################################################################################################################
 plt.figure()
 plt.plot(H,-1*magCalcEmu, label = 'PCF Calculated')
-plt.plot(H,MEmu, label = 'Measured')
+plt.plot(H,MEmu, label = 'PCF Calculated')
 plt.xlabel('Field (Oe)')
 plt.ylabel('Magnetization (emu spin^-1)')
 plt.title('{} Magnetization at {} K'.format(comp,Temp))
@@ -96,11 +97,25 @@ plt.legend()
 
 plt.figure()
 plt.plot(HTes,-1*magCalcBohr, label = 'PCF Calculated')
-plt.plot(HTes,MBohr, label = 'Measured')
+plt.plot(HTes,MBohr, label = 'Meausred')
 plt.xlabel('Field (T)')
 plt.ylabel('Magnetization (uB spin^-1)')
 plt.title('{} Magnetization at {} K'.format(comp,Temp))
 plt.legend()
 
+
+# plt.figure()
+# plt.plot(H,MEmu, label = 'Meausred')
+# plt.xlabel('Field (Oe)')
+# plt.ylabel('Magnetization (emu Oe^-1 mol^-1)')
+# plt.title('{} Magnetization at {} K'.format(comp,Temp))
+# plt.legend()
+
+# plt.figure()
+# plt.plot(HTes,MBohr, label = 'Meausred')
+# plt.xlabel('Field (T)')
+# plt.ylabel('Magnetization (uB T^-1 mol^-1)')
+# plt.title('{} Magnetization at {} K'.format(comp,Temp))
+# plt.legend()
 plt.show()
 #####################################################################################################################################################################

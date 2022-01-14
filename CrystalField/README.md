@@ -6,14 +6,14 @@ Use inelastic neutron scattering (INS) data to calculate the crystal field Hamil
 1. Use the simplest model, the cubic model, to find a good starting point for the Stevens' Coefficients.
 2. Lift cubic constraints, introduce the coefficients expected for the material's structure, and fit the model to measured INS data. [Here's A Link To A Table With Coefficients For Each Structure](https://docs.mantidproject.org/nightly/concepts/CrystalField.html#jensenmackintosh91)
 3. Using fitted coefficients, create and diagonalize a CF Hamiltonian.
-4. Predict thermodynamic properties (Magnetization and Susceptibility) and confirm the predictions with experiment.
+4. Predict thermodynamic properties (Magnetization, Susceptibility, and Neutron Spectrum) and confirm the predictions with experiment.
 
 ## Required Package(s)
 Every package dependency can be installed via "pip" except for PyCrystalField (PCF), which has no installer. A few steps must be taken to get PCF working on your machine.
-PyCrystalField, designed by Dr. Allen Scheie, can be found at https://github.com/asche1/PyCrystalField .
+PyCrystalField, designed by Dr. Allen Scheie, can be found [here](https://github.com/asche1/PyCrystalField).
 
-1. Manually add "PyCrystalField.py" and "pcf_lib" to your Python's "site-package/" directory.
-2. On line 18 and 957 replace: 
+1. Manually add "PyCrystalField.py" and "pcf_lib" to your Python's "/site-package/" directory.
+2. On lines 18 and 957 replace:
 
 ```
 from numba import njit, jitclass

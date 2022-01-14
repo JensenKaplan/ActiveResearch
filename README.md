@@ -10,17 +10,17 @@ There are some common measurements we use to characterize our crystalline system
 
 #### QuantumDesign PPMS Dynacool with Vibrating Sample Magnetometer
 1. Magnetization (M vs H) measured at different temperatures.
-2. Susceptibility (M vs T) Field Cooling / Zero Field Cooling (with an applied .01T magnetic field)
+2. Susceptibility (M vs T) Field Cooling / Zero Field Cooling (with an applied .1T magnetic field)
 #### OakRidge National Lab (ORNL) Neutron Beamlines
-1. Inelastic Neutron Scattering
+1. Inelastic Neutron Scattering.
 
 #### What do I do with the measured data?
-1. Thermodynamic (M vs T) data as measured by the PPMS is analyzed to find the Curie and Weiss constants. The Weiss Constant give us insight into the ferromagnetic / antiferromagnetic nature exhibited by our systems. The Curie Constant is used to calculate the effective magnetic moment of our system.
-2. Thermodynamic (M vs H) data as measured by the PPMS is analyzed to find saturation points of my compounds.
+1. Thermodynamic magnetization data (M vs T) as measured by the PPMS is analyzed to find the Curie and Weiss constants. The Weiss Constant give us insight into the ferromagnetic / antiferromagnetic nature exhibited by our systems. The Curie Constant is used to calculate the effective magnetic moment of our system.
+2. Thermodynamic susceptibility data (M vs H) as measured by the PPMS is analyzed to find saturation points of my compounds.
 3. Neutron data is analyzed to find low lying (in energy) magnetic modes in our systems. Analysis is carried out to determine the Crystal Electric Field Hamiltonian.
 
 # Important Details of My Code (kwargs)
-I've been implementing changes that allows all of my scripts to be more general. As well as adjusting the scripts in this repo I have conventionalized how I handle data in my DropBox. There are a few important kwargs that should be defined in every script so that the proper JensenTools functions are called.
+I've generalized most functions in JensenTools.py which allows me to easily choose a compound, which basis to work in (LS/J), how I normalize my units, etc. As well as generalizing the scripts in this repo I have conventionalized how I handle data in my DropBox. There are a few important kwargs that should be defined in every script so that the proper JensenTools functions are called.
 
 1. "LS_on" a boolean. If True then all calculations done in LS basis; if False then calculations performed in J basis.
 1. "comp" a string. This allows the script to find the proper data in my Dropbox.

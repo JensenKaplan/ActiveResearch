@@ -1,7 +1,9 @@
 import sys
 sys.path.append('..')
 from JensenTools import *
-
+import PyCrystalField as cef
+import numpy as np
+import matplotlib.pyplot as plt
 
 # kwargs
 #####################################################################################################################################################################
@@ -16,7 +18,7 @@ numlevels = 4
 L = 3
 S = 0.5
 massErr = .00005
-molweight = molweight[comp]
+molweight = 380.15
 #####################################################################################################################################################################
 
 # Make LS_CFLevels object with best fit parameters
@@ -42,7 +44,6 @@ else:
 	Pr.diagonalize()
 #####################################################################################################################################################################
 
-
 # Loading data for M vs T 
 #####################################################################################################################################################################
 runs = []
@@ -53,15 +54,27 @@ MTdata = {}
 for i in runs:
     M,H,T,MErr,mass,measType = getData(i,MTDir, who = who, dataType = 'MT')
     M = normalize(M,mass,molweight,'spin')
-    MErr = normalize(MErr,mass,molweight,'spin')
     MTdata[measType] = [M,H,T,MErr,mass]
 
 #Either 'ZFC' or 'FC'
-M,H,T,MErr,mass = MTdata['ZFC']
+M,H,T,MErr,mass = MTdata['FC']
 #####################################################################################################################################################################
 
-# Use PCF to calculate Susceptibility (uB/T)
-# Also do unit conversions
+# Use PCF function to calculate Magnetization (uB/spin) at fixed Field (.1T) over temop range
+# Divide this magnetization by field to get Susceptibiltiy in (uB/T/spin)
+#####################################################################################################################################################################
+Ha = .1
+magCalcBohr = []
+for i in T:
+	if LS_on:
+		magCalcBohr.append(Pr.magnetization( Temp = i, Field = [0, 0, Ha])[2])		
+	else:
+		magCalcBohr.append(Pr.magnetization( Temp = i, Field = [0, 0, Ha], ion = ion)[2])
+
+sus = np.array(magCalcBohr)/Ha
+#####################################################################################################################################################################
+
+# Use PCF function to calculate Susceptibility (uB/Tesla/Spin) over T
 #####################################################################################################################################################################
 fieldT = 0.1 #To match Arun's measurements
 deltaField = .00001
@@ -69,51 +82,60 @@ if LS_on:
 	XCalcBohr = Pr.susceptibility(Temps = T, Field = fieldT, deltaField = deltaField)
 else:
 	XCalcBohr = Pr.susceptibility(Temps = T, Field = fieldT, deltaField = deltaField, ion = ion)
-
-X = M/H
-Xi = 1/X
-XBohr = emuToBohr2(X)
-XiBohr = 1/np.array(XBohr)
-
-## Normalize calculated susceptibility per mol. /10000 to get uB/Oe/mol
-## Calculate inverse
-XCalcBohr = np.array(XCalcBohr)/10000
-XiCalcBohr = 1/np.array(XCalcBohr)
-## Convert to emu and calulcate inverse
-XCalcEmu = bohrToEmu2(XCalcBohr)
-XiCalcEmu = 1/np.array(XCalcEmu)
 #####################################################################################################################################################################
 
 
-# Plot inverse susceptibility for:
-# Calculated and measured: in (uB^-1 Oe Mol) and (emu^-1 Oe Mol)
+PCFRatio = XCalcBohr/sus
+
+# Plotting
 #####################################################################################################################################################################
+# Plot ratio of calculated PCFs
 plt.figure()
-plt.plot(T,Xi, label = 'Measured')
+plt.plot(T,PCFRatio, label = 'Ratio')
 plt.xlabel('Temperature (K)')
-plt.ylabel('X^-1 (emu^-1 Oe spin)')
-plt.title('{} Inverse Susceptibility with Scalar {} T field'.format(comp,fieldT))
+plt.ylabel('Ratio (PCF susc)/(PCF M/H)')
 plt.legend()
+plt.title('Ratio of Susceptibilities {} Tesla'.format(Ha))
+plt.show()
 
-plt.figure()
-plt.plot(T,-1*XiCalcEmu, label = 'PCF')
-plt.xlabel('Temperature (K)')
-plt.ylabel('X^-1 (emu^-1 Oe spin)')
-plt.title('{} Inverse Susceptibility with Scalar {} T field'.format(comp,fieldT))
-plt.legend()
 
-plt.figure()
-plt.plot(T,XiBohr, label = 'Measured')
-plt.xlabel('Temperature (K)')
-plt.ylabel('X^-1  (uB^-1 Oe spin)')
-plt.title('{} Inverse Susceptibility with Scalar {} T field'.format(comp,fieldT))
-plt.legend()
+# # Plot PCF M/H
+# plt.figure()
+# plt.plot(T,-1*np.array(sus), label = 'PCF')
+# plt.xlabel('Temperature (K)')
+# plt.ylabel('Susceptibility (uB) Tesla^-1 spin^-1')
+# plt.legend()
+# plt.title('PCF M/H {} Tesla'.format(Ha))
+# # plt.show()
 
+# #Plot PCF Susc
+# plt.figure()
+# plt.plot(T,-1*XCalcBohr, label = 'PCF')
+# plt.xlabel('Temperature (K)')
+# plt.ylabel('Susceptibility (uB) Tesla^-1 spin^-1')
+# plt.legend()
+# plt.title('PCF Susceptbility {} Tesla '.format(Ha))
+# # plt.show()
+
+M = emuToBohr2(M)
+H = oeToTesla(H)
+# Plot experimental susc (M/H)
+# plt.figure()
+# plt.plot(T,M/H, label = 'Measured')
+# plt.xlabel('Temperature (K)')
+# plt.ylabel('Susceptibility (uB) Tesla^-1 spin^-1')
+# plt.legend()
+# plt.title('Measured Susceptbility {} Tesla '.format(Ha))
+
+# Overplot all 3
 plt.figure()
-plt.plot(T,-1*XiCalcBohr, label = 'PCF')
+plt.plot(T,M/H, label = 'Measured M/H')
+plt.plot(T,-1*XCalcBohr, label = 'PCF Susceptibility')
+plt.plot(T,-1*np.array(sus), label = 'PCF M/H')
 plt.xlabel('Temperature (K)')
-plt.ylabel('X^-1 (uB^-1 Oe spin)')
-plt.title('{} Inverse Susceptibility with Scalar {} T field'.format(comp,fieldT))
+plt.ylabel('Susceptibility (uB) Tesla^-1 spin^-1')
 plt.legend()
+plt.title('Susceptbility All Methods Plotted {} Tesla '.format(Ha))
+
 plt.show()
 #####################################################################################################################################################################

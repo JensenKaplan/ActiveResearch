@@ -1,13 +1,15 @@
 import sys
 sys.path.append('..')
 from JensenTools import *
-
+import PyCrystalField as cef
+import numpy as np
+import matplotlib.pyplot as plt
 
 # kwargs
 #####################################################################################################################################################################
-comp = 'Sr2PrO4'
+comp = 'Li8PrO6'
 ion = 'Ce3+'
-who = 'Arun'
+who = 'PPMS'
 LS_on = True
 Kmeans = True
 LSValue = 100
@@ -16,7 +18,7 @@ numlevels = 4
 L = 3
 S = 0.5
 massErr = .00005
-molweight = molweight[comp]
+molweight = 380.15
 #####################################################################################################################################################################
 
 # Make LS_CFLevels object with best fit parameters
@@ -51,13 +53,11 @@ for i in os.listdir(MTDir):
         runs.append(i)
 MTdata = {}
 for i in runs:
-    M,H,T,MErr,mass,measType = getData(i,MTDir, who = who, dataType = 'MT')
-    M = normalize(M,mass,molweight,'spin')
-    MErr = normalize(MErr,mass,molweight,'spin')
-    MTdata[measType] = [M,H,T,MErr,mass]
+    M,H,T,MErr,samplemass,measType = getData(i,MTDir, who = who, dataType = 'MT')
+    MTdata[measType] = [M,H,T,MErr,samplemass]
 
 #Either 'ZFC' or 'FC'
-M,H,T,MErr,mass = MTdata['ZFC']
+M,H,T,MErr,mass = MTdata['FC']
 #####################################################################################################################################################################
 
 # Use PCF to calculate Susceptibility (uB/T)
@@ -70,18 +70,21 @@ if LS_on:
 else:
 	XCalcBohr = Pr.susceptibility(Temps = T, Field = fieldT, deltaField = deltaField, ion = ion)
 
-X = M/H
-Xi = 1/X
-XBohr = emuToBohr2(X)
-XiBohr = 1/np.array(XBohr)
 
 ## Normalize calculated susceptibility per mol. /10000 to get uB/Oe/mol
 ## Calculate inverse
+XCalcBohr = np.array(normalizeMol(XCalcBohr, mass, molweight))/10000
 XCalcBohr = np.array(XCalcBohr)/10000
 XiCalcBohr = 1/np.array(XCalcBohr)
 ## Convert to emu and calulcate inverse
 XCalcEmu = bohrToEmu2(XCalcBohr)
 XiCalcEmu = 1/np.array(XCalcEmu)
+
+## Get measured data normalized susceptibility to Emu/Oe/Mol with error prop
+XEmu,XErrEmu,XiEmu,XiErrEmu = normSusc(M,H,MErr,molweight,samplemass,massErr)
+## Converting measured data to uB/Oe/Mol
+XBohr = emuToBohr2(XEmu)
+XiBohr = 1/np.array(XBohr)
 #####################################################################################################################################################################
 
 
@@ -89,30 +92,38 @@ XiCalcEmu = 1/np.array(XCalcEmu)
 # Calculated and measured: in (uB^-1 Oe Mol) and (emu^-1 Oe Mol)
 #####################################################################################################################################################################
 plt.figure()
-plt.plot(T,Xi, label = 'Measured')
+plt.errorbar(T,XiEmu, yerr = XiErrEmu, label = 'Measured')
 plt.xlabel('Temperature (K)')
-plt.ylabel('X^-1 (emu^-1 Oe spin)')
-plt.title('{} Inverse Susceptibility with Scalar {} T field'.format(comp,fieldT))
-plt.legend()
-
-plt.figure()
-plt.plot(T,-1*XiCalcEmu, label = 'PCF')
-plt.xlabel('Temperature (K)')
-plt.ylabel('X^-1 (emu^-1 Oe spin)')
+plt.ylabel('X^-1 (emu^-1 Oe mol)')
+# plt.ylabel('X^-1 (emu^-1 Oe)')
 plt.title('{} Inverse Susceptibility with Scalar {} T field'.format(comp,fieldT))
 plt.legend()
 
 plt.figure()
 plt.plot(T,XiBohr, label = 'Measured')
 plt.xlabel('Temperature (K)')
-plt.ylabel('X^-1  (uB^-1 Oe spin)')
+plt.ylabel('X^-1  (uB^-1 Oe mol)')
+# plt.ylabel('X^-1 (uB^-1 Oe)')
 plt.title('{} Inverse Susceptibility with Scalar {} T field'.format(comp,fieldT))
 plt.legend()
 
+
+
 plt.figure()
-plt.plot(T,-1*XiCalcBohr, label = 'PCF')
+plt.plot(T,-1*XiCalcEmu, label = 'PCF')
 plt.xlabel('Temperature (K)')
-plt.ylabel('X^-1 (uB^-1 Oe spin)')
+plt.ylabel('X^-1 (emu^-1 Oe mol)')
+# plt.ylabel('X^-1  (emu^-1 Oe)')
+plt.title('{} Inverse Susceptibility with Scalar {} T field'.format(comp,fieldT))
+plt.legend()
+
+
+
+plt.figure()
+plt.plot(T,-1*XiCalcBohr, label = 'Measured')
+plt.xlabel('Temperature (K)')
+plt.ylabel('X^-1 (uB^-1 Oe mol)')
+# plt.ylabel('X^-1 (uB^-1 Oe)')
 plt.title('{} Inverse Susceptibility with Scalar {} T field'.format(comp,fieldT))
 plt.legend()
 plt.show()
