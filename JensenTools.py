@@ -136,7 +136,6 @@ def getData(magrun, dataDir,**kwargs):
 	    	return M,H,T,E, mass, measType
 
 	elif who == 'PPMS':
-		name =  getTemp(magrun, who = who)
 		# name = name.replace('P','.')
 		mass = getMass(magrun,**kwargs)
 		# print(mass)
@@ -148,6 +147,7 @@ def getData(magrun, dataDir,**kwargs):
 		M = np.array(df['Moment (emu)'])
 
 		if dataType == 'MH':
+			name =  getTemp(magrun, who = who)
 			return  M, H, E, mass, name
 		if dataType == 'MT':
 			measType = magrun.split('_')[-1].split('.')[0]
