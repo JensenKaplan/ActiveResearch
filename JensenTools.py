@@ -15,7 +15,7 @@ import pandas as pd
 from scipy import integrate
 
 # Moleuclar weight dictionary for our compounds.
-molweight = { 'Sr2PrO4' : 380.15, 'Li8PrO6' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16 } 
+molweight = { 'Sr2PrO4' : 380.15, 'Li8PrO6' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16, 'Ba2YbNbO6' : 636.60 } 
 
 # Thermo diagnostic function.
 # Uses PCF object
@@ -129,13 +129,15 @@ def getData(magrun, dataDir,**kwargs):
 	    measType = magrun.split('_')[-1].split('.')[0]
 	    # print(measType)
 	    if dataType == 'MH':
-	    	return M, H, E, mass, name
+	    	# T = getTemp(magrun, who = who)
+	    	# T = filename.split('_')[-1].split('.')[0][:-1].replace('P','.')
+	    	return M, H, E, mass, T
 	    if dataType == 'MT':
 	    	return M,H,T,E, mass, measType
 
 	elif who == 'PPMS':
-		name = magrun.split('_')[4].split('.')[0]
-		name = name.replace('P','.')
+		name =  getTemp(magrun, who = who)
+		# name = name.replace('P','.')
 		mass = getMass(magrun,**kwargs)
 		# print(mass)
 		df = pd.read_csv(dataDir + magrun)
@@ -157,7 +159,7 @@ def getMass(filename,**kwargs):
 		mass = filename.split('_')[3]
 		mass = mass.replace('P','.')
 	else:
-		mass = filename.split('_')[2]
+		mass = filename.split('_')[3]
 		mass = mass.replace('P','.')		
 	mass = mass[:-2]
 	mass = float(mass)

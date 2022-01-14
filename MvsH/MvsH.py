@@ -3,8 +3,8 @@ sys.path.append('..')
 from JensenTools import *
 
 #####################################################################################################################################################################
-who = 'Arun'
-comp = 'Sr2PrO4'
+who = 'PPMS'
+comp = 'Ba2YbNbO6'
 MHDir = getSaveDir('m', comp = comp, dataType = 'MH')
 molweight = molweight[comp]
 #####################################################################################################################################################################
@@ -19,14 +19,12 @@ for i in os.listdir(MHDir):
 
 temp = [] # temporary list for sorting
 for i in runs:
-    temp.append(getTemp(i, who = who)) # this creates a list of just temperatures as read by the filename   
+    temp.append(getTemp(i, who = who)) # this creates a list of just temperatures as read by the filename
+print(temp)
 temp = np.argsort([int(i) for i in temp]) # Sort by temperature
 runs = [runs[i] for i in temp] # newly sorted listed
+print(runs)
 #####################################################################################################################################################################
-
-## Get mass and temp from one of the filenames. Doesn't matter since they should all have the same name/mass.
-mass = getMass(runs[0], who = who)
-T = getTemp(runs[0], who = who)
 
 # Normalize measurement to spin^-1
 # Plot the data in both Emu/Oe and uB/T
@@ -37,6 +35,7 @@ MHdata = {} #Data will be normalized and stored in Emu/Oe. Conversions to uB/T a
 plt.figure()
 for i in runs: 
     M, H, Err, mass, T = getData(i,MHDir,who = who, dataType = 'MH')
+    # print(mass,T)
     M = normalize(M,mass,molweight,'spin')
     Err = normalize(Err,mass,molweight,'spin')
     MHdata[T] = [M,H,Err,mass,i]
@@ -66,7 +65,7 @@ plt.show()
 # Choose a run to find the saturation magnetization
 # Perform a linear fit over a chosen field range (Tesla)
 #####################################################################################################################################################################
-temp = '20K' #Select a temperature to analyze
+temp = 1.8 #Select a temperature to analyze
 curRun = MHdata[temp] #loading the data from my current run
 
 # Converto to uB/T
