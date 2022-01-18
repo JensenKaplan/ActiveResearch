@@ -15,7 +15,7 @@ import pandas as pd
 from scipy import integrate
 
 # Moleuclar weight dictionary for our compounds.
-molweight = { 'Sr2PrO4' : 380.15, 'Li8PrO6' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16, 'Ba2YbNbO6' : 636.60 } 
+molweight = { 'Sr2PrO4' : 380.15, 'Li8PrO6' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16, 'Ba2YbNbO6' : 636.60, 'Ba2DyNbO6': 626.06 , 'Ba2ErNbO6': 630.82 } 
 
 # Thermo diagnostic function.
 # Uses PCF object
