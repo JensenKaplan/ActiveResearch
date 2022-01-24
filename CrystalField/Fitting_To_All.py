@@ -10,13 +10,18 @@ who = 'PPMS'
 LS_on = False
 per = 'spin'
 molweight = molweight[comp]
-LSValue = 100.5
-
-# The L,S values are as follows for the Pr4+ ion
-L = 3
+# The L,S and J values are as follows for the Yb3+ ion
 S = 0.5
+L = 3
+J = 7/2
 
-# Emeas = [168, 335, 385] # The measured INS magnetic modes
+# # The L,S and J values are as follows for the Er3+ ion
+# S = 3./2
+# L = 6
+# J = 15./2
+
+# Emeas = [168, 335, 385] # The measured INS magnetic modes SRPR
+# Emeas = [4, 11, 13]
 #####################################################################################################################################################################
 
 #LMFIT Models
@@ -55,10 +60,11 @@ def fullFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs )
     return total
 
 # Fits the concatenated X^-1 and magnetization
-def thermoFit(B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
+def thermoFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
     deltaField = .0001
     
     Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
+    Stev['B20'] = B20
     Stev['B40'] = B40
     Stev['B60'] = B60
     Stev['B44'] = B44
@@ -132,25 +138,21 @@ def magFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
     return M
 #####################################################################################################################################################################
 
-
+# Loading proper directories
+#####################################################################################################################################################################
 saveDir = getSaveDir('m',comp = comp) #General Directory for the project
-PCOLig, Yb = cef.importCIF(saveDir + 'Ba2YbNbO6.cif','Yb1')
 MTDir = getSaveDir('m',comp = comp, dataType = 'MT') #MvsT data
 MHDir = getSaveDir('m',comp = comp, dataType = 'MH') #MvsT data
-
-
-B40 = Yb.B[0]
-B44 = Yb.B[1]
-B60 = Yb.B[2]
-B64 = Yb.B[3]
-
-# print(MHdata.keys())
-# Loading data for M vs T 
 #####################################################################################################################################################################
-runs = []
+
+# Loading and storing data for MvsT and MvsH into their own dictionaries
+#####################################################################################################################################################################
+# MvsT
+runs = [] # List of all .dat files in directory
 for i in os.listdir(MTDir):
     if i.endswith('.DAT') or i.endswith('.dat'): #This was a safeguard against a situation arising at an earlier implementation of my code.
         runs.append(i)
+# Normalizes and stores data.
 MTdata = {}
 for i in runs:
     M,H,T,MErr,mass,measType = getData(i,MTDir, who = who, dataType = 'MT')
@@ -158,30 +160,28 @@ for i in runs:
     Merr = normalize(MErr,mass,molweight,per)
     MTdata[measType] = [M,H,T,MErr,mass]
 
-runs = []
+# MvsH
+runs = [] # List of all .dat files in directory
 for i in os.listdir(MHDir):
     if i.endswith('.DAT') or i.endswith('.dat'): #This was a safeguard against a situation arising at an earlier implementation of my code.
         runs.append(i)       
-# Normalizes and stores data as well as plotting in Emu/Oe for all temperatures.
+# Normalizes and stores data.
 MHdata = {}
 for i in runs: 
     M, H, Err, mass, T = getData(i,MHDir,who = who, dataType = 'MH')
     M = normalize(M,mass,molweight,per)
     Err = normalize(Err,mass,molweight,per)
     MHdata[T] = [M,H,Err,mass,i]
-
 #####################################################################################################################################################################
 
 #Either 'ZFC' or 'FC'
-M,H,TempX,MErr,mass = MTdata['FC']
+M,H,TempX,MErr,mass = MTdata['FC'] # Only have FC for Ba2YbNbO6
 MBohr = emuToBohr2(M)
 HTes = oeToTesla(H)
 X = MBohr/HTes
 Xi = 1/X
 
-
-# print(MHdata.keys())
-# Choosing 20K run
+# Choosing 1.8K run
 Tmh = 1.8
 TempM = getTemp(MHdata[Tmh][-1], who = who)
 M, FieldM, Err, mass, filename = MHdata[Tmh]
@@ -189,11 +189,22 @@ M = emuToBohr2(M)
 FieldM = oeToTesla(FieldM)
 
 total = np.concatenate((-Xi,-M), axis = None)
+# total = np.concatenate((Emeas,-Xi,-M), axis = None)
 
-# ENorm = 1/7/len(Emeas)*np.ones(len(Emeas))
-# XiNorm = 3/7/len(Xi)*np.ones(len(Xi))
-# MNorm = 3/7/len(M)*np.ones(len(M))
+# ENorm = 1/3/len(Emeas)*np.ones(len(Emeas))
+# XiNorm = 1/3/len(Xi)*np.ones(len(Xi))
+# MNorm = 1/3/len(M)*np.ones(len(M))
 # error = np.concatenate((ENorm,XiNorm,MNorm),axis = None)
+
+# Initial B guess
+#####################################################################################################################################################################
+PCOLig, Yb = cef.importCIF(saveDir + comp + '.cif','Yb1') #Load cif file for starting Bs
+B20 = 0
+B40 = Yb.B[0]
+B44 = Yb.B[1]
+B60 = Yb.B[2]
+B64 = Yb.B[3]
+#####################################################################################################################################################################
 
 # Make LMFIT model and fit
 # Create stevens coefficients dictionary from fitted parameters
@@ -202,7 +213,7 @@ susModel = Model(thermoFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'Fie
 params = susModel.make_params()
 
 # Since we only have 4 training points, only 4 parameters can vary at once.
-# params['B20'].set(value = B20, vary = False)
+params['B20'].set(value = B20, vary = True)
 params['B40'].set(value = B40, vary=True)
 params['B60'].set(value = B60, vary=True)
 params['B44'].set(value = B44, vary = True)
@@ -211,9 +222,9 @@ params['B64'].set(value = B64, vary = True)
 if LS_on:
 	params['LS'].set(value=LS, vary=True)
 
-
 # Fit model to data
 fitted = susModel.fit(total,params, TempX = TempX, FieldX = .1, TempM = TempM, FieldM = FieldM, LS_on = LS_on, ion = ion)
+# fitted = susModel.fit(total,params, TempX = TempX, FieldX = .1, TempM = TempM, FieldM = FieldM, LS_on = LS_on, ion = ion, weights = error)
 
 # Create a dictionary of the fitted parameters (stevens coefficients)
 stev = {'B40': fitted.params['B40'].value, 'B60': fitted.params['B60'].value, 'B44' : fitted.params['B44'].value, 'B64' : fitted.params['B64'].value}
@@ -244,13 +255,16 @@ XiCalcPowder = -1/XCalcPowder
 magCalcBohrPowder = -1*np.array(magCalcBohrPowder)
 
 
+
+#Plot magnetization and susceptibility data and fitted model
+#####################################################################################################################################################################
 plt.figure()
 plt.plot(TempX,Xi, label = 'Measured')
 plt.plot(TempX,XiCalcPowder, label = 'PCF Powder Average')
 plt.xlabel('Temperature (K)')
 plt.ylabel('X^-1 uB^-1 Tesla spin')
 plt.legend()
-plt.title('Inverse Susceptbility Applied {} Tesla '.format(.1))
+plt.title('{} Inverse Susceptbility Applied {} Tesla '.format(comp,.1))
 
 plt.figure()
 plt.plot(FieldM,M, label = 'Measured')
@@ -258,7 +272,8 @@ plt.plot(FieldM,magCalcBohrPowder, label = 'PCF Powder Average')
 plt.xlabel('Field (T)')
 plt.ylabel('X^-1 uB^-1 Tesla spin')
 plt.legend()
-plt.title('Magnetization at {} K '.format(TempM))
+plt.title('{} Magnetization at {} K '.format(comp,TempM))
 
 Pr.printEigenvectors()
 plt.show()
+#####################################################################################################################################################################
