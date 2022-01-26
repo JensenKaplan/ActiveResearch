@@ -3,13 +3,6 @@ sys.path.append('..')
 from JensenTools import *
 
 #####################################################################################################################################################################
-# Simple function for pritting my parameters after fitting so that I can copy paste the values from output for further iterations.
-def paramPrint(fittedparams):
-	print()
-	for i in fittedparams:
-		# print(i, ' = ', i.value)
-		print(i, ' = ',fittedparams[i].value )
-
 # Function to be made into an LMFIT model.
 def energyFit(B40,B60, B44, B64, B20, numlevels, LS, **kwargs ):
 	numlevels = numlevels
@@ -37,6 +30,51 @@ def energyFit(B40,B60, B44, B64, B20, numlevels, LS, **kwargs ):
 		else:
 			e =  Pr.eigenvalues
 	return e
+
+# Function to be made into an LMFIT model.
+def energyFit2(B20, B21, B22, B40, B41, B42, B43, B44, B60, B61, B62, B63, B64, B65, B66, numlevels, LS, **kwargs ):
+	numlevels = numlevels
+	Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
+	Stev['B20'] = B20
+	Stev['B21'] = B21
+	Stev['B22'] = B22
+	Stev['B40'] = B40
+	Stev['B40'] = B41
+	Stev['B40'] = B42
+	Stev['B40'] = B43
+	Stev['B40'] = B44
+	Stev['B60'] = B60
+	Stev['B61'] = B61
+	Stev['B62'] = B62
+	Stev['B63'] = B63
+	Stev['B64'] = B64
+	Stev['B65'] = B65
+	Stev['B66'] = B66
+
+	if kwargs['LS_on']:
+		Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling = LS) #Create CF_Levels obejct wtih the given coefficients.
+		Pr.diagonalize()
+		if kwargs['Kmeans']:
+			e = kmeansSort(Pr.eigenvalues,numlevels)[:numlevels-1] #Excluding the highest mode which we did not detect in our INS runs
+			# e.append(e[2]/e[1]) #The aforementioned ratio
+		else: 
+			e = Pr.eigenvalues
+	else:
+		Pr = cef.CFLevels.Bdict(Bdict = Stev, ion = kwargs['ion'])
+		Pr.diagonalize()
+		if kwargs['Kmeans']:   	
+			e = kmeansSort(Pr.eigenvalues,numlevels)[:numlevels-1] #Excluding the highest mode which we did not detect in our INS runs
+			e.append(e[1]/e[0]) #The aforementioned ratio
+		else:
+			e =  Pr.eigenvalues
+	return e
+
+# Simple function for pritting my parameters after fitting so that I can copy paste the values from output for further iterations.
+def paramPrint(fittedparams):
+	print()
+	for i in fittedparams:
+		# print(i, ' = ', i.value)
+		print(i, ' = ',fittedparams[i].value )
 #####################################################################################################################################################################
 
 # Define important things
@@ -48,6 +86,12 @@ LS_on = True
 Kmeans = True
 molweight = molweight[comp]
 LSValue = 100
+per = 'spin'
+
+# The S,L,J values are as follows for the Pr4+ ion
+S = 0.5
+L = 3
+J = 5./2
 
 if LS_on:
 	numlevels = 4
@@ -55,12 +99,9 @@ if LS_on:
 else:
 	numlevels = 3
 	Emeas = [168, 335, 335/168] # The measured INS magnetic modes, only first 2 for J basis
-    
-# The L,S values are as follows for the Pr4+ ion
-L = 3
-S = 0.5
 #####################################################################################################################################################################
 
+#Load necessary directories
 saveDir = getSaveDir('m',comp = comp)
 MHDir = getSaveDir('m',comp = comp, dataType = 'MH')
 MTDir = getSaveDir('m',comp = comp, dataType = 'MT')
@@ -125,6 +166,34 @@ if not LS_on:
 	B20  =  12.606195720794622
 #####################################################################################################################################################################
 
+# Loading data for Susceptibility (M vs T) and Magnetization (M vs H) data
+#####################################################################################################################################################################
+runs = []
+for i in os.listdir(MTDir):
+    if i.endswith('.DAT') or i.endswith('.dat'): #This was a safeguard against a situation arising at an earlier implementation of my code.
+        runs.append(i)
+# Normalizes and stores data in MTdata dict
+MTdata = {}
+for i in runs:
+    M,H,T,MErr,mass,measType = getData(i,MTDir, who = who, dataType = 'MT')
+    M = normalize(M,mass,molweight,per)
+    Merr = normalize(MErr,mass,molweight,per)
+    MTdata[measType] = [M,H,T,MErr,mass]
+
+runs = []
+for i in os.listdir(MHDir):
+    if i.endswith('.DAT') or i.endswith('.dat'): #This was a safeguard against a situation arising at an earlier implementation of my code.
+        runs.append(i)       
+# Normalizes and stores data in MHdata dict
+MHdata = {}
+for i in runs: 
+    M, H, Err, mass, T = getData(i,MHDir,who = who, dataType = 'MH')
+    M = normalize(M,mass,molweight,per)
+    Err = normalize(Err,mass,molweight,per)
+    MHdata[T] = [M,H,Err,mass,i]
+#####################################################################################################################################################################
+
+
 # Make LMFIT model and fit
 # Create stevens coefficients dictionary from fitted parameters
 #####################################################################################################################################################################
@@ -133,10 +202,20 @@ params = eModel.make_params()
 
 # Since we only have 4 training points, only 4 parameters can vary at once.
 params['B20'].set(value = B20, vary = False)
+# params['B21'].set(value = 0, vary = False)
+# params['B22'].set(value = 0, vary = False)
 params['B40'].set(value=B40, vary=False)
+# params['B41'].set(value=0, vary=False)
+# params['B42'].set(value=0, vary=False)
+# params['B43'].set(value=0, vary=False)
+params['B44'].set(value=B44, vary=False)
 params['B60'].set(value=B60, vary=False)
-params['B44'].set(value = B44, vary = False )
-params['B64'].set(value = B64, vary = False )
+# params['B61'].set(value=0, vary=False)
+# params['B62'].set(value=0, vary=False)
+# params['B63'].set(value=0, vary=False)
+params['B64'].set(value=B64, vary=False)
+# params['B65'].set(value=0, vary=False)
+# params['B66'].set(value=0, vary=False)
 
 if LS_on:
 	params['LS'].set(value=LS, vary=False)
@@ -163,12 +242,11 @@ if LS_on:
 	Pr = cef.LS_CFLevels.Bdict(Bdict = stev, L = L, S = S, SpinOrbitCoupling=fitted.params['LS'].value)
 	Pr.diagonalize()
 else:
-	Pr = cef.CFLevels.Bdict(Bdict = stev, ion = 'Ce3+')
+	Pr = cef.CFLevels.Bdict(Bdict = stev, ion = ion)
 	Pr.diagonalize()
-	
 
 # Print final matrix
-print('\n\nEnergy values as measured by INS (meV): {}'.format(Emeas[:-1]))
+print('\n\nEnergy values as measured by INS (meV): {}'.format(Emeas))
 Pr.printEigenvectors()
 
 # Calculate and neatly print G-Tensor using Pandas
@@ -180,22 +258,6 @@ print(df)
 
 # ## PCF Magnetization
 #####################################################################################################################################################################
-runs = []
-for i in os.listdir(MHDir):
-    if i.endswith('.DAT'): #This was a safeguard against a situation arising at an earlier implementation of my code.
-        runs.append(i)
-
-# mass = getMass(runs[0],who = who)
-
-MHdata = {}
-# plt.figure()
-for i in runs:
-    M, H, Err,  mass, T = getData(i,MHDir,who = who, dataType = 'MH')
-    M = normalize(M,mass,molweight, 'spin')
-    Err = normalize(Err,mass,molweight, 'spin')
-    MHdata[T] = [M,H,Err,mass,i]
-    # plt.errorbar(H,M, yerr = Err, label = name)
-
 T = '20K'
 Temp = getTemp(MHdata[T][-1], who = who)
 M, H, Err, mass, filename = MHdata[T]
@@ -207,37 +269,25 @@ H = oeToTesla(H)
 magCalc = []
 for i in H:
 	if LS_on:
-		magCalc.append(Pr.magnetization( Temp = Temp, Field = [0, 0, i])[2])		
+		magCalc.append((Pr.magnetization( Temp = Temp, Field = [i, 0, 0])[0] + Pr.magnetization( Temp = Temp, Field = [0, i, 0])[1] + Pr.magnetization( Temp = Temp, Field = [0, 0, i])[2])/3)		
 	else:
-		magCalc.append(Pr.magnetization( Temp = Temp, Field = [0, 0, i], ion = ion)[2])
+		magCalc.append((Pr.magnetization( Temp = Temp, Field = [i, 0, 0], ion = ion)[0] + Pr.magnetization( Temp = Temp, Field = [0, i, 0], ion = ion)[1] + Pr.magnetization( Temp = Temp, Field = [0, 0, i], ion = ion)[2])/3)		
 
 
 plt.figure()
-plt.plot(H,-1.*np.array(magCalc), label = 'PCF Calculated')
+plt.plot(H,-1.*np.array(magCalc), label = 'PCF Powder Average')
 plt.errorbar(H,M, yerr = Err, label = 'Measured')
 plt.xlabel('Field (T)')
 plt.ylabel('Magnetization \N{GREEK SMALL LETTER MU}B')
-plt.title('Magnetization at {} K'.format(Temp))
+plt.title('{} Magnetization at {} K'.format(comp, Temp))
 plt.legend()
-plt.show()
+
+
+# plt.show()
 #####################################################################################################################################################################
 
 # ## PCF Susceptibility
 #####################################################################################################################################################################
-runs = []
-for i in os.listdir(MTDir):
-    if i.endswith('.DAT') or i.endswith('.dat'): #This was a safeguard against a situation arising at an earlier implementation of my code.
-        runs.append(i)
-
-MTdata = {}
-# plt.figure()
-for i in runs:
-    M,H,T,Err,samplemass,measType = getData(i,MTDir, who = who, dataType = 'MT')
-    M = normalize(M,mass,molweight, 'spin')
-    Err = normalize(Err,mass,molweight, 'spin')    
-    MTdata[measType] = [M,H,T,Err,samplemass]
-    # plt.errorbar(H,M, yerr = Err, label = name)
-
 M,H,T,Err,samplemass = MTdata['ZFC']
 X = M/H
 Xi  = 1/X
@@ -248,7 +298,6 @@ HTes = oeToTesla(H)
 
 XBohr = MBohr/HTes
 XBohrI = 1/XBohr
-
 
 XCalc = []
 # Temp = np.linspace(.001,T,1000)
@@ -264,37 +313,39 @@ XCalcEmu = bohrToEmu2(XCalc)/10000
 XCalcEmuI = 1/XCalcEmu
 
 plt.figure()
-plt.plot(T,-1*np.array(XCalc), label = 'PCF')
-plt.plot(T,XBohr, label = 'Masured')
-plt.xlabel('Temperature (K)')
-plt.ylabel('X (uB T^-1 Spin^-1)')
-plt.title('Susceptibility with Scalar {} T field'.format(fieldT))
-plt.legend()
-plt.figure()
-
-plt.plot(T, -1*np.array(XCalcI), label = 'PCF')
+plt.plot(T, -1*np.array(XCalcI), label = 'PCF Powder Average')
 plt.plot(T, XBohrI, label = 'Measured')
 plt.xlabel('Temperature (K)')
-plt.ylabel('1/X (uB ^-1 T Spin)')
-plt.title('Inverse Susceptibility with Scalar {} T field'.format(fieldT))
+plt.ylabel('1/X (uB ^-1 T)')
+plt.title('{} Inverse Susceptibility with Scalar {} T field'.format(comp, fieldT))
 plt.legend()
-plt.figure()
 
-plt.plot(T, -1*np.array(XCalcEmu), label = 'PCF')
-plt.plot(T,X, label = 'Measured')
-plt.xlabel('Temperature (K)')
-plt.ylabel('X (emu oe^-1 Spin^-1)')
-plt.title('Susceptibility with Scalar {} T field'.format(fieldT))
-plt.legend()
-plt.figure()
+plt.show()
 
-plt.plot(T, -1*np.array(XCalcEmuI),label = 'PCF')
-plt.plot(T, Xi, label = 'Measured')
-plt.xlabel('Temperature (K)')
-plt.ylabel('1/X (emu ^-1 Oe Spin)')
-plt.title('Inverse Susceptibility with Scalar {} T field'.format(fieldT))
-plt.legend()
-# plt.show()
+# plt.figure()
+# plt.plot(T,-1*np.array(XCalc), label = 'PCF')
+# plt.plot(T,XBohr, label = 'Masured')
+# plt.xlabel('Temperature (K)')
+# plt.ylabel('X (uB T^-1 Spin^-1)')
+# plt.title('Susceptibility with Scalar {} T field'.format(fieldT))
+# plt.legend()
+# plt.figure()
+
+# plt.plot(T, -1*np.array(XCalcEmu), label = 'PCF')
+# plt.plot(T,X, label = 'Measured')
+# plt.xlabel('Temperature (K)')
+# plt.ylabel('X (emu oe^-1 Spin^-1)')
+# plt.title('Susceptibility with Scalar {} T field'.format(fieldT))
+# plt.legend()
+# plt.figure()
+
+# plt.plot(T, -1*np.array(XCalcEmuI),label = 'PCF')
+# plt.plot(T, Xi, label = 'Measured')
+# plt.xlabel('Temperature (K)')
+# plt.ylabel('1/X (emu ^-1 Oe Spin)')
+# plt.title('Inverse Susceptibility with Scalar {} T field'.format(fieldT))
+# plt.legend()
+
 #####################################################################################################################################################################
 
 # ## PCF Neutron Spectrum
@@ -311,13 +362,15 @@ plt.plot(energy,CalculatedSpectrum)
 plt.ylabel('Intensity (arb. units)')
 plt.xlabel('Energy (meV)')
 plt.title('PCF Spectrum: Ei = {}meV, Temp = {}K, Res = {}'.format(Ei,Temp,res))
-plt.show()
+# plt.show()
 #####################################################################################################################################################################
 
-print()
-Pr.printLaTexEigenvectors()
-print()
 
-wyb = cef.StevensToWybourne('Ce3+',stev, LS=True)
-print("Fitted coefficients in Wybourne's")
-print(wyb)
+
+# print()
+# Pr.printLaTexEigenvectors()
+# print()
+
+# wyb = cef.StevensToWybourne('Ce3+',stev, LS=True)
+# print("Fitted coefficients in Wybourne's")
+# print(wyb)
