@@ -17,7 +17,8 @@ S = 0.5
 L = 3
 J = 5./2
 
-Emeas = [168, 335, 385] # The measured INS magnetic modes
+Emeas = [0, 168, 335, 385, 385/335] # The measured INS magnetic modes
+numlevels = 6
 #####################################################################################################################################################################
 
 #LMFIT Models
@@ -212,6 +213,34 @@ def magFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
             M.append(1/3*Pr.magnetization(Temp = TempM, Field = [i, 0, 0], ion=ion)[0] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, i, 0], ion = ion)[1] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, 0, i], ion = ion)[2])
     M = -1*np.array(M)
     return M
+
+# Fitting to eigenvalues
+def energyFit(B40, B60, B44, B64, B20, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
+    numlevels = kwargs['numlevels']
+    Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
+    Stev['B20'] = B20
+    Stev['B40'] = B40
+    Stev['B60'] = B60
+    Stev['B44'] = B44
+    Stev['B64'] = B64
+
+    if kwargs['LS_on']:
+        Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling = LS) #Create CF_Levels obejct wtih the given coefficients.
+        Pr.diagonalize()
+        if kwargs['Kmeans']:
+            e = kmeansSort(Pr.eigenvalues,numlevels)[:numlevels-1] #Excluding the highest mode which we did not detect in our INS runs
+            # e.append(e[2]/e[1]) #The aforementioned ratio
+        else: 
+            e = Pr.eigenvalues
+    else:
+        Pr = cef.CFLevels.Bdict(Bdict = Stev, ion = kwargs['ion'])
+        Pr.diagonalize()
+        if kwargs['Kmeans']:    
+            e = kmeansSort(Pr.eigenvalues,numlevels)[:numlevels-1] #Excluding the highest mode which we did not detect in our INS runs
+            e.append(e[:-1]/e[:-2]) #The aforementioned ratio
+        else:
+            e =  Pr.eigenvalues
+    return e
 #####################################################################################################################################################################
 
 
@@ -337,7 +366,7 @@ total = np.concatenate((Xi,M), axis = None)
 # Make LMFIT model and fit
 # Create stevens coefficients dictionary from fitted parameters
 #####################################################################################################################################################################
-myModel = Model(susFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM'])
+myModel = Model(energyFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM'])
 params = myModel.make_params()
 
 # Since we only have 4 training points, only 4 parameters can vary at once.
@@ -361,7 +390,7 @@ if LS_on:
 	params['LS'].set(value=LS, vary=False)
     
 # Fit model to data
-fitted = myModel.fit(Xi,params, TempX = TempX, FieldX = .1, TempM = TempM, FieldM = FieldM, LS_on = LS_on, ion = ion)
+fitted = myModel.fit(Emeas,params, TempX = TempX, FieldX = .1, TempM = TempM, FieldM = FieldM, LS_on = LS_on, ion = ion, numlevels = numlevels, Kmeans = True)
 # fitted = myModel.fit(Xi,params, TempX = TempX, FieldX = .1, TempM = TempM, FieldM = FieldM, LS_on = LS_on, ion = ion, weights = error)
 
 # Create a dictionary of the fitted parameters (stevens coefficients)

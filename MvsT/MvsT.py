@@ -3,12 +3,20 @@ sys.path.append('..')
 from JensenTools import *
 
 #####################################################################################################################################################################
-comp = 'Sr2PrO4'
-who = 'Arun'
+# comp = 'Sr2PrO4'
+# who = 'Arun'
+comp = 'Li8PrO6'
+who = 'MPMS'
 dataType = 'MT'
 saveDir = getSaveDir('m', comp = comp, dataType = dataType)
 molweight = molweight[comp]
-J = 1/2
+per = 'spin'
+
+# The S,L,J values are as follows for the Pr4+ ion
+S = 0.5
+L = 3
+J = 5./2
+
 massErr = .00005
 #####################################################################################################################################################################
 
@@ -37,14 +45,16 @@ for i in os.listdir(saveDir):
     if i.endswith('.DAT') or i.endswith('.dat'):
         runs.append(i)       
 data = {}
+
 for i in runs:
     M,H,T,MErr,mass,measType = getData(i,saveDir, who = who, dataType = dataType)
-    M = normalize(M,mass,molweight, 'mol')
-    Merr = normalize(M,mass,molweight, 'mol')
+    M = normalize(M,mass,molweight, per)
+    Merr = normalize(M,mass,molweight, per)
     data[measType] = [M,H,T,MErr,mass]
 
 #Choose here
-M,H,T,MErr,samplemass = data['ZFC']
+name = '0.1T_ZFC'
+M,H,T,MErr,samplemass = data[name]
 MBohr = emuToBohr2(M)
 HTes = oeToTesla(H)
 #####################################################################################################################################################################
@@ -59,7 +69,7 @@ XBohr = MBohr/HTes
 XiBohr = 1/XBohr
 
 
-tr = [200,300] #temprange = [low,high]
+tr = [0,300] #temprange = [low,high]
 newT = []
 newXi = []
 newErr = []
@@ -86,18 +96,18 @@ for i in T:
 plt.figure()
 plt.plot(T,Xi,label = 'Measured 1/X')
 # plt.errorbar(T,Xi,yerr = XiErr,label = 'Measured 1/X')
-plt.plot(T,fullLine,'orange', linestyle = '--', label = 'Fitted 1/X')
-plt.title("{} {} fitted over T = [{},{}]".format(comp,measType,tr[0],tr[1]), fontsize = 20)
+plt.plot(T,fullLine,'orange', linestyle = '--', label = 'Fitted X^-1')
+plt.title("{} {} fitted over T = [{},{}]".format(comp,name,tr[0],tr[1]), fontsize = 20)
 plt.xlabel('Temperature (K)', fontsize = 13)
-plt.ylabel('1/X (emu ^-1 Oe mol)', fontsize = 13)
+plt.ylabel('X^-1 (emu ^-1 Oe)', fontsize = 13)
 plt.legend()
 
 plt.figure()
-plt.plot(T,XiBohr,label = 'Measured 1/X')
+plt.plot(T,XiBohr,label = 'Measured X^-1')
 # plt.plot(T,fullLine,'orange', linestyle = '--', label = 'Fitted 1/X')
-plt.title("{} {} fitted over T = [{},{}]".format(comp,measType,tr[0],tr[1]), fontsize = 20)
+plt.title("{} {}".format(comp,name), fontsize = 20)
 plt.xlabel('Temperature (K)', fontsize = 13)
-plt.ylabel('1/X (uB^-1 T mol)', fontsize = 13)
+plt.ylabel('X^-1 (uB^-1 T)', fontsize = 13)
 plt.legend()
 print('The Weiss constant = {:.2f} K\nThe Curie constant = {:.3f}'.format(resulti.params['wc'].value,resulti.params['c'].value))
 
