@@ -10,7 +10,9 @@ who = 'MPMS'
 dataType = 'MT'
 saveDir = getSaveDir('m', comp = comp, dataType = dataType)
 molweight = molweight[comp]
-per = 'spin'
+per = 'mol'
+
+fit = False
 
 # The S,L,J values are as follows for the Pr4+ ion
 S = 0.5
@@ -52,68 +54,125 @@ for i in runs:
     Merr = normalize(M,mass,molweight, per)
     data[measType] = [M,H,T,MErr,mass]
 
+
+byField = {}
 #Choose here
-name = '0.1T_ZFC'
-M,H,T,MErr,samplemass = data[name]
-MBohr = emuToBohr2(M)
-HTes = oeToTesla(H)
+for i in data.keys():
+    name = i
+    fieldStr = i.split('_')[0]
+    M,H,T,MErr,samplemass = data[name]
+    MBohr = emuToBohr2(M)
+    HTes = oeToTesla(H)
+    #####################################################################################################################################################################
+
+    # Calculate susceptibility (Emu/Oe).
+    # Choose a temp range to fit over (K)
+    #####################################################################################################################################################################
+    # X,XErr,Xi,XiErr = normSusc(M,H,MErr,molweight,samplemass,massErr)
+    X = M/H
+    Xi = 1 / X
+    XT = X*T
+    if fieldStr in byField.keys():
+        byField[fieldStr].append([name,X,Xi,XT])
+    else:
+        byField[fieldStr] = [name,T,X,Xi,XT]
+    XBohr = MBohr/HTes
+    XiBohr = 1/XBohr
 #####################################################################################################################################################################
 
-# Calculate susceptibility (Emu/Oe).
-# Choose a temp range to fit over (K)
-#####################################################################################################################################################################
-# X,XErr,Xi,XiErr = normSusc(M,H,MErr,molweight,samplemass,massErr)
-X = M/H
-Xi = 1 / X
-XBohr = MBohr/HTes
-XiBohr = 1/XBohr
+if fit:
+    tr = [0,300] #temprange = [low,high]
+    newT = []
+    newXi = []
+    newErr = []
+    for i in range(len(T)):
+        if (T[i] >= tr[0] and T[i]<= tr[1]):
+            newT.append(T[i])
+            newXi.append(Xi[i])
+            # newErr.append(XiErr[i])
 
+    cmodeli =  Model(Curiei, independent_vars = ['t'])
+    params = cmodeli.make_params()
+    params['wc'].set(value = -10)
+    params['c'].set(value = 10)   
 
-tr = [0,300] #temprange = [low,high]
-newT = []
-newXi = []
-newErr = []
-for i in range(len(T)):
-    if (T[i] >= tr[0] and T[i]<= tr[1]):
-        newT.append(T[i])
-        newXi.append(Xi[i])
-        # newErr.append(XiErr[i])
-#####################################################################################################################################################################
+    resulti = cmodeli.fit(newXi, params, t = newT) #fit
+    # resulti = cmodeli.fit(newXi, params, t = newT, weights = newErr) #fit
 
-cmodeli =  Model(Curiei, independent_vars = ['t'])
-params = cmodeli.make_params()
-params['wc'].set(value = -10)
-params['c'].set(value = 10)   
-
-resulti = cmodeli.fit(newXi, params, t = newT) #fit
-# resulti = cmodeli.fit(newXi, params, t = newT, weights = newErr) #fit
-
-fullLine = []
-for i in T:
-    fullLine.append(Curiei(i,resulti.params['c'].value,resulti.params['wc'].value))
-
+    fullLine = []
+    for i in T:
+        fullLine.append(Curiei(i,resulti.params['c'].value,resulti.params['wc'].value))
 #####################################################################################################################################################################
 plt.figure()
-plt.plot(T,Xi,label = 'Measured 1/X')
-# plt.errorbar(T,Xi,yerr = XiErr,label = 'Measured 1/X')
-plt.plot(T,fullLine,'orange', linestyle = '--', label = 'Fitted X^-1')
-plt.title("{} {} fitted over T = [{},{}]".format(comp,name,tr[0],tr[1]), fontsize = 20)
-plt.xlabel('Temperature (K)', fontsize = 13)
-plt.ylabel('X^-1 (emu ^-1 Oe)', fontsize = 13)
-plt.legend()
-
-plt.figure()
-plt.plot(T,XiBohr,label = 'Measured X^-1')
-# plt.plot(T,fullLine,'orange', linestyle = '--', label = 'Fitted 1/X')
-plt.title("{} {}".format(comp,name), fontsize = 20)
-plt.xlabel('Temperature (K)', fontsize = 13)
-plt.ylabel('X^-1 (uB^-1 T)', fontsize = 13)
-plt.legend()
-print('The Weiss constant = {:.2f} K\nThe Curie constant = {:.3f}'.format(resulti.params['wc'].value,resulti.params['c'].value))
-
-ueff, gj = calcConstants(resulti.params['c'].value,J)
-
-print('Effective moment for {:} is {:.3f} bohr magnetons, with J={} -> gj factor = {:.3f}'.format(comp,ueff,J,gj))
+for i in byField.keys():
+    plt.plot(byField[i][1],byField[i][3],label = byField[i][0])
+    plt.title("{} {}".format(comp, 'X^-1'), fontsize = 20)
+    plt.xlabel('Temperature (K)', fontsize = 13)
+    plt.ylabel('X^-1 (emu ^-1 Oe)', fontsize = 13)
+    plt.legend()    
 plt.show()
+
+plt.figure()
+for i in byField.keys():
+    plt.plot(byField[i][1],byField[i][2],label = byField[i][0])
+    plt.title("{} {}".format(comp, 'X'), fontsize = 20)
+    plt.xlabel('Temperature (K)', fontsize = 13)
+    plt.ylabel('X (emu Oe^-1)', fontsize = 13)
+    plt.legend()   
+plt.show()
+
+plt.figure()
+for i in byField.keys():
+    plt.plot(byField[i][1],byField[i][4],label = byField[i][0])
+    plt.title("{} {}".format(comp, 'X*T'), fontsize = 20)
+    plt.xlabel('Temperature (K)', fontsize = 13)
+    plt.ylabel('X*T (emu K Oe^-1)', fontsize = 13)
+    plt.legend()   
+plt.show()
+
+# fig,ax = plt.subplots()
+
+# ax.plot(T,Xi, color ='b',label = 'Measured X^-1')
+# ax.set_xlabel('Temperature (K)', fontsize = 13)
+# ax.set_ylabel('X^-1 (emu ^-1 Oe)', fontsize = 13, color = 'b')
+# ax2 = ax.twinx()
+# ax2.plot(T,X, color = 'orange', label = 'Measured X')
+# ax2.set_ylabel('X (emu Oe^-1)', fontsize = 13, color = 'orange')
+
+# ax2.plot(T, T*X, color = 'red', label = 'X*T')
+
+# # plt.errorbar(T,Xi,yerr = XiErr,label = 'Measured 1/X')
+# if fit:
+#     plt.plot(T,fullLine,'orange', linestyle = '--', label = 'Fitted X^-1')
+# ax.set_title("{} {}".format(comp,name), fontsize = 20)
+# fig.legend()
+# plt.show()
+
+# plt.figure()
+# plt.plot(T,Xi,label = 'Measured X^-1')
+# plt.plot(T,X, label = 'Measured X')
+# plt.plot(T, T*X, label = 'X*T')
+# # plt.errorbar(T,Xi,yerr = XiErr,label = 'Measured 1/X')
+# if fit:
+#     plt.plot(T,fullLine,'orange', linestyle = '--', label = 'Fitted X^-1')
+# plt.title("{} {}".format(comp,name), fontsize = 20)
+# plt.xlabel('Temperature (K)', fontsize = 13)
+# plt.ylabel('X^-1 (emu ^-1 Oe)', fontsize = 13)
+# plt.legend()
+
+# plt.figure()
+# plt.plot(T,XiBohr,label = 'Measured X^-1')
+# if fit:
+#     plt.plot(T,fullLine,'orange', linestyle = '--', label = 'Fitted 1/X')
+# plt.title("{} {}".format(comp,name), fontsize = 20)
+# plt.xlabel('Temperature (K)', fontsize = 13)
+# plt.ylabel('X^-1 (uB^-1 T)', fontsize = 13)
+# plt.legend()
+# if fit:
+#     print('The Weiss constant = {:.2f} K\nThe Curie constant = {:.3f}'.format(resulti.params['wc'].value,resulti.params['c'].value))
+#     ueff, gj = calcConstants(resulti.params['c'].value,J)
+
+#     print('Effective moment for {:} is {:.3f} bohr magnetons, with J={} -> gj factor = {:.3f}'.format(comp,ueff,J,gj))
+# plt.show()
 
 #####################################################################################################################################################################
