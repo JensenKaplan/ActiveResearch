@@ -109,7 +109,7 @@ def getData(magrun, dataDir,**kwargs):
 	who = kwargs['who']
 	dataType = kwargs['dataType']
 	if who == 'Arun':
-		name = (magrun.split('_')[5] + "_" + magrun.split('_')[6]).split('.')[0]
+		name = (magrun.split('_')[-1] + "_" + magrun.split('_')[-1]).split('.')[0]
 		name = name.replace('P','.')
 		name = name.replace('p','.')
 		mass = getMass(magrun,**kwargs)
@@ -150,14 +150,24 @@ def getData(magrun, dataDir,**kwargs):
 			return M,H,T,E, mass, measType
 
 	elif who == 'MPMS':
-		name = (magrun.split('_')[4] + "_" + magrun.split('_')[5]).split('.')[0]
-		name = name.replace('P','.')
-		name = name.replace('p','.')
+		if dataType == 'MT':
+			name = (magrun.split('_')[4] + "_" + magrun.split('_')[5]).split('.')[0]
+			name = name.replace('P','.')
+			name = name.replace('p','.')
+		if dataType == 'MH':
+			name = (magrun.split('_')[-1].split('.')[0])
+			name = name.replace('P','.')
+			name = name.replace('p','.')			
 		mass = getMass(magrun,**kwargs)
-		print(name)
-		df = pd.read_csv(dataDir + magrun)
-		df.dropna(inplace = True)
+		f = open(dataDir + magrun)
+		while f.readline().strip() != '[Data]':
+			pass
+		df = pd.read_csv(f)
+		# print(name)
+		# df = pd.read_csv(dataDir + magrun, skiprows=[i for i in range(0,40)])
+		df.dropna(subset = ['Magnetic Field (Oe)','DC Moment Fixed Ctr (emu)'],inplace = True)
 		T = np.array(df['Temperature (K)'])
+		# print(T)
 		H = np.array(df['Magnetic Field (Oe)'])
 		E = np.array(df['DC Moment Err Fixed Ctr (emu)'])
 		M = np.array(df['DC Moment Fixed Ctr (emu)'])

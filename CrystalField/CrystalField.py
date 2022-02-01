@@ -26,7 +26,7 @@ def energyFit(B40,B60, B44, B64, B20, numlevels, LS, **kwargs ):
 		Pr.diagonalize()
 		if kwargs['Kmeans']:   	
 			e = kmeansSort(Pr.eigenvalues,numlevels)[:numlevels-1] #Excluding the highest mode which we did not detect in our INS runs
-			e.append(e[1]/e[0]) #The aforementioned ratio
+			# e.append(e[2]/e[1]) #The aforementioned ratio
 		else:
 			e =  Pr.eigenvalues
 	return e
@@ -64,7 +64,7 @@ def energyFit2(B20, B21, B22, B40, B41, B42, B43, B44, B60, B61, B62, B63, B64, 
 		Pr.diagonalize()
 		if kwargs['Kmeans']:   	
 			e = kmeansSort(Pr.eigenvalues,numlevels)[:numlevels-1] #Excluding the highest mode which we did not detect in our INS runs
-			e.append(e[1]/e[0]) #The aforementioned ratio
+			# e.append(e[2]/e[1]) #The aforementioned ratio
 		else:
 			e =  Pr.eigenvalues
 	return e
@@ -86,7 +86,7 @@ LS_on = True
 Kmeans = True
 molweight = molweight[comp]
 LSValue = 100
-per = 'spin'
+per = 'mol'
 
 # The S,L,J values are as follows for the Pr4+ ion
 S = 0.5
@@ -97,7 +97,7 @@ if LS_on:
 	numlevels = 4
 	Emeas = [168, 335,385] # The measured INS magnetic modes
 else:
-	numlevels = 3
+	numlevels = 4
 	Emeas = [168, 335, 335/168] # The measured INS magnetic modes, only first 2 for J basis
 #####################################################################################################################################################################
 
@@ -261,24 +261,25 @@ print(df)
 T = '20K'
 Temp = getTemp(MHdata[T][-1], who = who)
 M, H, Err, mass, filename = MHdata[T]
-M = emuToBohr2(M)
-Err = emuToBohr2(Err)
-H = oeToTesla(H)
+MBohr = emuToBohr2(M)
+ErrBohr = emuToBohr2(Err)
+HTes = oeToTesla(H)
 
 #Generate a magnetization curve for comparing results to experiment
 magCalc = []
-for i in H:
+for i in HTes:
 	if LS_on:
 		magCalc.append((Pr.magnetization( Temp = Temp, Field = [i, 0, 0])[0] + Pr.magnetization( Temp = Temp, Field = [0, i, 0])[1] + Pr.magnetization( Temp = Temp, Field = [0, 0, i])[2])/3)		
 	else:
 		magCalc.append((Pr.magnetization( Temp = Temp, Field = [i, 0, 0], ion = ion)[0] + Pr.magnetization( Temp = Temp, Field = [0, i, 0], ion = ion)[1] + Pr.magnetization( Temp = Temp, Field = [0, 0, i], ion = ion)[2])/3)		
 
+magCalcEmu = bohrToEmu2(magCalc)*6.02214076*10**23
 
 plt.figure()
-plt.plot(H,-1.*np.array(magCalc), label = 'PCF Powder Average')
+plt.plot(H,-1.*np.array(magCalcEmu), label = 'PCF Powder Average')
 plt.errorbar(H,M, yerr = Err, label = 'Measured')
-plt.xlabel('Field (T)')
-plt.ylabel('Magnetization \N{GREEK SMALL LETTER MU}B')
+plt.xlabel('Field (Oe)')
+plt.ylabel('Magnetization (emu {}^-1)'.format(per))
 plt.title('{} Magnetization at {} K'.format(comp, Temp))
 plt.legend()
 
@@ -307,16 +308,18 @@ if LS_on:
 	XCalc = Pr.susceptibility(Temps = T, Field = fieldT, deltaField = deltaField)
 else:
 	XCalc = Pr.susceptibility(Temps = T, Field = fieldT, deltaField = deltaField, ion = ion)
+XCalc = XCalc*6.02214076*10**23
+
 XCalcI = 1/XCalc
     
 XCalcEmu = bohrToEmu2(XCalc)/10000
 XCalcEmuI = 1/XCalcEmu
 
 plt.figure()
-plt.plot(T, -1*np.array(XCalcI), label = 'PCF Powder Average')
-plt.plot(T, XBohrI, label = 'Measured')
+plt.plot(T, -1*np.array(XCalcEmuI), label = 'PCF Powder Average')
+plt.plot(T, Xi, label = 'Measured')
 plt.xlabel('Temperature (K)')
-plt.ylabel('1/X (uB ^-1 T)')
+plt.ylabel('1/X (emu^-1 T {})'.format(per))
 plt.title('{} Inverse Susceptibility with Scalar {} T field'.format(comp, fieldT))
 plt.legend()
 
@@ -367,10 +370,10 @@ plt.title('PCF Spectrum: Ei = {}meV, Temp = {}K, Res = {}'.format(Ei,Temp,res))
 
 
 
-# print()
+print()
 # Pr.printLaTexEigenvectors()
-# print()
+print()
 
-# wyb = cef.StevensToWybourne('Ce3+',stev, LS=True)
-# print("Fitted coefficients in Wybourne's")
-# print(wyb)
+wyb = cef.StevensToWybourne('Ce3+',stev, LS=True)
+print("Fitted coefficients in Wybourne's")
+print(wyb)

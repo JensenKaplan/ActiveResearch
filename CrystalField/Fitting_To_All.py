@@ -344,18 +344,22 @@ for i in runs:
 M,H,TempX,MErr,mass = MTdata['FC']
 MBohr = emuToBohr2(M)
 HTes = oeToTesla(H)
-X = MBohr/HTes
-Xi = 1/X
+XBohr = MBohr/HTes
+XiBohr = 1/XBohr
+XEmu = M/H
+XiEmu = 1/XEmu
 
 # Choosing 20K run
 Tmh = '20K'
 TempM = getTemp(MHdata[Tmh][-1], who = who)
-M, FieldM, Err, mass, filename = MHdata[Tmh]
-M = emuToBohr2(M)
-FieldM = oeToTesla(FieldM)
+M, H, Err, mass, filename = MHdata[Tmh]
+MBohr = emuToBohr2(M)
+HTes = oeToTesla(H)
+# X = M/H
+# Xi = 1/X
 
 # total = np.concatenate((Emeas,Xi,M), axis = None)
-total = np.concatenate((Xi,M), axis = None)
+total = np.concatenate((XiBohr,MBohr), axis = None)
 
 # ENorm = 1/89/len(Emeas)*np.ones(len(Emeas))
 # XiNorm = 44/89/len(Xi)*np.ones(len(Xi))
@@ -366,7 +370,7 @@ total = np.concatenate((Xi,M), axis = None)
 # Make LMFIT model and fit
 # Create stevens coefficients dictionary from fitted parameters
 #####################################################################################################################################################################
-myModel = Model(energyFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM'])
+myModel = Model(susFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM'])
 params = myModel.make_params()
 
 # Since we only have 4 training points, only 4 parameters can vary at once.
@@ -390,7 +394,7 @@ if LS_on:
 	params['LS'].set(value=LS, vary=False)
     
 # Fit model to data
-fitted = myModel.fit(Emeas,params, TempX = TempX, FieldX = .1, TempM = TempM, FieldM = FieldM, LS_on = LS_on, ion = ion, numlevels = numlevels, Kmeans = True)
+fitted = myModel.fit(XiBohr,params, TempX = TempX, FieldX = .1, TempM = TempM, FieldM = HTes, LS_on = LS_on, ion = ion, numlevels = numlevels, Kmeans = True)
 # fitted = myModel.fit(Xi,params, TempX = TempX, FieldX = .1, TempM = TempM, FieldM = FieldM, LS_on = LS_on, ion = ion, weights = error)
 
 # Create a dictionary of the fitted parameters (stevens coefficients)
@@ -407,37 +411,48 @@ else:
 #####################################################################################################################################################################
 
 params.pretty_print()
-magCalcBohrPowder = []
+magCalcPowderBohr = []
 
 if LS_on:
-    XCalcPowder = Pr.susceptibility(Temps = TempX, Field = .1, deltaField = .0001)
-    for i in FieldM:
-        magCalcBohrPowder.append((Pr.magnetization(Temp = TempM, Field = [i, 0, 0])[0] + Pr.magnetization(Temp = TempM, Field = [0, i, 0])[1] + Pr.magnetization(Temp = TempM, Field = [0, 0, i])[2])/3)
+    XCalcPowderBohr = Pr.susceptibility(Temps = TempX, Field = .1, deltaField = .0001)
+    for i in HTes:
+        magCalcPowderBohr.append((Pr.magnetization(Temp = TempM, Field = [i, 0, 0])[0] + Pr.magnetization(Temp = TempM, Field = [0, i, 0])[1] + Pr.magnetization(Temp = TempM, Field = [0, 0, i])[2])/3)
 
 else:
-    XCalcPowder = Pr.susceptibility(Temps = TempX, Field = .1, deltaField = .0001, ion = ion)
-    for i in FieldM:
-        magCalcBohrPowder.append((Pr.magnetization(Temp = TempM, Field = [i, 0, 0], ion = ion)[0] + Pr.magnetization(Temp = TempM, Field = [0, i, 0], ion = ion)[1] + Pr.magnetization(Temp = TempM, Field = [0, 0, i], ion = ion)[2])/3)
+    XCalcPowderBohr = Pr.susceptibility(Temps = TempX, Field = .1, deltaField = .0001, ion = ion)
+    for i in HTes:
+        magCalcPowderBohr.append((Pr.magnetization(Temp = TempM, Field = [i, 0, 0], ion = ion)[0] + Pr.magnetization(Temp = TempM, Field = [0, i, 0], ion = ion)[1] + Pr.magnetization(Temp = TempM, Field = [0, 0, i], ion = ion)[2])/3)
 
-XiCalcPowder = -1/XCalcPowder
-magCalcBohrPowder = -1*np.array(magCalcBohrPowder)
 
+XCalcPowderEmu = bohrToEmu2(XCalcPowderBohr)*6.02214076*10**23/10000
+XiCalcPowderEmu = -1/XCalcPowderEmu
+
+XEmu = XEmu*6.02214076*10**23
+XiEmu = 1/XEmu
+
+# XiCalcPowderBohr = -1/XCalcPowderBohr
+magCalcPowderBohr = -1*np.array(magCalcPowderBohr)
+magCalcPowderEmu = bohrToEmu2(magCalcPowderBohr)*6.02214076*10**23
+
+M = M*6.02214076*10**23
 
 plt.figure()
-plt.plot(TempX,Xi, label = 'Measured')
-plt.plot(TempX,XiCalcPowder, label = 'PCF Powder Average')
+plt.plot(TempX,XiEmu, label = 'Measured')
+plt.plot(TempX,XiCalcPowderEmu, label = 'PCF Powder Average')
 plt.xlabel('Temperature (K)')
-plt.ylabel('X^-1 (uB^-1 Tesla)')
+plt.ylabel('X^-1 (emu^-1 T mol)')
 plt.legend()
 plt.title('{} Inverse Susceptbility Applied {} Tesla '.format(comp,.1))
 
 plt.figure()
-plt.plot(FieldM,M, label = 'Measured')
-plt.plot(FieldM,magCalcBohrPowder, label = 'PCF Powder Average')
-plt.xlabel('Field (T)')
-plt.ylabel('M (uB)')
+plt.plot(H,M, label = 'Measured')
+plt.plot(H,magCalcPowderEmu, label = 'PCF Powder Average')
+plt.xlabel('Field (oe)')
+plt.ylabel('M (emu mol^-1)')
 plt.legend()
 plt.title('{} Magnetization at {} K '.format(comp,TempM))
 
 Pr.printEigenvectors()
+
+Pr.printLaTexEigenvectors()
 plt.show()

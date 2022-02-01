@@ -3,9 +3,13 @@ sys.path.append('..')
 from JensenTools import *
 
 #####################################################################################################################################################################
-who = 'Arun'
-comp = 'Sr2PrO4'
+# comp = 'Sr2PrO4'
+# who = 'Arun'
+comp = 'Li8PrO6'
+who = 'MPMS'
 MHDir = getSaveDir('m', comp = comp, dataType = 'MH')
+per = 'mol'
+fit = False
 molweight = molweight[comp]
 #####################################################################################################################################################################
 
@@ -14,7 +18,7 @@ molweight = molweight[comp]
 #####################################################################################################################################################################
 runs = [] #A list of all the data file names
 for i in os.listdir(MHDir):
-    if i.endswith('.DAT') or i.endswith('.dat.'): #This was a safeguard against a situation arising at an earlier implementation of my code.
+    if i.endswith('.DAT') or i.endswith('.dat'): #This was a safeguard against a situation arising at an earlier implementation of my code.
         runs.append(i)
 
 temp = [] # temporary list for sorting
@@ -25,6 +29,7 @@ runs = [runs[i] for i in temp] # newly sorted listed
 #####################################################################################################################################################################
 
 ## Get mass and temp from one of the filenames. Doesn't matter since they should all have the same name/mass.
+
 mass = getMass(runs[0], who = who)
 T = getTemp(runs[0], who = who)
 
@@ -35,14 +40,14 @@ MHdata = {} #Data will be normalized and stored in Emu/Oe. Conversions to uB/T a
 
 # Normalizes and stores data as well as plotting in Emu/Oe for all temperatures.
 plt.figure()
-for i in runs: 
+for i in runs:
     M, H, Err, mass, T = getData(i,MHDir,who = who, dataType = 'MH')
-    M = normalize(M,mass,molweight,'spin')
-    Err = normalize(Err,mass,molweight,'spin')
+    M = normalize(M,mass,molweight,per)
+    Err = normalize(Err,mass,molweight, per)
     MHdata[T] = [M,H,Err,mass,i]
-    plt.errorbar(H, M, yerr = Err, label = T)
-plt.title(comp)
-plt.ylabel('Moment (emu) spin^-1')
+    plt.plot(H, M, label = T)
+plt.title('{} Magnetization'.format(comp))
+plt.ylabel('Moment (emu {}^-1)'.format(per))
 plt.xlabel('Field (Oe)')
 plt.legend()
 
@@ -54,9 +59,9 @@ for i in MHdata.keys():
     M = emuToBohr2(M)
     H = oeToTesla(H)
     Err = emuToBohr2(Err)
-    plt.errorbar(H,M, yerr = Err,label = i)
-plt.title(comp)
-plt.ylabel('Moment (\N{GREEK SMALL LETTER MU}B) spin^-1')
+    plt.plot(H,M,label = i)
+plt.title('{} Magnetization'.format(comp))
+plt.ylabel('Moment (\N{GREEK SMALL LETTER MU}B {}^-1)'.format(per))
 plt.xlabel('Field (T)')
 plt.legend()
 plt.show()
@@ -70,39 +75,53 @@ temp = '20K' #Select a temperature to analyze
 curRun = MHdata[temp] #loading the data from my current run
 
 # Converto to uB/T
-M = emuToBohr2(curRun[0])
-H = oeToTesla(curRun[1])
-Err = emuToBohr2(curRun[2])
+M = curRun[0]
+H = curRun[1]
+MBohr = emuToBohr2(curRun[0])
+HTes = oeToTesla(curRun[1])
+ErrBohr = emuToBohr2(curRun[2])
 
-# Choose the field range to fit over (Tesla)
-fieldRange = [13.5,14]
-newH = []
-newM = []
-newErr = []
-for i in range(len(M)):
-    if (H[i] >= fieldRange[0] and H[i] <= fieldRange[1]):
-        newH.append(H[i])
-        newM.append(M[i])
-        newErr.append(Err[i])
+if fit:
+    # Choose the field range to fit over (Tesla)
+    fieldRange = [13.5,14]
+    newH = []
+    newM = []
+    newErr = []
+    for i in range(len(M)):
+        if (H[i] >= fieldRange[0] and H[i] <= fieldRange[1]):
+            newH.append(HTes[i])
+            newM.append(MBohr[i])
+            newErr.append(ErrBohr[i])
 
-# Create LMFIT Linear Model
-linModel = LinearModel()
-params = linModel.guess(newM, x = newH)
-fitted = linModel.fit(newM, x = newH, weights = newErr)
+    # Create LMFIT Linear Model
+    linModel = LinearModel()
+    params = linModel.guess(newM, x = newH)
+    fitted = linModel.fit(newM, x = newH, weights = newErr)
 
-#Drawing a full line from the fitted results
-MLine = []
-for i in H:
-    MLine.append(fitted.params['slope'].value*i + fitted.params['intercept'].value)
+    #Drawing a full line from the fitted results
+    MLine = []
+    for i in H:
+        MLine.append(fitted.params['slope'].value*i + fitted.params['intercept'].value)
 
 # Plot the data and the fit
+plt.figure()
 plt.plot(H,M, label = temp)
-plt.plot(H,MLine, linestyle = '--', label = 'Fitted')
+plt.xlabel('Field (Oe)')
+plt.ylabel('Magnetization (Emu)')
+plt.legend()
+plt.title(comp)
+
+plt.figure()
+# Plot the data and the fit
+plt.plot(HTes,MBohr, label = temp)
+if fit:
+    plt.plot(HTes,MLine, linestyle = '--', label = 'Fitted')
 plt.xlabel('Field (T)')
-plt.ylabel('Magnetization (bohr magneton)')
+plt.ylabel('Magnetization (uB)')
 plt.legend()
 plt.title(comp)
 plt.show()
 
-print('Saturation magnetization =  {:.3f} uB'.format(fitted.params['intercept'].value))
+if fit:
+    print('Saturation magnetization =  {:.3f} uB'.format(fitted.params['intercept'].value))
 #####################################################################################################################################################################

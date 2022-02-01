@@ -73,7 +73,7 @@ for i in data.keys():
     Xi = 1 / X
     XT = X*T
     if fieldStr in byField.keys():
-        byField[fieldStr].append([name,X,Xi,XT])
+        byField[fieldStr].append([name,T,X,Xi,XT])
     else:
         byField[fieldStr] = [name,T,X,Xi,XT]
     XBohr = MBohr/HTes
@@ -106,6 +106,7 @@ if fit:
 plt.figure()
 for i in byField.keys():
     plt.plot(byField[i][1],byField[i][3],label = byField[i][0])
+    # print(byField[i,2])
     plt.title("{} {}".format(comp, 'X^-1'), fontsize = 20)
     plt.xlabel('Temperature (K)', fontsize = 13)
     plt.ylabel('X^-1 (emu ^-1 Oe)', fontsize = 13)
