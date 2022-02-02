@@ -107,7 +107,7 @@ if fit:
 plt.figure()
 plt.plot(H,M, label = temp)
 plt.xlabel('Field (Oe)')
-plt.ylabel('Magnetization (Emu)')
+plt.ylabel('Magnetization (emu mol^-1)')
 plt.legend()
 plt.title(comp)
 

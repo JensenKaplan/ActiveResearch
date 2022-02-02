@@ -3,10 +3,10 @@ sys.path.append('..')
 from JensenTools import *
 
 #####################################################################################################################################################################
-# comp = 'Sr2PrO4'
-# who = 'Arun'
-comp = 'Li8PrO6'
-who = 'MPMS'
+comp = 'Sr2PrO4'
+who = 'Arun'
+# comp = 'Li8PrO6'
+# who = 'MPMS'
 dataType = 'MT'
 saveDir = getSaveDir('m', comp = comp, dataType = dataType)
 molweight = molweight[comp]
