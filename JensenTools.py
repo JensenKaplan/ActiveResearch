@@ -310,8 +310,6 @@ def loadMatrix(runDir, **kwargs):
 				E.append(i)
 		return E, data		
 
-
-
 # Contour plotting function for all energy bands
 def plotContours(data,EList,**kwargs):
 
@@ -403,6 +401,18 @@ def kmeansSort(e,numlevels):
 	finalEvalList = np.sort(finalEvalList).tolist()
 	# return finalEvalList[1:] #This excludes the lowest (0 energy) mode
 	return finalEvalList #This includes
+
+def kmeansSort2(e,numlevels):
+	km = KMeans(numlevels+1) #5 clusters. One for each excited energy level (4) and one for the ground state.
+	pred_y = km.fit(e.reshape(-1,1))
+	centers = pred_y.cluster_centers_
+	finalEvalList = []
+	for j in centers:
+		data_shift = list(np.abs(e-j))
+		i = data_shift.index(min(list(data_shift)))
+		finalEvalList.append(e[i])
+	finalEvalList = np.sort(finalEvalList).tolist()
+	return finalEvalList[1:] #This excludes the lowest (0 energy) mode
 #####################################################################################################################################################################
 
 

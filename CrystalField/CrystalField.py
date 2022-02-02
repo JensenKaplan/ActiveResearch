@@ -31,8 +31,34 @@ def energyFit(B40,B60, B44, B64, B20, numlevels, LS, **kwargs ):
 			e =  Pr.eigenvalues
 	return e
 
+def energyFit2(B40,B60, B44, B64, B20, numlevels, LS, **kwargs ):
+	numlevels = numlevels
+	Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
+	Stev['B20'] = B20
+	Stev['B40'] = B40
+	Stev['B60'] = B60
+	Stev['B44'] = B44
+	Stev['B64'] = B64
+
+	if kwargs['LS_on']:
+		Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling = LS) #Create CF_Levels obejct wtih the given coefficients.
+		Pr.diagonalize()
+		if kwargs['Kmeans']:
+			e = kmeansSort2(Pr.eigenvalues,numlevels)[:3] #Excluding the highest mode which we did not detect in our INS runs
+			e.append(e[2]/e[1]) #The aforementioned ratio
+		else: 
+			e = Pr.eigenvalues
+	else:
+		Pr = cef.CFLevels.Bdict(Bdict = Stev, ion = kwargs['ion'])
+		Pr.diagonalize()
+		if kwargs['Kmeans']:   	
+			e = kmeansSort2(Pr.eigenvalues,numlevels) #Excluding the highest mode which we did not detect in our INS runs
+		else:
+			e =  Pr.eigenvalues
+	return e
+
 # Function to be made into an LMFIT model.
-def energyFit2(B20, B21, B22, B40, B41, B42, B43, B44, B60, B61, B62, B63, B64, B65, B66, numlevels, LS, **kwargs ):
+def energyFitAll(B20, B21, B22, B40, B41, B42, B43, B44, B60, B61, B62, B63, B64, B65, B66, numlevels, LS, **kwargs ):
 	numlevels = numlevels
 	Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
 	Stev['B20'] = B20
@@ -95,7 +121,7 @@ J = 5./2
 
 if LS_on:
 	numlevels = 4
-	Emeas = [168, 335,385] # The measured INS magnetic modes
+	Emeas = [168, 335,385, 385/335] # The measured INS magnetic modes
 else:
 	numlevels = 4
 	Emeas = [168, 335, 335/168] # The measured INS magnetic modes, only first 2 for J basis
@@ -197,23 +223,23 @@ for i in runs:
 # Make LMFIT model and fit
 # Create stevens coefficients dictionary from fitted parameters
 #####################################################################################################################################################################
-eModel = Model(energyFit, independent_vars = ['numlevels'])
+eModel = Model(energyFit2, independent_vars = ['numlevels'])
 params = eModel.make_params()
 
 # Since we only have 4 training points, only 4 parameters can vary at once.
 params['B20'].set(value = B20, vary = False)
 # params['B21'].set(value = 0, vary = False)
 # params['B22'].set(value = 0, vary = False)
-params['B40'].set(value=B40, vary=False)
+params['B40'].set(value=B40, vary=True)
 # params['B41'].set(value=0, vary=False)
 # params['B42'].set(value=0, vary=False)
 # params['B43'].set(value=0, vary=False)
-params['B44'].set(value=B44, vary=False)
-params['B60'].set(value=B60, vary=False)
+params['B44'].set(value=B44, vary=True)
+params['B60'].set(value=B60, vary=True)
 # params['B61'].set(value=0, vary=False)
 # params['B62'].set(value=0, vary=False)
 # params['B63'].set(value=0, vary=False)
-params['B64'].set(value=B64, vary=False)
+params['B64'].set(value=B64, vary=True)
 # params['B65'].set(value=0, vary=False)
 # params['B66'].set(value=0, vary=False)
 
