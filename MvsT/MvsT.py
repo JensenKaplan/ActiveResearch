@@ -3,7 +3,7 @@ sys.path.append('..')
 from JensenTools import *
 
 #####################################################################################################################################################################
-comp = 'Ba2DyNbO6'
+comp = 'Ba2YbNbO6'
 who = 'PPMS'
 dataType = 'MT'
 saveDir = getSaveDir('m', comp = comp, dataType = dataType)
@@ -35,7 +35,8 @@ def calcConstants(c,J):
 runs = []
 for i in os.listdir(saveDir):
     if i.endswith('.DAT') or i.endswith('.dat'):
-        runs.append(i)       
+        runs.append(i)
+        print(i`)       
 data = {}
 for i in runs:
     M,H,T,MErr,mass,measType = getData(i,saveDir, who = who, dataType = dataType)

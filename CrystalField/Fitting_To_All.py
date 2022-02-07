@@ -10,6 +10,7 @@ who = 'PPMS'
 LS_on = False
 per = 'spin'
 molweight = molweight[comp]
+
 # The L,S and J values are as follows for the Yb3+ ion
 S = 0.5
 L = 3
@@ -89,7 +90,7 @@ def thermoFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs
     return total
 
 # Fits X^-1
-def susFit( B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
+def susFit( B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
     deltaField = .0001
     
     Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
@@ -206,24 +207,33 @@ B60 = Yb.B[2]
 B64 = Yb.B[3]
 #####################################################################################################################################################################
 
+# Best B's for Ba2YbNbO6
+#####################################################################################################################################################################
+B20  =  0.0
+B40  =  -0.05112545568036134
+B60  =  0.00012539390564843478
+B44  =  -0.2556272784018081
+B64  =  -0.0026332720186171108
+#####################################################################################################################################################################
+
 # Make LMFIT model and fit
 # Create stevens coefficients dictionary from fitted parameters
 #####################################################################################################################################################################
-susModel = Model(thermoFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM'])
+susModel = Model(magFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM'])
 params = susModel.make_params()
 
 # Since we only have 4 training points, only 4 parameters can vary at once.
-params['B20'].set(value = B20, vary = True)
-params['B40'].set(value = B40, vary=True)
-params['B60'].set(value = B60, vary=True)
-params['B44'].set(value = B44, vary = True)
-params['B64'].set(value = B64, vary = True)
+params['B20'].set(value = B20, vary = False)
+params['B40'].set(value = B40, vary=False)
+params['B60'].set(value = B60, vary=False)
+params['B44'].set(value = B44, vary = False)
+params['B64'].set(value = B64, vary = False)
 
 if LS_on:
-	params['LS'].set(value=LS, vary=True)
+	params['LS'].set(value=LS, vary=False)
 
 # Fit model to data
-fitted = susModel.fit(total,params, TempX = TempX, FieldX = .1, TempM = TempM, FieldM = FieldM, LS_on = LS_on, ion = ion)
+fitted = susModel.fit(M,params, TempX = TempX, FieldX = .1, TempM = TempM, FieldM = FieldM, LS_on = LS_on, ion = ion)
 # fitted = susModel.fit(total,params, TempX = TempX, FieldX = .1, TempM = TempM, FieldM = FieldM, LS_on = LS_on, ion = ion, weights = error)
 
 # Create a dictionary of the fitted parameters (stevens coefficients)
@@ -262,18 +272,26 @@ plt.figure()
 plt.plot(TempX,Xi, label = 'Measured')
 plt.plot(TempX,XiCalcPowder, label = 'PCF Powder Average')
 plt.xlabel('Temperature (K)')
-plt.ylabel('X^-1 uB^-1 Tesla spin')
+plt.ylabel('X^-1 (uB^-1 Tesla)')
 plt.legend()
 plt.title('{} Inverse Susceptbility Applied {} Tesla '.format(comp,.1))
+
+
 
 plt.figure()
 plt.plot(FieldM,M, label = 'Measured')
 plt.plot(FieldM,magCalcBohrPowder, label = 'PCF Powder Average')
 plt.xlabel('Field (T)')
-plt.ylabel('X^-1 uB^-1 Tesla spin')
+plt.ylabel('M (uB)')
 plt.legend()
 plt.title('{} Magnetization at {} K '.format(comp,TempM))
 
 Pr.printEigenvectors()
 plt.show()
 #####################################################################################################################################################################
+
+paramPrint(fitted.params)
+
+wyb = cef.StevensToWybourne(ion,stev, LS=LS_on)
+print("Fitted coefficients in Wybourne's")
+print(wyb)

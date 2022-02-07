@@ -603,6 +603,14 @@ def energyCalcKPar14(LS,x = 0.0352 ,bpf = -0.3970, numlevels = 4):
 	Pr.diagonalize()
 	e = Pr.eigenvalues
 	return e
+
+
+# Simple function for pritting my parameters after fitting so that I can copy paste the values from output for further iterations.
+def paramPrint(fittedparams):
+	print()
+	for i in fittedparams:
+		# print(i, ' = ', i.value)
+		print(i, ' = ',fittedparams[i].value )
 #####################################################################################################################################################################
 
 
