@@ -3,9 +3,9 @@ sys.path.append('..')
 from JensenTools import *
 
 #####################################################################################################################################################################
-# comp = 'Sr2PrO4'
+comp = 'Sr2PrO4'
 # who = 'Arun'
-comp = 'Li8PrO6'
+# comp = 'Li8PrO6'
 who = 'MPMS'
 MHDir = getSaveDir('m', comp = comp, dataType = 'MH')
 per = 'mol'

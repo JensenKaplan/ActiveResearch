@@ -26,8 +26,8 @@ Pr.diagonalize()
 
 print(Pr.eigenvalues)
 
-Emeas = [168, 335, 385] # The measured INS magnetic modes
+Emeas = [0,168, 335, 385] # The measured INS magnetic modes
 numlevels = 5
 
-e = kmeansSort(Pr.eigenvalues,numlevels)[1:numlevels-1] #Excluding the highest mode which we did not detect in our INS runs
+e = kmeansSort(Pr.eigenvalues,numlevels)[:numlevels-1] #Excluding the highest mode which we did not detect in our INS runs
 print(e)

@@ -132,11 +132,8 @@ def getData(magrun, dataDir,**kwargs):
 			return M,H,T,E, mass, name
 
 	elif who == 'PPMS':
-<<<<<<< Updated upstream
 		name = magrun.split('_')[4].split('.')[0]
 		name = name.replace('P','.')
-=======
->>>>>>> Stashed changes
 		mass = getMass(magrun,**kwargs)
 		# print(dataDir + magrun)
 		f = open(dataDir + magrun)

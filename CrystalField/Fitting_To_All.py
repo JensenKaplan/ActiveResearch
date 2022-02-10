@@ -6,7 +6,7 @@ from JensenTools import *
 #####################################################################################################################################################################
 comp = 'Sr2PrO4'
 ion = 'Ce3+'
-who = 'Arun'
+who = 'MPMS'
 LS_on = True
 per = 'spin'
 molweight = molweight[comp]
@@ -17,8 +17,8 @@ S = 0.5
 L = 3
 J = 5./2
 
-Emeas = [0, 168, 335, 385, 385/335] # The measured INS magnetic modes
-numlevels = 6
+Emeas = [0, 168, 335, 385] # The measured INS magnetic modes
+numlevels = 5
 #####################################################################################################################################################################
 
 #LMFIT Models
@@ -26,7 +26,7 @@ numlevels = 6
 # Fits the concatenated X^-1 and magnetization
 def fullFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
     deltaField = .0001
-    numlevels = 4
+    numlevels = kwargs['numlevels']
 
     Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
     Stev['B20'] = B20
@@ -124,7 +124,7 @@ def thermoFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs
             M.append(1/3*Pr.magnetization(Temp = TempM, Field = [i, 0, 0], ion=ion)[0] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, i, 0], ion = ion)[1] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, 0, i], ion = ion)[2])
     M = -1*np.array(M)
     Xi = -1/X
-    total = np.concatenate((Xi,M), axis = None)
+    total = np.concatenate((-X,M), axis = None)
     return total
 
 def thermoFit2(B20, B21, B22, B40, B41, B42, B43, B44, B60, B61, B62, B63, B64, B65, B66, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
@@ -320,6 +320,7 @@ runs = []
 for i in os.listdir(MTDir):
     if i.endswith('.DAT') or i.endswith('.dat'): #This was a safeguard against a situation arising at an earlier implementation of my code.
         runs.append(i)
+
 MTdata = {}
 for i in runs:
     M,H,T,MErr,mass,measType = getData(i,MTDir, who = who, dataType = 'MT')
@@ -331,46 +332,58 @@ runs = []
 for i in os.listdir(MHDir):
     if i.endswith('.DAT') or i.endswith('.dat'): #This was a safeguard against a situation arising at an earlier implementation of my code.
         runs.append(i)       
+
 # Normalizes and stores data as well as plotting in Emu/Oe for all temperatures.
 MHdata = {}
 for i in runs: 
-    M, H, Err, mass, T = getData(i,MHDir,who = who, dataType = 'MH')
+    M, H, MErr, mass, T = getData(i,MHDir,who = who, dataType = 'MH')
     M = normalize(M,mass,molweight,per)
-    Err = normalize(Err,mass,molweight,per)
-    MHdata[T] = [M,H,Err,mass,i]
+    MErr = normalize(MErr,mass,molweight,per)
+    MHdata[T] = [M,H,MErr,mass,i]
 #####################################################################################################################################################################
 
-#Either 'ZFC' or 'FC'
-M,H,TempX,MErr,mass = MTdata['FC']
-MBohr = emuToBohr2(M)
-HTes = oeToTesla(H)
+# Susceptibility MvsT
+# Either 'ZFC' or 'FC' (usually ZFC)
+Mx,Hx,TempX,MErrxEmu,mass = MTdata['3T_ZFC']
+FieldX = 3.
+MBohr = emuToBohr2(Mx)
+HTes = oeToTesla(Hx)
+MErrBohr = emuToBohr2(MErrxEmu)
+XErrEmu = MErrxEmu/Hx
+XErrBohr = MErrBohr/HTes
+XEmu = Mx/Hx
+XiEmu = 1/XEmu
 XBohr = MBohr/HTes
 XiBohr = 1/XBohr
-XEmu = M/H
-XiEmu = 1/XEmu
 
-# Choosing 20K run
-Tmh = '20K'
+# Magnetization MvsH
+# Choosing 50K run
+Tmh = '50K'
 TempM = getTemp(MHdata[Tmh][-1], who = who)
-M, H, Err, mass, filename = MHdata[Tmh]
-MBohr = emuToBohr2(M)
-HTes = oeToTesla(H)
-# X = M/H
-# Xi = 1/X
+Mm, Hm, MErrmEmu, mass, filename = MHdata[Tmh]
+MBohr = emuToBohr2(Mm)
+HTes = oeToTesla(Hm)
+MErrmBohr = emuToBohr2(MErrmEmu)
 
 # total = np.concatenate((Emeas,Xi,M), axis = None)
-total = np.concatenate((XiBohr,MBohr), axis = None)
+total = np.concatenate((XBohr,MBohr), axis = None)
+print("X error length {}. M error length {}. Total data length {}".format(len(XBohr),len(MBohr), len(total)))
+
 
 # ENorm = 1/89/len(Emeas)*np.ones(len(Emeas))
-# XiNorm = 44/89/len(Xi)*np.ones(len(Xi))
-# MNorm = 44/89/len(M)*np.ones(len(M))
-# error = np.concatenate((ENorm,XiNorm,MNorm),axis = None)
+XNorm = 1/2/len(XErrBohr)*XErrBohr
+MNorm = 1/2/len(MErrmBohr)*MErrBohr
+print("X error length {}. M error length {}. Total data length {}".format(len(XNorm),len(MNorm), len(XNorm) + len(MNorm)))
+error = np.concatenate((XNorm,MNorm),axis = None)
 
+
+print(len(total))
+print(len(error))
 
 # Make LMFIT model and fit
 # Create stevens coefficients dictionary from fitted parameters
 #####################################################################################################################################################################
-myModel = Model(susFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM'])
+myModel = Model(thermoFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM'])
 params = myModel.make_params()
 
 # Since we only have 4 training points, only 4 parameters can vary at once.
@@ -391,11 +404,11 @@ params['B64'].set(value=B64, vary=True)
 # params['B66'].set(value=0, vary=True)
 
 if LS_on:
-	params['LS'].set(value=LS, vary=False)
+	params['LS'].set(value=LS, vary=True)
     
 # Fit model to data
-fitted = myModel.fit(XiBohr,params, TempX = TempX, FieldX = .1, TempM = TempM, FieldM = HTes, LS_on = LS_on, ion = ion, numlevels = numlevels, Kmeans = True)
-# fitted = myModel.fit(Xi,params, TempX = TempX, FieldX = .1, TempM = TempM, FieldM = FieldM, LS_on = LS_on, ion = ion, weights = error)
+# fitted = myModel.fit(XiBohr,params, TempX = TempX, FieldX = .1, TempM = TempM, FieldM = HTes, LS_on = LS_on, ion = ion, numlevels = numlevels, Kmeans = True)
+fitted = myModel.fit(total,params, TempX = TempX, FieldX = FieldX, TempM = TempM, FieldM = HTes, LS_on = LS_on, ion = ion, numlevels = numlevels, weights = error)
 
 # Create a dictionary of the fitted parameters (stevens coefficients)
 stev = {'B20' :fitted.params['B20'].value, 'B40': fitted.params['B40'].value, 'B44': fitted.params['B44'].value, 'B60': fitted.params['B60'].value,'B64': fitted.params['B64'].value}
