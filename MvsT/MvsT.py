@@ -2,6 +2,7 @@ import sys
 sys.path.append('..')
 from JensenTools import *
 
+<<<<<<< Updated upstream
 #####################################################################################################################################################################
 comp = 'Sr2PrO4'
 who = 'Arun'
@@ -21,6 +22,14 @@ J = 5./2
 
 massErr = .00005
 #####################################################################################################################################################################
+=======
+comp = 'Ba2YbNbO6'
+who = 'PPMS'
+dataType = 'MT'
+saveDir = getSaveDir('m', comp = comp, dataType = dataType)
+molweight = molweight[comp]
+J = 1/2
+>>>>>>> Stashed changes
 
 # Inverse Curie Law for LMFIT
 # Constant calculation function
@@ -39,14 +48,32 @@ def calcConstants(c,J):
     return ueff, gj
 #####################################################################################################################################################################
 
+<<<<<<< Updated upstream
 # Load all M vs H runs
 # Normalize 
+=======
+
+massErr = .00005
+
+>>>>>>> Stashed changes
 #####################################################################################################################################################################
 runs = []
 for i in os.listdir(saveDir):
     if i.endswith('.DAT') or i.endswith('.dat'):
+<<<<<<< Updated upstream
         runs.append(i)       
 data = {}
+=======
+        runs.append(i)     
+data = {}
+
+for i in runs:
+    M,H,T,MErr,samplemass,measType = getData(i,saveDir, who = who, dataType = dataType)
+    data[measType] = [M,H,T,MErr,samplemass]
+
+#####################################################################################################################################################################
+
+>>>>>>> Stashed changes
 
 for i in runs:
     M,H,T,MErr,mass,measType = getData(i,saveDir, who = who, dataType = dataType)

@@ -132,11 +132,17 @@ def getData(magrun, dataDir,**kwargs):
 			return M,H,T,E, mass, name
 
 	elif who == 'PPMS':
+<<<<<<< Updated upstream
 		name = magrun.split('_')[4].split('.')[0]
 		name = name.replace('P','.')
+=======
+>>>>>>> Stashed changes
 		mass = getMass(magrun,**kwargs)
-		# print(mass)
-		df = pd.read_csv(dataDir + magrun)
+		# print(dataDir + magrun)
+		f = open(dataDir + magrun)
+		# while f.readline().strip() != '[Data]':
+			# pass
+		df = pd.read_csv(f)
 		df.dropna(inplace = True)
 		T = np.array(df['Temperature (K)'])
 		H = np.array(df['Magnetic Field (Oe)'])
@@ -144,6 +150,7 @@ def getData(magrun, dataDir,**kwargs):
 		M = np.array(df['Moment (emu)'])
 
 		if dataType == 'MH':
+			name =  getTemp(magrun, who = who)
 			return  M, H, E, mass, name
 		if dataType == 'MT':
 			measType = magrun.split('_')[-1].split('.')[0]
