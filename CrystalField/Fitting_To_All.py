@@ -17,8 +17,8 @@ S = 0.5
 L = 3
 J = 5./2
 
-Emeas = [0, 168, 335, 385] # The measured INS magnetic modes
-numlevels = 5
+Emeas = [ 168, 335, 385] # The measured INS magnetic modes
+numlevels = 4
 #####################################################################################################################################################################
 
 #LMFIT Models
@@ -51,6 +51,7 @@ def fullFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs )
             M.append(1/3*Pr.magnetization(Temp = TempM, Field = [i, 0, 0], ion=ion)[0] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, i, 0], ion = ion)[1] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, 0, i], ion = ion)[2])
     
     e = kmeansSort(Pr.eigenvalues,numlevels)[:numlevels-1] #Excluding the highest mode which we did not detect in our INS runs
+    print(e)
     M = -1*np.array(M)
     Xi = -1/X
     total = np.concatenate((e,Xi,M), axis = None)
@@ -349,11 +350,13 @@ FieldX = 3.
 MBohr = emuToBohr2(Mx)
 HTes = oeToTesla(Hx)
 MErrBohr = emuToBohr2(MErrxEmu)
-XErrEmu = MErrxEmu/Hx
-XErrBohr = MErrBohr/HTes
+
 XEmu = Mx/Hx
+XErrEmu = MErrxEmu/Hx
 XiEmu = 1/XEmu
+
 XBohr = MBohr/HTes
+XErrBohr = MErrBohr/HTes
 XiBohr = 1/XBohr
 
 # Magnetization MvsH
@@ -366,24 +369,27 @@ HTes = oeToTesla(Hm)
 MErrmBohr = emuToBohr2(MErrmEmu)
 
 # total = np.concatenate((Emeas,Xi,M), axis = None)
-total = np.concatenate((XBohr,MBohr), axis = None)
-print("X error length {}. M error length {}. Total data length {}".format(len(XBohr),len(MBohr), len(total)))
 
+
+EMeasErr = np.array([1,1,1])
 
 # ENorm = 1/89/len(Emeas)*np.ones(len(Emeas))
-XNorm = 1/2/len(XErrBohr)*XErrBohr
-MNorm = 1/2/len(MErrmBohr)*MErrBohr
-print("X error length {}. M error length {}. Total data length {}".format(len(XNorm),len(MNorm), len(XNorm) + len(MNorm)))
-error = np.concatenate((XNorm,MNorm),axis = None)
+XNorm = 2/5/len(XErrBohr)*XErrBohr
+MNorm = 2/5/len(MErrmBohr)*MErrmBohr
+EMeasErrNorm = 1/5/len(EMeasErr)*EMeasErr
 
 
-print(len(total))
-print(len(error))
+total = np.concatenate((Emeas,XBohr,MBohr), axis = None)
+print("X data length {}. M data length {}. Total data length {}".format(len(XBohr),len(MBohr), len(total)))
+print("X error length {}. M error length {}. Total error length {}".format(len(XNorm),len(MNorm), len(XNorm) + len(MNorm)))
+
+
+error = np.concatenate((EMeasErrNorm,XNorm,MNorm),axis = None)
 
 # Make LMFIT model and fit
 # Create stevens coefficients dictionary from fitted parameters
 #####################################################################################################################################################################
-myModel = Model(thermoFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM'])
+myModel = Model(fullFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM'])
 params = myModel.make_params()
 
 # Since we only have 4 training points, only 4 parameters can vary at once.
@@ -447,10 +453,10 @@ XiEmu = 1/XEmu
 magCalcPowderBohr = -1*np.array(magCalcPowderBohr)
 magCalcPowderEmu = bohrToEmu2(magCalcPowderBohr)*6.02214076*10**23
 
-M = M*6.02214076*10**23
+Mm = Mm*6.02214076*10**23
 
 plt.figure()
-plt.plot(TempX,XiEmu, label = 'Measured')
+plt.plot(TempX, XiEmu, label = 'Measured')
 plt.plot(TempX,XiCalcPowderEmu, label = 'PCF Powder Average')
 plt.xlabel('Temperature (K)')
 plt.ylabel('X^-1 (emu^-1 T mol)')
@@ -458,8 +464,8 @@ plt.legend()
 plt.title('{} Inverse Susceptbility Applied {} Tesla '.format(comp,.1))
 
 plt.figure()
-plt.plot(H,M, label = 'Measured')
-plt.plot(H,magCalcPowderEmu, label = 'PCF Powder Average')
+plt.errorbar(Hm, Mm, yerr =MErrmEmu, label = 'Measured')
+plt.plot(Hm,magCalcPowderEmu, label = 'PCF Powder Average')
 plt.xlabel('Field (oe)')
 plt.ylabel('M (emu mol^-1)')
 plt.legend()

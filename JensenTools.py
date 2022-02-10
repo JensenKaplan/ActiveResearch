@@ -118,7 +118,7 @@ def getData(magrun, dataDir,**kwargs):
 		while f.readline().strip() != '[Data]':
 			pass
 		df = pd.read_csv(f)
-		df.dropna(subset = ['Magnetic Field (Oe)','M. Std. Err. (emu)'],inplace = True)
+		df.dropna(subset = ['Magnetic Field (Oe)','M. Std. Err. (emu)','Magnetic Field (Oe)','Moment (emu)'],inplace = True)
 		T = np.array(df['Temperature (K)'])
 		H = np.array(df['Magnetic Field (Oe)'])
 		E = np.array(df['M. Std. Err. (emu)'])
@@ -169,9 +169,8 @@ def getData(magrun, dataDir,**kwargs):
 		df = pd.read_csv(f)
 		# print(name)
 		# df = pd.read_csv(dataDir + magrun, skiprows=[i for i in range(0,40)])
-		df.dropna(subset = ['Magnetic Field (Oe)','DC Moment Fixed Ctr (emu)'],inplace = True)
+		df.dropna(subset = ['DC Moment Fixed Ctr (emu)','DC Moment Err Fixed Ctr (emu)','Magnetic Field (Oe)'],inplace = True)
 		T = np.array(df['Temperature (K)'])
-		# print(T)
 		H = np.array(df['Magnetic Field (Oe)'])
 		E = np.array(df['DC Moment Err Fixed Ctr (emu)'])
 		M = np.array(df['DC Moment Fixed Ctr (emu)'])
