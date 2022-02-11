@@ -227,7 +227,7 @@ eModel = Model(energyFit2, independent_vars = ['numlevels'])
 params = eModel.make_params()
 
 # Since we only have 4 training points, only 4 parameters can vary at once.
-params['B20'].set(value = B20, vary = False)
+params['B20'].set(value = B20, vary = True)
 # params['B21'].set(value = 0, vary = False)
 # params['B22'].set(value = 0, vary = False)
 params['B40'].set(value=B40, vary=True)
@@ -244,7 +244,7 @@ params['B64'].set(value=B64, vary=True)
 # params['B66'].set(value=0, vary=False)
 
 if LS_on:
-	params['LS'].set(value=LS, vary=False)
+	params['LS'].set(value=LS, vary=True)
     
 # Fit model to data
 fitted = eModel.fit(Emeas,params, numlevels = numlevels, LS_on = LS_on, Kmeans = Kmeans, ion = ion)
