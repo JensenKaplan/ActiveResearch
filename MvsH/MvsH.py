@@ -1,9 +1,33 @@
 import sys
 sys.path.append('..')
 from JensenTools import *
+from matplotlib import rcParams
+from matplotlib import patches
+
+rcParams['font.family'] = 'sans-serif'
+rcParams['font.sans-serif'] = ['Arial']
+rcParams.update({'font.size': 28})
+rcParams['font.weight'] = 'bold'
+rcParams['axes.linewidth'] = 4
+rcParams['xtick.direction'] = 'out'
+rcParams['ytick.direction'] = 'out'
+rcParams['xtick.top'] = False
+rcParams['ytick.right'] = False
+rcParams['xtick.major.size'] = 12.5
+rcParams['ytick.major.size'] = 12.5
+rcParams['xtick.minor.size'] = 7.5
+rcParams['ytick.minor.size'] = 7.5
+rcParams['xtick.major.width'] = 3
+rcParams['ytick.major.width'] = 3
+rcParams['xtick.minor.width'] = 3
+rcParams['ytick.minor.width'] = 3
+rcParams['xtick.minor.visible'] = True
+rcParams['ytick.minor.visible'] = True
+rcParams['legend.frameon'] = False
+rcParams['legend.fontsize'] = 18
 
 #####################################################################################################################################################################
-comp = 'Sr2PrO4'
+comp = 'Li8PrO6'
 # who = 'Arun'
 # comp = 'Li8PrO6'
 who = 'MPMS'
@@ -108,7 +132,7 @@ plt.figure()
 plt.plot(H,M, label = temp)
 plt.xlabel('Field (Oe)')
 plt.ylabel('Magnetization (emu mol^-1)')
-plt.legend()
+plt.legend(fontsize = 30)
 plt.title(comp)
 
 plt.figure()
@@ -118,9 +142,9 @@ if fit:
     plt.plot(HTes,MLine, linestyle = '--', label = 'Fitted')
 plt.xlabel('Field (T)')
 plt.ylabel('Magnetization (uB)')
-plt.legend()
+plt.legend(fontsize = 30)
 plt.title(comp)
-plt.show()
+# plt.show()
 
 if fit:
     print('Saturation magnetization =  {:.3f} uB'.format(fitted.params['intercept'].value))

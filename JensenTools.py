@@ -15,7 +15,21 @@ import pandas as pd
 from scipy import integrate
 
 # Moleuclar weight dictionary for our compounds.
-molweight = { 'Sr2PrO4' : 380.15, 'Li8PrO6' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16 } 
+molweight = {'Sr2PrO4' : 380.15, 'Li8PrO6' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16} 
+avo = 6.0221409e+23 #spin/mol
+
+def POEXi(M,MErr,H,mass,massErr,comp,per):
+	X = M/H
+	XErr = []
+	for i in range(len(M)):
+		XErr.append((MErr[i]/H[i])*(molweight[comp]/mass) + (M[i]/H[i])*(molweight[comp]/mass**2)*massErr)
+	
+	XErr = 1/avo**2*np.array(XErr)
+	XiErr = []
+	for i in range(len(X)):
+		XiErr.append(XErr[i]/(X[i]**2))
+	return XiErr
+
 
 # Thermo diagnostic function.
 # Uses PCF object
@@ -96,6 +110,12 @@ def getSaveDir(name = 'm', comp = 'Sr2PrO4', dataType = None):
 		dataDir = dataDir + 'MVSH/'
 	elif dataType == 'MT':
 		dataDir = dataDir + 'MVST/'
+	elif dataType == 'IE':
+		dataDir = dataDir + 'IE/'
+	elif dataType == 'IQ':
+		dataDir = dataDir + 'IQ/'
+	elif dataType == 'HC':
+		dataDir = dataDir + 'HC/'
 	else:
 		return dataDir
 	return dataDir
@@ -132,26 +152,47 @@ def getData(magrun, dataDir,**kwargs):
 			return M,H,T,E, mass, name
 
 	elif who == 'PPMS':
-		name = magrun.split('_')[4].split('.')[0]
-		name = name.replace('P','.')
-		mass = getMass(magrun,**kwargs)
+
 		# print(dataDir + magrun)
-		f = open(dataDir + magrun)
+		f = open(dataDir + magrun, encoding = 'latin1')
+		# print(dataDir+magrun)
 		# while f.readline().strip() != '[Data]':
 			# pass
-		df = pd.read_csv(f)
+		df = pd.read_csv(f, sep = ',', header = 0)
+		newcols = {}
+		for i in df.columns:
+			newcols[i] = i.replace('Â','')
+		df.rename(columns = newcols, inplace = True)
 		df.dropna(inplace = True)
-		T = np.array(df['Temperature (K)'])
-		H = np.array(df['Magnetic Field (Oe)'])
-		E = np.array(df['M. Std. Err. (emu)'])
-		M = np.array(df['Moment (emu)'])
 
 		if dataType == 'MH':
+			name = magrun.split('_')[4].split('.')[0]
+			name = name.replace('P','.')
+			mass = getMass(magrun,**kwargs)
+			T = np.array(df['Temperature (K)'])
+			H = np.array(df['Magnetic Field (Oe)'])
+			E = np.array(df['M. Std. Err. (emu)'])
+			M = np.array(df['Moment (emu)'])
 			name =  getTemp(magrun, who = who)
 			return  M, H, E, mass, name
 		if dataType == 'MT':
+			name = magrun.split('_')[4].split('.')[0]
+			name = name.replace('P','.')
+			mass = getMass(magrun,**kwargs)
+			T = np.array(df['Temperature (K)'])
+			H = np.array(df['Magnetic Field (Oe)'])
+			E = np.array(df['M. Std. Err. (emu)'])
+			M = np.array(df['Moment (emu)'])
 			measType = magrun.split('_')[-1].split('.')[0]
 			return M,H,T,E, mass, measType
+		if dataType == 'HC':
+			name = magrun.split('_')[-1].split('.')[0]
+			# print(name)
+			# print(df.columns)
+			T = np.array(df['Sample Temp (Kelvin)'])
+			h = np.array(df['Samp HC (µJ/K)'])
+			hErr = np.array(df['Samp HC Err (µJ/K)'])
+			return T,h,hErr, name
 
 	elif who == 'MPMS':
 		if dataType == 'MT':
@@ -161,14 +202,13 @@ def getData(magrun, dataDir,**kwargs):
 		if dataType == 'MH':
 			name = (magrun.split('_')[-1].split('.')[0])
 			name = name.replace('P','.')
-			name = name.replace('p','.')			
+			name = name.replace('p','.')	
+		print(magrun)		
 		mass = getMass(magrun,**kwargs)
 		f = open(dataDir + magrun)
 		while f.readline().strip() != '[Data]':
 			pass
 		df = pd.read_csv(f)
-		# print(name)
-		# df = pd.read_csv(dataDir + magrun, skiprows=[i for i in range(0,40)])
 		df.dropna(subset = ['DC Moment Fixed Ctr (emu)','DC Moment Err Fixed Ctr (emu)','Magnetic Field (Oe)'],inplace = True)
 		T = np.array(df['Temperature (K)'])
 		H = np.array(df['Magnetic Field (Oe)'])
@@ -186,6 +226,10 @@ def getMass(filename,**kwargs):
 	if kwargs['who'] == 'Arun':
 		mass = filename.split('_')[3]
 		mass = mass.replace('P','.')
+	elif kwargs['who'] == 'MPMS':
+		mass = filename.split('_')[2]
+		mass = mass.replace('P','.')
+		mass = mass.replace('p','.')		
 	else:
 		mass = filename.split('_')[2]
 		mass = mass.replace('P','.')

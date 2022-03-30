@@ -1,6 +1,57 @@
 import sys
 sys.path.append('..')
 from JensenTools import *
+from scipy.integrate import simps
+from matplotlib import rcParams
+from matplotlib import patches
+
+#####################################################################################################################################################################
+# #Set Fonts/Plot Style
+# rcParams['font.family'] = 'sans-serif'
+# rcParams['font.sans-serif'] = ['Arial']
+# rcParams.update({'font.size': 18})
+# rcParams['xtick.direction'] = 'in'
+# rcParams['ytick.direction'] = 'in'
+# rcParams['xtick.top'] = True
+# rcParams['ytick.right'] = True
+# rcParams['xtick.major.size'] = 10
+# rcParams['ytick.major.size'] = 10
+# rcParams['xtick.minor.size'] = 5
+# rcParams['ytick.minor.size'] = 5
+# rcParams['xtick.minor.visible'] = True
+# rcParams['ytick.minor.visible'] = True
+#####################################################################################################################################################################
+
+avo = 6.02214076*10**23
+
+#####################################################################################################################################################################
+rcParams['font.family'] = 'sans-serif'
+rcParams['font.sans-serif'] = ['Arial']
+rcParams.update({'font.size': 28})
+rcParams['font.weight'] = 'bold'
+rcParams['axes.linewidth'] = 4
+rcParams['xtick.direction'] = 'out'
+rcParams['ytick.direction'] = 'out'
+rcParams['xtick.top'] = False
+rcParams['ytick.right'] = False
+rcParams['xtick.major.size'] = 12.5
+rcParams['ytick.major.size'] = 12.5
+rcParams['xtick.minor.size'] = 7.5
+rcParams['ytick.minor.size'] = 7.5
+rcParams['xtick.major.width'] = 3
+rcParams['ytick.major.width'] = 3
+rcParams['xtick.minor.width'] = 3
+rcParams['ytick.minor.width'] = 3
+rcParams['xtick.minor.visible'] = True
+rcParams['ytick.minor.visible'] = True
+rcParams['legend.frameon'] = False
+rcParams['legend.fontsize'] = 18
+#####################################################################################################################################################################
+
+Ei = 700
+Temp = 4.82
+res = 6
+massErr = .00005
 
 # Define important things
 #####################################################################################################################################################################
@@ -9,6 +60,7 @@ ion = 'Ce3+'
 who = 'MPMS'
 LS_on = True
 per = 'spin'
+
 molweight = molweight[comp]
 LSValue = 100.5
 
@@ -17,17 +69,45 @@ S = 0.5
 L = 3
 J = 5./2
 
-Emeas = [0, 168, 336, 384.9, 384.9/336,336/168] # The measured INS magnetic modes
+EMeas = [0, 168, 336, 384.9, 384.9/336,336/168] # The measured INS magnetic modes
 EMeasErr = [0, 0.1231, 0.3966, 0.993, 0.993/.3966, 0.3966/0.1231]
+numlevels = 7
+
+EmeasIntensity = [0, 168, 336, 384.9, 7.359660386881444e-05/0.0003294713170859596]
+EmeasIntensityErr = [0, 0.1231, 0.3966, 0.993, 2.436e-05/7.163e-05]
+numlevels = 6
+
 # Emeas = [0,168,336,384.9]
 # EMeasErr = [0, 0.1231, 0.3966, 0.993]
-numlevels = 7
+
 # Emeas = [168, 335, 385] # The measured INS magnetic modes
 # numlevels = 4
 #####################################################################################################################################################################
 
 #LMFIT Models
 #####################################################################################################################################################################
+# Fits the concatenated X^-1 and magnetization
+def lineshapeFit(pf, B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, energy, **kwargs ):
+
+    Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
+    Stev['B20'] = B20
+    Stev['B40'] = B40
+    Stev['B60'] = B60
+    Stev['B44'] = B44
+    Stev['B64'] = B64
+    
+    if kwargs['LS_on']:
+        Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling = LS) #Create CF_Levels obejct wtih the given coefficients.
+        Pr.diagonalize()
+        CalculatedSpectrum = Pr.neutronSpectrum(energy, Temp=Temp, Ei=Ei, ResFunc = lambda x: res )
+        
+    else:
+        Pr = cef.CFLevels.Bdict(Bdict = Stev, ion = kwargs['ion'])
+        Pr.diagonalize()
+        CalculatedSpectrum = Pr.neutronSpectrum(energy, Temp=Temp, Ei=Ei, ResFunc = lambda x: res )
+
+    return pf*CalculatedSpectrum
+
 # Fits the concatenated X^-1 and magnetization
 def fullFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
     deltaField = .0001
@@ -65,47 +145,6 @@ def fullFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs )
     total = np.concatenate((e,X), axis = None)
     return total
 
-def fullFit2(B20, B21, B22, B40, B41, B42, B43, B44, B60, B61, B62, B63, B64, B65, B66, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
-    numlevels = 4
-    deltaField = .0001
-
-    Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
-    Stev['B20'] = B20
-    Stev['B21'] = B21
-    Stev['B22'] = B22
-    Stev['B40'] = B40
-    Stev['B40'] = B41
-    Stev['B40'] = B42
-    Stev['B40'] = B43
-    Stev['B40'] = B44
-    Stev['B60'] = B60
-    Stev['B61'] = B61
-    Stev['B62'] = B62
-    Stev['B63'] = B63
-    Stev['B64'] = B64
-    Stev['B65'] = B65
-    Stev['B66'] = B66
-
-    M = []
-    if kwargs['LS_on']:
-        Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling = LS) #Create CF_Levels obejct wtih the given coefficients.
-        Pr.diagonalize()
-        X = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = deltaField)
-        for i in FieldM:
-            M.append(1/3*Pr.magnetization(Temp = TempM, Field = [i, 0, 0])[0] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, i, 0])[1] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, 0, i])[2])
-    else:
-        Pr = cef.CFLevels.Bdict(Bdict = Stev, ion = kwargs['ion'])
-        Pr.diagonalize()
-        X = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = deltaField, ion = ion)
-        for i in FieldM:
-            M.append(1/3*Pr.magnetization(Temp = TempM, Field = [i, 0, 0], ion=ion)[0] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, i, 0], ion = ion)[1] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, 0, i], ion = ion)[2])
-
-    e = kmeansSort(Pr.eigenvalues,numlevels)[:numlevels-1] #Excluding the highest mode which we did not detect in our INS runs
-    
-    M = -1*np.array(M)
-    Xi = -1/X
-    total = np.concatenate((e,Xi,M), axis = None)
-    return total
 
 # Fits the concatenated X^-1 and magnetization
 def thermoFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
@@ -136,43 +175,6 @@ def thermoFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs
     total = np.concatenate((-X,M), axis = None)
     return total
 
-def thermoFit2(B20, B21, B22, B40, B41, B42, B43, B44, B60, B61, B62, B63, B64, B65, B66, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
-    deltaField = .0001
-
-    Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
-    Stev['B20'] = B20
-    Stev['B21'] = B21
-    Stev['B22'] = B22
-    Stev['B40'] = B40
-    Stev['B40'] = B41
-    Stev['B40'] = B42
-    Stev['B40'] = B43
-    Stev['B40'] = B44
-    Stev['B60'] = B60
-    Stev['B61'] = B61
-    Stev['B62'] = B62
-    Stev['B63'] = B63
-    Stev['B64'] = B64
-    Stev['B65'] = B65
-    Stev['B66'] = B66
-
-    M = []
-    if kwargs['LS_on']:
-        Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling = LS) #Create CF_Levels obejct wtih the given coefficients.
-        Pr.diagonalize()
-        X = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = deltaField)
-        for i in FieldM:
-            M.append(1/3*Pr.magnetization(Temp = TempM, Field = [i, 0, 0])[0] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, i, 0])[1] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, 0, i])[2])
-    else:
-        Pr = cef.CFLevels.Bdict(Bdict = Stev, ion = kwargs['ion'])
-        Pr.diagonalize()
-        X = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = deltaField, ion = ion)
-        for i in FieldM:
-            M.append(1/3*Pr.magnetization(Temp = TempM, Field = [i, 0, 0], ion=ion)[0] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, i, 0], ion = ion)[1] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, 0, i], ion = ion)[2])
-    M = -1*np.array(M)
-    Xi = -1/X
-    total = np.concatenate((Xi,M), axis = None)
-    return total
 
 # Fits X^-1
 def susFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
@@ -252,6 +254,51 @@ def energyFit(B40, B60, B44, B64, B20, LS, TempX, FieldX, TempM, FieldM, **kwarg
             e =  Pr.eigenvalues
     return e
 
+# Fitting to eigenvalues
+def energyIntensityFit(B40, B60, B44, B64, B20, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
+
+    numlevels = kwargs['numlevels']
+    Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
+    Stev['B20'] = B20
+    Stev['B40'] = B40
+    Stev['B60'] = B60
+    Stev['B44'] = B44
+    Stev['B64'] = B64
+
+    if kwargs['LS_on']:
+        Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling = LS) #Create CF_Levels obejct wtih the given coefficients.
+        Pr.diagonalize()
+        if kwargs['Kmeans']:
+            e = kmeansSort(Pr.eigenvalues,numlevels)[:numlevels-2] #Excluding the highest mode which we did not detect in our INS runs
+
+            E = Pr.neutronSpectrum(energy, Temp=Temp, Ei=Ei, ResFunc = lambda x: res )
+            peak1Range = [308,358]
+            peak2Range = [360,405]
+            peak1New = []
+            peak2New = []
+
+            for i in range(len(energy)):
+                if (energy[i] >= peak1Range[0] and energy[i]<= peak1Range[1]):
+                    peak1New.append(E[i])
+                if (energy[i] >= peak2Range[0] and energy[i]<= peak2Range[1]):
+                    peak2New.append(E[i])
+
+            area1 = simps(peak1New, dx=.01)
+            area2 = simps(peak2New, dx=.01)
+
+            e.append(area2/area1)
+        else: 
+            e = Pr.eigenvalues
+    else:
+        Pr = cef.CFLevels.Bdict(Bdict = Stev, ion = kwargs['ion'])
+        Pr.diagonalize()
+        if kwargs['Kmeans']:    
+            e = kmeansSort(Pr.eigenvalues,numlevels)[:numlevels-1] #Excluding the highest mode which we did not detect in our INS runs
+            e.append(e[:-1]/e[:-2]) #The aforementioned ratio
+        else:
+            e =  Pr.eigenvalues
+    return e
+
 # Simple function for pritting my parameters after fitting so that I can copy paste the values from output for further iterations.
 def paramPrint(fittedparams):
     print()
@@ -260,9 +307,7 @@ def paramPrint(fittedparams):
         print(i, ' = ',fittedparams[i].value )
 #####################################################################################################################################################################
 
-
 # Best Fit Params from [E0,E1,E2,E3,E3/E2,E2/E1]
-
 #####################################################################################################################################################################
 B40  =  -0.5012606800352563
 B60  =  0.035606510173406256
@@ -270,6 +315,66 @@ B44  =  -2.3362611638838318
 B64  =  0.16051908499496623
 B20  =  2.786665787837128
 LS  =  78.52277597643308
+#####################################################################################################################################################################
+
+#####################################################################################################################################################################
+pf  =  1.544069493619394
+B20  =  10.271176099207107
+B40  =  -0.7900000926018218
+B60  =  -0.027294715137310747
+B44  =  -3.8834080305537184
+B64  =  0.62379565696025
+LS  =  112.13739498016606
+
+
+# Ei = 700 meV, res = 12
+pf  =  0.6392822975748268
+B20  =  6.920936482418957
+B40  =  -1.3459080476460257
+B60  =  -0.04591184042570789
+B44  =  -5.569383987577362
+B64  =  0.8791325629968747
+LS  =  111.94181118904241
+
+# Ei = 700 meV, res = 12 BEST YET BITCH
+pf  =  0.32306456625688873
+B20  =  8.630823912691385
+B40  =  -0.880918071031349
+B60  =  -0.0036563779714316553
+B44  =  -4.766629656046794
+B64  =  0.8712457036717587
+LS  =  69.56096710407799
+
+# Ei = 700 meV, res = 6 EVEN BETTER BITCH
+pf  =  0.31465830296464253
+B20  =  10.763640417959891
+B40  =  -0.06594707305473559
+B60  =  0.03827418591117107
+B44  =  -1.1393823530938316
+B64  =  0.0017317195907978896
+LS  =  64.52612950429346
+
+# Ei = 700 meV, res = 3 EVEN BETTER AGAIN BITCH
+# pf  =  0.3249302105514858
+# B20  =  11.878821057910848
+# B40  =  -0.027443660935498212
+# B60  =  0.04108937188089112
+# B44  =  -1.2762034463309937
+# B64  =  -0.07027980953931078
+# LS  =  64.63543962518928
+
+# Ei = 700 meV, res = 15 it ok BITCH
+# pf  =  0.32445546923595575
+# B20  =  11.506125633458634
+# B40  =  0.011066310392373468
+# B60  =  0.044913099230107265
+# B44  =  -0.9785990018637161
+# B64  =  -0.14654212894410554
+# LS  =  61.324671595577264
+
+# B44 = 5*B40
+# B64 = -21*B60
+# B20 = 0
 #####################################################################################################################################################################
 
 saveDir = getSaveDir('m',comp = comp) #General Directory for the project
@@ -299,11 +404,13 @@ for i in os.listdir(MHDir):
 MHdata = {}
 for i in runs: 
     M, H, MErr, mass, T = getData(i,MHDir,who = who, dataType = 'MH')
-    M = normalize(M,mass,molweight,per)
-    MErr = normalize(MErr,mass,molweight,per)
+    M = normalize(M,mass,molweight,'mol')
+    MErr = normalize(MErr,mass,molweight,'mol')
     MHdata[T] = [M,H,MErr,mass,i]
 #####################################################################################################################################################################
 
+
+#####################################################################################################################################################################
 # Susceptibility MvsT
 # Either 'ZFC' or 'FC' (usually ZFC)
 Mx,Hx,TempX,MErrxEmu,mass = MTdata['3T_ZFC']
@@ -320,68 +427,84 @@ XBohr = MBohr/HTes
 XErrBohr = MErrBohr/HTes
 XiBohr = 1/XBohr
 
+XiErr = POEXi(Mx,MErrxEmu,Hx,mass,massErr,comp,per)
+
 # Magnetization MvsH
 # Choosing 50K run
-Tmh = '50K'
-TempM = getTemp(MHdata[Tmh][-1], who = who)
-Mm, Hm, MErrmEmu, mass, filename = MHdata[Tmh]
-MBohr = emuToBohr2(Mm)
-HTes = oeToTesla(Hm)
-MErrmBohr = emuToBohr2(MErrmEmu)
+# Tmh = '10K'
+# TempM = getTemp(MHdata[Tmh][-1], who = who)
+# Mm, Hm, MErrmEmu, mass, filename = MHdata[Tmh]
+# MBohr = emuToBohr2(Mm)
+# HTes = oeToTesla(Hm)
+# MErrmBohr = emuToBohr2(MErrmEmu)
+
+# Tmh = '15K'
+# TempM = getTemp(MHdata[Tmh][-1], who = who)
+# Mm, Hm, MErrmEmu, mass, filename = MHdata[Tmh]
+# MBohr = emuToBohr2(Mm)
+# HTes = oeToTesla(Hm)
+# MErrmBohr = emuToBohr2(MErrmEmu)
 
 # total = np.concatenate((Emeas,XBohr,M), axis = None)
-total = np.concatenate((XBohr,MBohr), axis = None)
+# total = np.concatenate((XBohr,MBohr), axis = None)
 # total = np.concatenate((Emeas,XBohr), axis = None)
 
 
-XNorm = 2/3/len(XErrBohr)*XErrBohr
-MNorm = 1/3/len(MErrmBohr)*MErrmBohr
+# XNorm = 2/3/len(XErrBohr)*XErrBohr
+# MNorm = 1/3/len(MErrmBohr)*MErrmBohr
 # EMeasErrNorm = 4/5/len(EMeasErr)*np.array(EMeasErr)
 
-
-print("X data length {}. M data length {}. Total data length {}".format(len(XBohr),len(MBohr), len(total)))
-# print("X error length {}. M error length {}. Total error length {}".format(len(XNorm),len(MNorm), len(XNorm) + len(MNorm)))
-
-
 # error = np.concatenate((EMeasErrNorm,XNorm),axis = None)
-error = np.concatenate((XNorm,MBohr),axis = None)
+# error = np.concatenate((XNorm,MBohr),axis = None)
+#####################################################################################################################################################################
 
 
 # Make LMFIT model and fit
 # Create stevens coefficients dictionary from fitted parameters
 #####################################################################################################################################################################
-myModel = Model(energyFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM'])
+myModel = Model(lineshapeFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM', 'energy'])
 params = myModel.make_params()
 
+
 # Since we only have 4 training points, only 4 parameters can vary at once.
-params['B20'].set(value=B20, vary=True)
-# params['B21'].set(value = 0, vary = True)
-# params['B22'].set(value = 0, vary = True)
-params['B40'].set(value=B40, vary=True)
-# params['B41'].set(value=0, vary=True)
-# params['B42'].set(value=0, vary=True)
-# params['B43'].set(value=0, vary=True)
-params['B44'].set(value=B44, vary=True)
-params['B60'].set(value=B60, vary=True)
-# params['B61'].set(value=0, vary=True)
-# params['B62'].set(value=0, vary=True)
-# params['B63'].set(value=0, vary=True)
-params['B64'].set(value=B64, vary=True)
-# params['B65'].set(value=0, vary=True)
-# params['B66'].set(value=0, vary=True)
+# params['B20'].set(value=B20, min = .25*B20, max = 1.75*B20, vary=True)
+# params['B20'].set(value=0, vary=True)
+# params['B40'].set(value=B40, vary = False)
+# params['B44'].set(value=5*B40, min = .5*5*params['B40'], max = 1.5*5*params['B40'], vary = False)
+# # params['B44'].set(value=5*B40, vary = True)
+# params['B60'].set(value=B60, vary = False)
+# params['B64'].set(value=-21*B64, min = .5*-21*params['B60'], max = 1.5*-21*params['B60'], vary = False)
+# # params['B64'].set(value=-21*B60, vary = True)
+# params['pf'].set(value = pf, vary = True)
+
+params['B20'].set(value = B20, vary = True)
+params['B40'].set(value = B40, vary = True)
+params['B44'].set(value = B44, vary = True)
+params['B60'].set(value = B60, vary = True)
+params['B64'].set(value = B64, vary = True)
+params['pf'].set(value = pf,   vary = True)
 
 if LS_on:
-	params['LS'].set(value=LS, vary=True)
+	params['LS'].set(value = LS, vary = True)
 # Fit model to data
-fitted = myModel.fit(Emeas,params, TempX = TempX, FieldX = FieldX, TempM = TempM, FieldM = HTes, LS_on = LS_on, ion = ion, numlevels = numlevels, Kmeans = True, weights = EMeasErr)
+
+f ='/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Sr2PrO4/Sr2PrO4_gaussians.csv' # We need to re-open the file
+df = pd.read_csv(f)
+energy = df['Energy']
+intensity = df['Intensity']
+lineErr = df['Error']
+
+TempM = '50K'
+fitted = myModel.fit(intensity, params, TempX = TempX, FieldX = FieldX, TempM = TempM, FieldM = HTes, energy = energy, LS_on = LS_on, ion = ion, numlevels = numlevels, Kmeans = True, weights = lineErr)
+# fitted = myModel.fit(EmeasIntensity,params, TempX = TempX, FieldX = FieldX, TempM = TempM, FieldM = HTes, LS_on = LS_on, ion = ion, numlevels = numlevels, Kmeans = True, weights = EmeasIntensityErr)
 # fitted = myModel.fit(total,params, TempX = TempX, FieldX = FieldX, TempM = TempM, FieldM = HTes, LS_on = LS_on, ion = ion, numlevels = numlevels, weights = error)
 
 # Create a dictionary of the fitted parameters (stevens coefficients)
-stev = {'B20' :fitted.params['B20'].value, 'B40': fitted.params['B40'].value, 'B44': fitted.params['B44'].value, 'B60': fitted.params['B60'].value,'B64': fitted.params['B64'].value}
+stev = {'B20' : fitted.params['B20'].value, 'B40' : fitted.params['B40'].value, 'B44': fitted.params['B44'].value, 'B60': fitted.params['B60'].value,'B64': fitted.params['B64'].value}
 # stev = {'B20' :fitted.params['B20'].value, 'B21' :fitted.params['B21'].value, 'B22' :fitted.params['B22'].value, 'B40': fitted.params['B40'].value,  'B41': fitted.params['B41'].value,  'B42': fitted.params['B42'].value,  'B43': fitted.params['B43'].value,  'B44': fitted.params['B44'].value, 'B60': fitted.params['B60'].value, 'B61': fitted.params['B61'].value, 'B62': fitted.params['B62'].value, 'B63': fitted.params['B63'].value, 'B64': fitted.params['B64'].value, 'B65': fitted.params['B65'].value, 'B66': fitted.params['B66'].value}
 
-
 paramPrint(fitted.params)
+fitted.params.pretty_print()
 
 # Create the CFLevels object and diagonalize it
 if LS_on:
@@ -392,71 +515,236 @@ else:
 	Pr.diagonalize()
 #####################################################################################################################################################################
 
-params.pretty_print()
-magCalcPowderBohr = []
+
+
+# Use best fit to make thermo and neutron predictions
+#####################################################################################################################################################################
+magCalcPowderBohr10 = []
+Tmh = '10K'
+TempM = getTemp(MHdata[Tmh][-1], who = who)
+Mm, Hm, MErrmEmu, mass, filename = MHdata[Tmh]
+MBohr10 = emuToBohr2(Mm)/avo
+HTes10 = oeToTesla(Hm)
+MErrmBohr10 = emuToBohr2(MErrmEmu)/avo
 
 if LS_on:
     XCalcPowderBohr = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = .0001)
-    for i in HTes:
-        magCalcPowderBohr.append((Pr.magnetization(Temp = TempM, Field = [i, 0, 0])[0] + Pr.magnetization(Temp = TempM, Field = [0, i, 0])[1] + Pr.magnetization(Temp = TempM, Field = [0, 0, i])[2])/3)
-
+    for i in HTes10:
+        magCalcPowderBohr10.append((Pr.magnetization(Temp = TempM, Field = [i, 0, 0])[0] + Pr.magnetization(Temp = TempM, Field = [0, i, 0])[1] + Pr.magnetization(Temp = TempM, Field = [0, 0, i])[2])/3)
 else:
     XCalcPowderBohr = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = .0001, ion = ion)
     for i in HTes:
         magCalcPowderBohr.append((Pr.magnetization(Temp = TempM, Field = [i, 0, 0], ion = ion)[0] + Pr.magnetization(Temp = TempM, Field = [0, i, 0], ion = ion)[1] + Pr.magnetization(Temp = TempM, Field = [0, 0, i], ion = ion)[2])/3)
 
+magCalcPowderBohr15 = []
+Tmh = '15K'
+TempM = getTemp(MHdata[Tmh][-1], who = who)
+Mm, Hm, MErrmEmu, mass, filename = MHdata[Tmh]
+MBohr15 = emuToBohr2(Mm)/avo
+HTes15 = oeToTesla(Hm)
+MErrmBohr15 = emuToBohr2(MErrmEmu)/avo
 
-XCalcPowderEmu = bohrToEmu2(XCalcPowderBohr)*6.02214076*10**23/10000
+if LS_on:
+    XCalcPowderBohr = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = .0001)
+    for i in HTes15:
+        magCalcPowderBohr15.append((Pr.magnetization(Temp = TempM, Field = [i, 0, 0])[0] + Pr.magnetization(Temp = TempM, Field = [0, i, 0])[1] + Pr.magnetization(Temp = TempM, Field = [0, 0, i])[2])/3)
+
+magCalcPowderBohr50 = []
+Tmh = '50K'
+TempM = getTemp(MHdata[Tmh][-1], who = who)
+Mm, Hm, MErrmEmu, mass, filename = MHdata[Tmh]
+MBohr50 = emuToBohr2(Mm)/avo
+HTes50 = oeToTesla(Hm)
+MErrmBohr50 = emuToBohr2(MErrmEmu)/avo
+
+if LS_on:
+    XCalcPowderBohr = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = .0001)
+    for i in HTes50:
+        magCalcPowderBohr50.append((Pr.magnetization(Temp = TempM, Field = [i, 0, 0])[0] + Pr.magnetization(Temp = TempM, Field = [0, i, 0])[1] + Pr.magnetization(Temp = TempM, Field = [0, 0, i])[2])/3)
+
+
+XCalcPowderEmu = bohrToEmu2(XCalcPowderBohr)/10000
 XiCalcPowderEmu = -1/XCalcPowderEmu
 
-XEmu = XEmu*6.02214076*10**23
+XEmu = XEmu
 XiEmu = 1/XEmu
 
 # XiCalcPowderBohr = -1/XCalcPowderBohr
-magCalcPowderBohr = -1*np.array(magCalcPowderBohr)
-magCalcPowderEmu = bohrToEmu2(magCalcPowderBohr)*6.02214076*10**23
+magCalcPowderBohr10 = -1*np.array(magCalcPowderBohr10)
+magCalcPowderBohr15 = -1*np.array(magCalcPowderBohr15)
+magCalcPowderBohr50 = -1*np.array(magCalcPowderBohr50)
+# magCalcPowderEmu = bohrToEmu2(magCalcPowderBohr)*6.02214076*10**23
 
-Mm = Mm*6.02214076*10**23
-
-plt.figure()
-plt.plot(TempX, XiEmu, label = 'Measured')
-plt.plot(TempX,XiCalcPowderEmu, label = 'PCF Powder Average')
-plt.xlabel('Temperature (K)')
-plt.ylabel('X^-1 (emu^-1 T mol)')
-plt.legend()
-plt.title('{} Inverse Susceptbility Applied {} Tesla '.format(comp,FieldX))
-
-plt.figure()
-plt.errorbar(Hm, Mm, yerr =MErrmEmu, label = 'Measured')
-plt.plot(Hm,magCalcPowderEmu, label = 'PCF Powder Average')
-plt.xlabel('Field (oe)')
-plt.ylabel('M (emu mol^-1)')
-plt.legend()
-plt.title('{} Magnetization at {} K '.format(comp,TempM))
-
-Pr.printEigenvectors()
-
-Pr.printLaTexEigenvectors()
-plt.show()
+# Mm = Mm*avo
 
 
-Ei = 700
-Temp = 4.82
-res = 9
-energy = np.linspace(.01,Ei,1000)
+df = pd.DataFrame()
+df['TempX'] = TempX
+df['X'] = -XCalcPowderEmu
+# df.to_csv('/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Sr2PrO4/Sr2PrO4_fitted_X.csv')
 
-CalculatedSpectrum = Pr.neutronSpectrum(energy, Temp=Temp, Ei=Ei, ResFunc = lambda x: res )
-# ResFunc = lambda x: 9 if (energy < 200) else 21
-plt.figure()
-plt.plot(energy,CalculatedSpectrum)
-plt.ylabel('Intensity (arb. units)')
-plt.xlabel('Energy (meV)')
-plt.title('PCF Spectrum: Ei = {}meV, Temp = {}K, Res = {}'.format(Ei,Temp,res))
-# plt.show()
+df = pd.DataFrame()
+df['Hm'] = HTes10
+df['Mm'] = magCalcPowderBohr10
+
+# df.to_csv('/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Sr2PrO4/Sr2PrO4_fitted_M.csv')
 
 
 
 #####################################################################################################################################################################
+plt.figure()
+plt.errorbar(TempX, XiEmu, yerr = XiErr,linestyle = 'none', marker = 'o',color='magenta',label='Data',markersize = 5)
+plt.plot(TempX,XiCalcPowderEmu, linestyle = '-',color='black',label='PCF Prediction',linewidth = 4)
+plt.xlabel('Temperature (K)', fontweight = 'bold')
+plt.ylabel('X^-1 (emu^-1 T mol)', fontweight = 'bold')
+plt.legend(fontsize = 30)
+
+
+plt.figure()
+plt.errorbar(TempX, XBohr*TempX, yerr = XErrEmu,linestyle = 'none', marker = 'o',color='magenta',label='Data',markersize = 5)
+plt.plot(TempX,-XCalcPowderBohr*TempX,  linestyle = '-',color='black',label='PCF Prediction',linewidth = 4)
+plt.xlabel('Temperature (K)', fontweight = 'bold')
+plt.ylabel('X(T)*T (uB T^-1 K spin^-1)', fontweight = 'bold')
+plt.legend(fontsize = 30)
+
+
+plt.figure()
+plt.errorbar(HTes10, MBohr10, yerr = MErrmBohr10, color = 'blue',linestyle = 'none', marker = 'o',label='10K Data',markersize = 5)
+plt.plot(HTes10,magCalcPowderBohr10,linestyle = '-',color='blue',label='10K PCF Prediction',linewidth = 4)
+plt.xlabel('Field (T)', fontweight = 'bold')
+plt.ylabel('M (uB per Pr4+ Ion)', fontweight = 'bold')
+plt.errorbar(HTes15, MBohr15, yerr = MErrmBohr15, color = 'orange',linestyle = 'none', marker = 'o',label='15K Data',markersize = 5)
+plt.plot(HTes15,magCalcPowderBohr15, color = 'orange',linestyle = '-',label='15K PCF Prediction',linewidth = 4)
+plt.errorbar(HTes50, MBohr50, yerr = MErrmBohr50, color = 'red', linestyle = 'none', marker = 'o',label='50K Data',markersize = 5)
+plt.plot(HTes50,magCalcPowderBohr50, color = 'red',linestyle = '-',label='50K PCF Prediction',linewidth = 4)
+plt.legend(fontsize = 25)
+
+Pr.printEigenvectors()
+
+Pr.printLaTexEigenvectors()
+# plt.show()
+
+
+# energy = np.linspace(.01,Ei,1000)
+
+CalculatedSpectrum = fitted.params['pf'].value*Pr.neutronSpectrum(energy, Temp=Temp, Ei=Ei, ResFunc = lambda x: res )
+# ResFunc = lambda x: 9 if (energy < 200) else 21
+plt.figure()
+plt.plot(energy, CalculatedSpectrum, linestyle = '--', label = 'Fitted')
+plt.plot(energy, intensity,  label = 'Generated Gaussian')
+plt.legend()
+plt.ylabel('Intensity (arb. units)')
+plt.xlabel('Energy (meV)')
+plt.title('PCF Spectrum: Ei = {}meV, Temp = {}K'.format(Ei,Temp))
+
+
+print(fitted.params['B44']/fitted.params['B40'])
+print(fitted.params['B64']/fitted.params['B60'])
+
+
+wyb = cef.StevensToWybourne('Ce3+',stev, LS=True)
+print(wyb)
+print(Pr.gtensor())
+
+plt.show()
+
+
+
+#####################################################################################################################################################################
+# def thermoFit2(B20, B21, B22, B40, B41, B42, B43, B44, B60, B61, B62, B63, B64, B65, B66, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
+#     deltaField = .0001
+
+#     Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
+#     Stev['B20'] = B20
+#     Stev['B21'] = B21
+#     Stev['B22'] = B22
+#     Stev['B40'] = B40
+#     Stev['B40'] = B41
+#     Stev['B40'] = B42
+#     Stev['B40'] = B43
+#     Stev['B40'] = B44
+#     Stev['B60'] = B60
+#     Stev['B61'] = B61
+#     Stev['B62'] = B62
+#     Stev['B63'] = B63
+#     Stev['B64'] = B64
+#     Stev['B65'] = B65
+#     Stev['B66'] = B66
+
+#     M = []
+#     if kwargs['LS_on']:
+#         Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling = LS) #Create CF_Levels obejct wtih the given coefficients.
+#         Pr.diagonalize()
+#         X = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = deltaField)
+#         for i in FieldM:
+#             M.append(1/3*Pr.magnetization(Temp = TempM, Field = [i, 0, 0])[0] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, i, 0])[1] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, 0, i])[2])
+#     else:
+#         Pr = cef.CFLevels.Bdict(Bdict = Stev, ion = kwargs['ion'])
+#         Pr.diagonalize()
+#         X = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = deltaField, ion = ion)
+#         for i in FieldM:
+#             M.append(1/3*Pr.magnetization(Temp = TempM, Field = [i, 0, 0], ion=ion)[0] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, i, 0], ion = ion)[1] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, 0, i], ion = ion)[2])
+#     M = -1*np.array(M)
+#     Xi = -1/X
+#     total = np.concatenate((Xi,M), axis = None)
+#     return total
+
+# def fullFit2(B20, B21, B22, B40, B41, B42, B43, B44, B60, B61, B62, B63, B64, B65, B66, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
+#     numlevels = 4
+#     deltaField = .0001
+
+#     Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
+#     Stev['B20'] = B20
+#     Stev['B21'] = B21
+#     Stev['B22'] = B22
+#     Stev['B40'] = B40
+#     Stev['B40'] = B41
+#     Stev['B40'] = B42
+#     Stev['B40'] = B43
+#     Stev['B40'] = B44
+#     Stev['B60'] = B60
+#     Stev['B61'] = B61
+#     Stev['B62'] = B62
+#     Stev['B63'] = B63
+#     Stev['B64'] = B64
+#     Stev['B65'] = B65
+#     Stev['B66'] = B66
+
+#     M = []
+#     if kwargs['LS_on']:
+#         Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling = LS) #Create CF_Levels obejct wtih the given coefficients.
+#         Pr.diagonalize()
+#         X = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = deltaField)
+#         for i in FieldM:
+#             M.append(1/3*Pr.magnetization(Temp = TempM, Field = [i, 0, 0])[0] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, i, 0])[1] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, 0, i])[2])
+#     else:
+#         Pr = cef.CFLevels.Bdict(Bdict = Stev, ion = kwargs['ion'])
+#         Pr.diagonalize()
+#         X = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = deltaField, ion = ion)
+#         for i in FieldM:
+#             M.append(1/3*Pr.magnetization(Temp = TempM, Field = [i, 0, 0], ion=ion)[0] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, i, 0], ion = ion)[1] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, 0, i], ion = ion)[2])
+
+#     e = kmeansSort(Pr.eigenvalues,numlevels)[:numlevels-1] #Excluding the highest mode which we did not detect in our INS runs
+    
+#     M = -1*np.array(M)
+#     Xi = -1/X
+#     total = np.concatenate((e,Xi,M), axis = None)
+#     return total
+
+
+# params['B21'].set(value = 0, vary = True)
+# params['B22'].set(value = 0, vary = True)
+# params['B41'].set(value=0, vary=True)
+# params['B42'].set(value=0, vary=True)
+# params['B43'].set(value=0, vary=True)
+# params['B61'].set(value=0, vary=True)
+# params['B62'].set(value=0, vary=True)
+# params['B63'].set(value=0, vary=True)
+# params['B65'].set(value=0, vary=True)
+# params['B66'].set(value=0, vary=True)
+
+
+
 # # From GridSearch For LS
 # #####################################################################################################################################################################
 # if LS_on:
