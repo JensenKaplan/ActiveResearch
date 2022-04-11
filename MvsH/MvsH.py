@@ -1,11 +1,47 @@
 import sys
 sys.path.append('..')
 from JensenTools import *
+<<<<<<< HEAD
 
 #####################################################################################################################################################################
 who = 'Arun'
 comp = 'Sr2PrO4'
 MHDir = getSaveDir('m', comp = comp, dataType = 'MH')
+=======
+from matplotlib import rcParams
+from matplotlib import patches
+
+rcParams['font.family'] = 'sans-serif'
+rcParams['font.sans-serif'] = ['Arial']
+rcParams.update({'font.size': 28})
+rcParams['font.weight'] = 'bold'
+rcParams['axes.linewidth'] = 4
+rcParams['xtick.direction'] = 'out'
+rcParams['ytick.direction'] = 'out'
+rcParams['xtick.top'] = False
+rcParams['ytick.right'] = False
+rcParams['xtick.major.size'] = 12.5
+rcParams['ytick.major.size'] = 12.5
+rcParams['xtick.minor.size'] = 7.5
+rcParams['ytick.minor.size'] = 7.5
+rcParams['xtick.major.width'] = 3
+rcParams['ytick.major.width'] = 3
+rcParams['xtick.minor.width'] = 3
+rcParams['ytick.minor.width'] = 3
+rcParams['xtick.minor.visible'] = True
+rcParams['ytick.minor.visible'] = True
+rcParams['legend.frameon'] = False
+rcParams['legend.fontsize'] = 18
+
+#####################################################################################################################################################################
+comp = 'Li8PrO6'
+# who = 'Arun'
+# comp = 'Li8PrO6'
+who = 'MPMS'
+MHDir = getSaveDir('m', comp = comp, dataType = 'MH')
+per = 'mol'
+fit = False
+>>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
 molweight = molweight[comp]
 #####################################################################################################################################################################
 
@@ -14,7 +50,11 @@ molweight = molweight[comp]
 #####################################################################################################################################################################
 runs = [] #A list of all the data file names
 for i in os.listdir(MHDir):
+<<<<<<< HEAD
     if i.endswith('.DAT') or i.endswith('.dat.'): #This was a safeguard against a situation arising at an earlier implementation of my code.
+=======
+    if i.endswith('.DAT') or i.endswith('.dat'): #This was a safeguard against a situation arising at an earlier implementation of my code.
+>>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
         runs.append(i)
 
 temp = [] # temporary list for sorting
@@ -23,6 +63,11 @@ for i in runs:
 temp = np.argsort([int(i) for i in temp]) # Sort by temperature
 runs = [runs[i] for i in temp] # newly sorted listed
 #####################################################################################################################################################################
+<<<<<<< HEAD
+=======
+
+## Get mass and temp from one of the filenames. Doesn't matter since they should all have the same name/mass.
+>>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
 
 ## Get mass and temp from one of the filenames. Doesn't matter since they should all have the same name/mass.
 mass = getMass(runs[0], who = who)
@@ -37,12 +82,17 @@ MHdata = {} #Data will be normalized and stored in Emu/Oe. Conversions to uB/T a
 plt.figure()
 for i in runs: 
     M, H, Err, mass, T = getData(i,MHDir,who = who, dataType = 'MH')
+<<<<<<< HEAD
     M = normalize(M,mass,molweight,'spin')
     Err = normalize(Err,mass,molweight,'spin')
+=======
+    M = normalize(M,mass,molweight,per)
+    Err = normalize(Err,mass,molweight, per)
+>>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
     MHdata[T] = [M,H,Err,mass,i]
-    plt.errorbar(H, M, yerr = Err, label = T)
-plt.title(comp)
-plt.ylabel('Moment (emu) spin^-1')
+    plt.plot(H, M, label = T)
+plt.title('{} Magnetization'.format(comp))
+plt.ylabel('Moment (emu {}^-1)'.format(per))
 plt.xlabel('Field (Oe)')
 plt.legend()
 
@@ -54,9 +104,15 @@ for i in MHdata.keys():
     M = emuToBohr2(M)
     H = oeToTesla(H)
     Err = emuToBohr2(Err)
+<<<<<<< HEAD
     plt.errorbar(H,M, yerr = Err,label = i)
 plt.title(comp)
 plt.ylabel('Moment (\N{GREEK SMALL LETTER MU}B) spin^-1')
+=======
+    plt.plot(H,M,label = i)
+plt.title('{} Magnetization'.format(comp))
+plt.ylabel('Moment (\N{GREEK SMALL LETTER MU}B {}^-1)'.format(per))
+>>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
 plt.xlabel('Field (T)')
 plt.legend()
 plt.show()
@@ -70,6 +126,7 @@ temp = '20K' #Select a temperature to analyze
 curRun = MHdata[temp] #loading the data from my current run
 
 # Converto to uB/T
+<<<<<<< HEAD
 M = emuToBohr2(curRun[0])
 H = oeToTesla(curRun[1])
 Err = emuToBohr2(curRun[2])
@@ -96,13 +153,59 @@ for i in H:
     MLine.append(fitted.params['slope'].value*i + fitted.params['intercept'].value)
 
 # Plot the data and the fit
-plt.plot(H,M, label = temp)
-plt.plot(H,MLine, linestyle = '--', label = 'Fitted')
-plt.xlabel('Field (T)')
-plt.ylabel('Magnetization (bohr magneton)')
-plt.legend()
-plt.title(comp)
-plt.show()
+=======
+M = curRun[0]
+H = curRun[1]
+MBohr = emuToBohr2(curRun[0])
+HTes = oeToTesla(curRun[1])
+ErrBohr = emuToBohr2(curRun[2])
 
+if fit:
+    # Choose the field range to fit over (Tesla)
+    fieldRange = [13.5,14]
+    newH = []
+    newM = []
+    newErr = []
+    for i in range(len(M)):
+        if (H[i] >= fieldRange[0] and H[i] <= fieldRange[1]):
+            newH.append(HTes[i])
+            newM.append(MBohr[i])
+            newErr.append(ErrBohr[i])
+
+    # Create LMFIT Linear Model
+    linModel = LinearModel()
+    params = linModel.guess(newM, x = newH)
+    fitted = linModel.fit(newM, x = newH, weights = newErr)
+
+    #Drawing a full line from the fitted results
+    MLine = []
+    for i in H:
+        MLine.append(fitted.params['slope'].value*i + fitted.params['intercept'].value)
+
+# Plot the data and the fit
+plt.figure()
+>>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
+plt.plot(H,M, label = temp)
+plt.xlabel('Field (Oe)')
+plt.ylabel('Magnetization (emu mol^-1)')
+plt.legend(fontsize = 30)
+plt.title(comp)
+
+<<<<<<< HEAD
 print('Saturation magnetization =  {:.3f} uB'.format(fitted.params['intercept'].value))
+=======
+plt.figure()
+# Plot the data and the fit
+plt.plot(HTes,MBohr, label = temp)
+if fit:
+    plt.plot(HTes,MLine, linestyle = '--', label = 'Fitted')
+plt.xlabel('Field (T)')
+plt.ylabel('Magnetization (uB)')
+plt.legend(fontsize = 30)
+plt.title(comp)
+# plt.show()
+
+if fit:
+    print('Saturation magnetization =  {:.3f} uB'.format(fitted.params['intercept'].value))
+>>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
 #####################################################################################################################################################################
