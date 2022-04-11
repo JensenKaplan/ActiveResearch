@@ -5,22 +5,6 @@ from scipy.integrate import simps
 from matplotlib import rcParams
 from matplotlib import patches
 
-#####################################################################################################################################################################
-# #Set Fonts/Plot Style
-# rcParams['font.family'] = 'sans-serif'
-# rcParams['font.sans-serif'] = ['Arial']
-# rcParams.update({'font.size': 18})
-# rcParams['xtick.direction'] = 'in'
-# rcParams['ytick.direction'] = 'in'
-# rcParams['xtick.top'] = True
-# rcParams['ytick.right'] = True
-# rcParams['xtick.major.size'] = 10
-# rcParams['ytick.major.size'] = 10
-# rcParams['xtick.minor.size'] = 5
-# rcParams['ytick.minor.size'] = 5
-# rcParams['xtick.minor.visible'] = True
-# rcParams['ytick.minor.visible'] = True
-#####################################################################################################################################################################
 
 avo = 6.02214076*10**23
 
@@ -68,21 +52,19 @@ LSValue = 100.5
 S = 0.5
 L = 3
 J = 5./2
-
-EMeas = [0, 168, 336, 384.9, 384.9/336,336/168] # The measured INS magnetic modes
-EMeasErr = [0, 0.1231, 0.3966, 0.993, 0.993/.3966, 0.3966/0.1231]
-numlevels = 7
-
-EmeasIntensity = [0, 168, 336, 384.9, 7.359660386881444e-05/0.0003294713170859596]
-EmeasIntensityErr = [0, 0.1231, 0.3966, 0.993, 2.436e-05/7.163e-05]
-numlevels = 6
-
-# Emeas = [0,168,336,384.9]
-# EMeasErr = [0, 0.1231, 0.3966, 0.993]
-
-# Emeas = [168, 335, 385] # The measured INS magnetic modes
-# numlevels = 4
 #####################################################################################################################################################################
+
+#March Meeting Best Fit
+#####################################################################################################################################################################
+pf  =  0.31466005532972374
+B20  =  10.76366288180152
+B40  =  -0.06594735005189663
+B60  =  0.03827417917473945
+B44  =  -1.1393836672476119
+B64  =  0.0017325741601411152
+LS  =  64.52581063639214
+#####################################################################################################################################################################
+
 
 #LMFIT Models
 #####################################################################################################################################################################
@@ -307,74 +289,8 @@ def paramPrint(fittedparams):
         print(i, ' = ',fittedparams[i].value )
 #####################################################################################################################################################################
 
-# Best Fit Params from [E0,E1,E2,E3,E3/E2,E2/E1]
-#####################################################################################################################################################################
-B40  =  -0.5012606800352563
-B60  =  0.035606510173406256
-B44  =  -2.3362611638838318
-B64  =  0.16051908499496623
-B20  =  2.786665787837128
-LS  =  78.52277597643308
-#####################################################################################################################################################################
-
-#####################################################################################################################################################################
-pf  =  1.544069493619394
-B20  =  10.271176099207107
-B40  =  -0.7900000926018218
-B60  =  -0.027294715137310747
-B44  =  -3.8834080305537184
-B64  =  0.62379565696025
-LS  =  112.13739498016606
 
 
-# Ei = 700 meV, res = 12
-pf  =  0.6392822975748268
-B20  =  6.920936482418957
-B40  =  -1.3459080476460257
-B60  =  -0.04591184042570789
-B44  =  -5.569383987577362
-B64  =  0.8791325629968747
-LS  =  111.94181118904241
-
-# Ei = 700 meV, res = 12 BEST YET BITCH
-pf  =  0.32306456625688873
-B20  =  8.630823912691385
-B40  =  -0.880918071031349
-B60  =  -0.0036563779714316553
-B44  =  -4.766629656046794
-B64  =  0.8712457036717587
-LS  =  69.56096710407799
-
-# Ei = 700 meV, res = 6 EVEN BETTER BITCH
-pf  =  0.31465830296464253
-B20  =  10.763640417959891
-B40  =  -0.06594707305473559
-B60  =  0.03827418591117107
-B44  =  -1.1393823530938316
-B64  =  0.0017317195907978896
-LS  =  64.52612950429346
-
-# Ei = 700 meV, res = 3 EVEN BETTER AGAIN BITCH
-# pf  =  0.3249302105514858
-# B20  =  11.878821057910848
-# B40  =  -0.027443660935498212
-# B60  =  0.04108937188089112
-# B44  =  -1.2762034463309937
-# B64  =  -0.07027980953931078
-# LS  =  64.63543962518928
-
-# Ei = 700 meV, res = 15 it ok BITCH
-# pf  =  0.32445546923595575
-# B20  =  11.506125633458634
-# B40  =  0.011066310392373468
-# B60  =  0.044913099230107265
-# B44  =  -0.9785990018637161
-# B64  =  -0.14654212894410554
-# LS  =  61.324671595577264
-
-# B44 = 5*B40
-# B64 = -21*B60
-# B20 = 0
 #####################################################################################################################################################################
 
 saveDir = getSaveDir('m',comp = comp) #General Directory for the project
@@ -477,15 +393,15 @@ params = myModel.make_params()
 # # params['B64'].set(value=-21*B60, vary = True)
 # params['pf'].set(value = pf, vary = True)
 
-params['B20'].set(value = B20, vary = True)
-params['B40'].set(value = B40, vary = True)
-params['B44'].set(value = B44, vary = True)
-params['B60'].set(value = B60, vary = True)
-params['B64'].set(value = B64, vary = True)
-params['pf'].set(value = pf,   vary = True)
+params['B20'].set(value = B20, vary = False)
+params['B40'].set(value = B40, vary = False)
+params['B44'].set(value = B44, vary = False)
+params['B60'].set(value = B60, vary = False)
+params['B64'].set(value = B64, vary = False)
+params['pf'].set(value = pf,   vary = False)
 
 if LS_on:
-	params['LS'].set(value = LS, vary = True)
+	params['LS'].set(value = LS, vary = False)
 # Fit model to data
 
 f ='/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Sr2PrO4/Sr2PrO4_gaussians.csv' # We need to re-open the file
@@ -495,7 +411,7 @@ intensity = df['Intensity']
 lineErr = df['Error']
 
 TempM = '50K'
-fitted = myModel.fit(intensity, params, TempX = TempX, FieldX = FieldX, TempM = TempM, FieldM = HTes, energy = energy, LS_on = LS_on, ion = ion, numlevels = numlevels, Kmeans = True, weights = lineErr)
+fitted = myModel.fit(intensity, params, TempX = TempX, FieldX = FieldX, TempM = TempM, FieldM = HTes, energy = energy, LS_on = LS_on, ion = ion, Kmeans = True, weights = lineErr)
 # fitted = myModel.fit(EmeasIntensity,params, TempX = TempX, FieldX = FieldX, TempM = TempM, FieldM = HTes, LS_on = LS_on, ion = ion, numlevels = numlevels, Kmeans = True, weights = EmeasIntensityErr)
 # fitted = myModel.fit(total,params, TempX = TempX, FieldX = FieldX, TempM = TempM, FieldM = HTes, LS_on = LS_on, ion = ion, numlevels = numlevels, weights = error)
 
@@ -649,162 +565,81 @@ print(Pr.gtensor())
 plt.show()
 
 
+# Best Fit Params from [E0,E1,E2,E3,E3/E2,E2/E1]
+# #####################################################################################################################################################################
+# B40  =  -0.5012606800352563
+# B60  =  0.035606510173406256
+# B44  =  -2.3362611638838318
+# B64  =  0.16051908499496623
+# B20  =  2.786665787837128
+# LS  =  78.52277597643308
+# #####################################################################################################################################################################
+
+# #####################################################################################################################################################################
+# pf  =  1.544069493619394
+# B20  =  10.271176099207107
+# B40  =  -0.7900000926018218
+# B60  =  -0.027294715137310747
+# B44  =  -3.8834080305537184
+# B64  =  0.62379565696025
+# LS  =  112.13739498016606
+
+
+# # Ei = 700 meV, res = 12
+# pf  =  0.6392822975748268
+# B20  =  6.920936482418957
+# B40  =  -1.3459080476460257
+# B60  =  -0.04591184042570789
+# B44  =  -5.569383987577362
+# B64  =  0.8791325629968747
+# LS  =  111.94181118904241
+
+# # Ei = 700 meV, res = 12 BEST YET BITCH
+# pf  =  0.32306456625688873
+# B20  =  8.630823912691385
+# B40  =  -0.880918071031349
+# B60  =  -0.0036563779714316553
+# B44  =  -4.766629656046794
+# B64  =  0.8712457036717587
+# LS  =  69.56096710407799
+#####################################################################################################################################################################
 
 #####################################################################################################################################################################
-# def thermoFit2(B20, B21, B22, B40, B41, B42, B43, B44, B60, B61, B62, B63, B64, B65, B66, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
-#     deltaField = .0001
+# EMeas = [0, 168, 336, 384.9, 384.9/336,336/168] # The measured INS magnetic modes
+# EMeasErr = [0, 0.1231, 0.3966, 0.993, 0.993/.3966, 0.3966/0.1231]
+# numlevels = 7
 
-#     Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
-#     Stev['B20'] = B20
-#     Stev['B21'] = B21
-#     Stev['B22'] = B22
-#     Stev['B40'] = B40
-#     Stev['B40'] = B41
-#     Stev['B40'] = B42
-#     Stev['B40'] = B43
-#     Stev['B40'] = B44
-#     Stev['B60'] = B60
-#     Stev['B61'] = B61
-#     Stev['B62'] = B62
-#     Stev['B63'] = B63
-#     Stev['B64'] = B64
-#     Stev['B65'] = B65
-#     Stev['B66'] = B66
+# EmeasIntensity = [0, 168, 336, 384.9, 7.359660386881444e-05/0.0003294713170859596]
+# EmeasIntensityErr = [0, 0.1231, 0.3966, 0.993, 2.436e-05/7.163e-05]
+# numlevels = 6
 
-#     M = []
-#     if kwargs['LS_on']:
-#         Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling = LS) #Create CF_Levels obejct wtih the given coefficients.
-#         Pr.diagonalize()
-#         X = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = deltaField)
-#         for i in FieldM:
-#             M.append(1/3*Pr.magnetization(Temp = TempM, Field = [i, 0, 0])[0] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, i, 0])[1] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, 0, i])[2])
-#     else:
-#         Pr = cef.CFLevels.Bdict(Bdict = Stev, ion = kwargs['ion'])
-#         Pr.diagonalize()
-#         X = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = deltaField, ion = ion)
-#         for i in FieldM:
-#             M.append(1/3*Pr.magnetization(Temp = TempM, Field = [i, 0, 0], ion=ion)[0] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, i, 0], ion = ion)[1] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, 0, i], ion = ion)[2])
-#     M = -1*np.array(M)
-#     Xi = -1/X
-#     total = np.concatenate((Xi,M), axis = None)
-#     return total
+# Emeas = [0,168,336,384.9]
+# EMeasErr = [0, 0.1231, 0.3966, 0.993]
 
-# def fullFit2(B20, B21, B22, B40, B41, B42, B43, B44, B60, B61, B62, B63, B64, B65, B66, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
-#     numlevels = 4
-#     deltaField = .0001
+# Emeas = [168, 335, 385] # The measured INS magnetic modes
+# numlevels = 4
+#####################################################################################################################################################################
 
-#     Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
-#     Stev['B20'] = B20
-#     Stev['B21'] = B21
-#     Stev['B22'] = B22
-#     Stev['B40'] = B40
-#     Stev['B40'] = B41
-#     Stev['B40'] = B42
-#     Stev['B40'] = B43
-#     Stev['B40'] = B44
-#     Stev['B60'] = B60
-#     Stev['B61'] = B61
-#     Stev['B62'] = B62
-#     Stev['B63'] = B63
-#     Stev['B64'] = B64
-#     Stev['B65'] = B65
-#     Stev['B66'] = B66
+#####################################################################################################################################################################
+# Ei = 700 meV, res = 3 EVEN BETTER AGAIN BITCH
+# pf  =  0.3249302105514858
+# B20  =  11.878821057910848
+# B40  =  -0.027443660935498212
+# B60  =  0.04108937188089112
+# B44  =  -1.2762034463309937
+# B64  =  -0.07027980953931078
+# LS  =  64.63543962518928
 
-#     M = []
-#     if kwargs['LS_on']:
-#         Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling = LS) #Create CF_Levels obejct wtih the given coefficients.
-#         Pr.diagonalize()
-#         X = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = deltaField)
-#         for i in FieldM:
-#             M.append(1/3*Pr.magnetization(Temp = TempM, Field = [i, 0, 0])[0] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, i, 0])[1] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, 0, i])[2])
-#     else:
-#         Pr = cef.CFLevels.Bdict(Bdict = Stev, ion = kwargs['ion'])
-#         Pr.diagonalize()
-#         X = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = deltaField, ion = ion)
-#         for i in FieldM:
-#             M.append(1/3*Pr.magnetization(Temp = TempM, Field = [i, 0, 0], ion=ion)[0] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, i, 0], ion = ion)[1] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, 0, i], ion = ion)[2])
+# Ei = 700 meV, res = 15 it ok BITCH
+# pf  =  0.32445546923595575
+# B20  =  11.506125633458634
+# B40  =  0.011066310392373468
+# B60  =  0.044913099230107265
+# B44  =  -0.9785990018637161
+# B64  =  -0.14654212894410554
+# LS  =  61.324671595577264
 
-#     e = kmeansSort(Pr.eigenvalues,numlevels)[:numlevels-1] #Excluding the highest mode which we did not detect in our INS runs
-    
-#     M = -1*np.array(M)
-#     Xi = -1/X
-#     total = np.concatenate((e,Xi,M), axis = None)
-#     return total
-
-
-# params['B21'].set(value = 0, vary = True)
-# params['B22'].set(value = 0, vary = True)
-# params['B41'].set(value=0, vary=True)
-# params['B42'].set(value=0, vary=True)
-# params['B43'].set(value=0, vary=True)
-# params['B61'].set(value=0, vary=True)
-# params['B62'].set(value=0, vary=True)
-# params['B63'].set(value=0, vary=True)
-# params['B65'].set(value=0, vary=True)
-# params['B66'].set(value=0, vary=True)
-
-
-
-# # From GridSearch For LS
-# #####################################################################################################################################################################
-# if LS_on:
-#   LS = LSValue
-#   x =  0.03629536921151444
-#   bpf = -0.6570713391739674
-#   # Assigning the coefficients from grid search
-#   # Enforcing cubic constraints as a start
-#   # and including the B20 term which is needed for tetragonal symmetry
-#   B40 = bpf
-#   B60 = x*bpf
-#   B44 = 5*B40
-#   B64 = -21*B60
-#   B20 = 0
-# #####################################################################################################################################################################
-
-# # From GridSearch For J
-# #####################################################################################################################################################################
-# if not LS_on:
-#   x = -1.0000
-#   bpf = -0.4673
-#   # Assigning the coefficients from grid search
-#   # Enforcing cubic constraints as a start
-#   # and including the B20 term which is needed for tetragonal symmetry    
-#   B40 = bpf
-#   B60 = x*bpf
-#   B44 = 5*B40
-#   B64 = -21*B60
-#   B20 = 0
-# #####################################################################################################################################################################
-
-
-# #Best Fit LS
-# #####################################################################################################################################################################
-# if LS_on: 
-#   B40  =  -0.6568663783690575
-#   B60  =  -0.02328250024945387
-#   LS   =  LSValue
-#   B44  =  -3.1415463304732714
-#   B64  =  0.504906552605772
-#   B20  =  0.4858075931009187
-# #####################################################################################################################################################################
-
-#Fix B20 to different values, check g tensor 
-
-# Best Fit J
-# #####################################################################################################################################################################
-# if not LS_on:
-#   # Red Chi = ~5
-#   # B40  =  -0.5572886105373519
-#   # B60  =  0.4673
-#   # B44  =  -3.0342208316734602
-#   # B64  =  -9.8133
-#   # B20  =  12.606195910392971
-
-#   # # Red Chi = ~.01
-#   B40  =  -0.5572886105373519
-#   B60  =  0.4673
-#   B44  =  -3.0946858584804335
-#   B64  =  -9.8133
-#   B20  =  12.606195720794622
-# #####################################################################################################################################################################
-
+# B44 = 5*B40
+# B64 = -21*B60
+# B20 = 0
+#####################################################################################################################################################################
