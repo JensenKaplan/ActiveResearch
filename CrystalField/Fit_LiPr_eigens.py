@@ -7,12 +7,9 @@ from matplotlib import patches
 
 # Plot Formatting
 #####################################################################################################################################################################
-# fig = plt.figure(figsize = (10,10))
-# gs = fig.add_gridspec(1, 1)
-# ax1 = plt.subplot(gs[0])
 rcParams['font.family'] = 'sans-serif'
 rcParams['font.sans-serif'] = ['Arial']
-rcParams.update({'font.size': 15})
+rcParams.update({'font.size': 28})
 rcParams['font.weight'] = 'bold'
 rcParams['axes.linewidth'] = 4
 rcParams['xtick.direction'] = 'out'
@@ -35,12 +32,11 @@ rcParams['legend.fontsize'] = 18
 
 # Define important things
 #####################################################################################################################################################################
-comp = 'Sr2PrO4'
+comp = 'Li8PrO6'
 ion = 'Ce3+'
 who = 'MPMS'
 LS_on = True
 per = 'spin'
-saveplots = True
 
 molweight = molweight[comp]
 LSValue = 100.5
@@ -53,9 +49,9 @@ J = 5./2
 
 
 avo = 6.02214076*10**23
-Ei = 700
+Ei = 500
 Temp = 4.88
-res = 6
+res = 9
 massErr = .00005
 
 
@@ -68,19 +64,10 @@ B60  =  0.03827417917473945
 B44  =  -1.1393836672476119
 B64  =  0.0017325741601411152
 LS  =  64.52581063639214
+LS  =  79.52581063639214
 
-
-#####################################################################################################################################################################
-
-# SrPr PAPER BEST FIT
-#####################################################################################################################################################################
-pf  =  0.24697226666068609
-B20  =  10.079050365865657
-B40  =  -0.07424576811339292
-B60  =  0.040280418062079895
-B44  =  -0.9997183336100587
-B64  =  0.07450220927671151
-LS  =  55.63834774730741
+# LS = 75.52581063639214
+# LS = 79
 #####################################################################################################################################################################
 
 #Working on LiPr Non Cubic
@@ -103,86 +90,57 @@ LS  =  55.63834774730741
 # LS  =  64.12404051358105
 
 # #BEST FIT ALL POS G TENSOR
-# B20  =  -0.018083295642218118
-# B40  =  -0.06404195129061385
-# B60  =  0.05112605185045689
-# B44  =  -0.012768518174137693
-# B64  =  0.7817977687376129
-# LS  =  64.86031437157135
+B20  =  -0.018083295642218118
+B40  =  -0.06404195129061385
+B60  =  0.05112605185045689
+B44  =  -0.012768518174137693
+B64  =  0.7817977687376129
+LS  =  64.86031437157135
 #####################################################################################################################################################################
 
 #LiPr Cubic
 #####################################################################################################################################################################
-# B40  =  -0.05754795580111737
-# B60  =  0.04185043831454387
-# B44  =  -0.28773977900558684
-# B64  =  -0.8788592046054212
-# LS  =  64.78063137001186
+B40  =  -0.05754795580111737
+B60  =  0.04185043831454387
+B44  =  -0.28773977900558684
+B64  =  -0.8788592046054212
+LS  =  64.78063137001186
 
-# B40  =  -0.05541936430436656
-# B60  =  0.0412871544016399
-# B44  =  -0.2770968215218328
-# B64  =  -0.8670302424344379
-# LS  =  67.03496369553983
+B40  =  -0.05541936430436656
+B60  =  0.0412871544016399
+B44  =  -0.2770968215218328
+B64  =  -0.8670302424344379
+LS  =  67.03496369553983
 
-# #Best susFit
-# B40  =  -0.056611204876660534
-# B60  =  0.04157509651054089
-# B44  =  -0.2830560243833027
-# B64  =  -0.8730770267213588
-# LS  =  80
+#Best susFit
+B40  =  -0.056611204876660534
+B60  =  0.04157509651054089
+B44  =  -0.2830560243833027
+B64  =  -0.8730770267213588
+LS  =  80
 
-# B40  =  -0.04950377777835187
-# B60  =  0.04070320355552652
-# B44  =  -0.24751888889175933
-# B64  =  -0.854767274666057
-# LS  =  45
+B40  =  -0.04950377777835187
+B60  =  0.04070320355552652
+B44  =  -0.24751888889175933
+B64  =  -0.854767274666057
+LS  =  45
 
-# B40  =  -0.08609482451631531
-# B60  =  0.04517067265624785
-# B44  =  -0.4304741225815766
-# B64  =  -0.9485841257812049
-# LS  =  74.7127360214523
+B40  =  -0.08609482451631531
+B60  =  0.04517067265624785
+B44  =  -0.4304741225815766
+B64  =  -0.9485841257812049
+LS  =  74.7127360214523
+pf = 1
 
-# #Best lineshape fit
-# pf  =  6.385815674644696e-05
-# B40  =  -0.12686183269914184
-# B60  =  0.049755653421813976
-# B44  =  -0.6343091634957092
-# B64  =  -1.0448687218580934
-# LS  =  0.7515514442942504
-
-# B40  =  -18.70082073622982
-# B60  =  4.087467008290764
-# B44  =  -93.50410368114909
-# B64  =  -85.83680717410604
-# LS  =  180.0839283726174
-# pf  =  0.3488669437229318
-
-# pf  =  0.3496557009134425
-# B20  =  -0.05406521662431572
-# B40  =  -18.700844820820013
-# B60  =  4.0874639350109785
-# B44  =  -93.50422410410006
-# B64  =  -85.83674263523055
-# LS  =  179.99097694812872
-
-# B20  =  -0.0533585191024184
-# B40  =  -18.72857530469581
-# B60  =  4.090102247932892
-# B44  =  -93.48410789067282
-# B64  =  -85.9195558516452
-# LS  =  77.88193791931394
-# pf  =  0.35381801759500453
+#Best lineshape fit
+# ,
 #####################################################################################################################################################################
 
 #LMFIT Models
 #####################################################################################################################################################################
 # Fits the concatenated X^-1 and magnetization
-def lineshapeFit(pf, B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, energy, **kwargs ):
-
+def lineshapeFit(pf, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, energy, **kwargs ):
     Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
-    Stev['B20'] = B20
     Stev['B40'] = B40
     Stev['B60'] = B60
     Stev['B44'] = B44
@@ -388,12 +346,11 @@ def energyFit(B40, B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
     return e
 
 # Fitting to eigenvalues
-def energyIntensityFit(B20, B40, B60, B44, B64, LS, pf, energy, TempX, FieldX, TempM, FieldM, **kwargs ):
+def energyIntensityFit(B40, B60, B44, B64, LS, pf, energy, TempX, FieldX, TempM, FieldM, **kwargs ):
 
     numlevels = kwargs['numlevels']
     Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
-
-    Stev['B20'] = B20
+    # Stev['B20'] = B20
     Stev['B40'] = B40
     Stev['B60'] = B60
     Stev['B44'] = B44
@@ -404,13 +361,26 @@ def energyIntensityFit(B20, B40, B60, B44, B64, LS, pf, energy, TempX, FieldX, T
         Pr.diagonalize()
         if kwargs['Kmeans']:
             e = kmeansSort(Pr.eigenvalues,numlevels)#Excluding the highest mode which we did not detect in our INS runs
-            E = pf*Pr.neutronSpectrum(energy, Temp=Temp, Ei=Ei, ResFunc = lambda x: res )
-            total =  np.concatenate((e,E), axis = None)
-        else:
-            E = pf*Pr.neutronSpectrum(energy, Temp=Temp, Ei=Ei, ResFunc = lambda x: res )
-            e = Pr.eigenvalues[0:8]
-            total =  np.concatenate((e,E), axis = None)
 
+            E = pf*Pr.neutronSpectrum(energy, Temp=Temp, Ei=Ei, ResFunc = lambda x: res )
+            # peak1Range = [308,358]
+            # peak2Range = [360,405]
+            # peak1New = []
+            # peak2New = []
+
+            # for i in range(len(energy)):
+            #     if (energy[i] >= peak1Range[0] and energy[i]<= peak1Range[1]):
+            #         peak1New.append(E[i])
+            #     if (energy[i] >= peak2Range[0] and energy[i]<= peak2Range[1]):
+            #         peak2New.append(E[i])
+
+            # area1 = simps(peak1New, dx=.01)
+            # area2 = simps(peak2New, dx=.01)
+
+            # e.append(area2/area1)
+            total =  np.concatenate((e,E))
+        else: 
+            e = Pr.eigenvalues
     else:
         Pr = cef.CFLevels.Bdict(Bdict = Stev, ion = kwargs['ion'])
         Pr.diagonalize()
@@ -525,7 +495,6 @@ error = np.concatenate((XiErr,MErrmBohr),axis = None)
 # Create stevens coefficients dictionary from fitted parameters
 #####################################################################################################################################################################
 myModel = Model(lineshapeFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM', 'energy'])
-# myModel = Model(energyIntensityit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM', 'energy'])
 # myModel = Model(energysusFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM'])
 # myModel = Model(energyFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM'])
 # myModel = Model(thermoFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM'])
@@ -546,51 +515,43 @@ params = myModel.make_params()
 # # params['B64'].set(value=-21*B60, vary = True)
 # params['pf'].set(value = pf, vary = True)
 
-params['B20'].set(value = B20, vary = False)
-params['B40'].set(value = B40, vary = False)
-params['B60'].set(value = B60, vary = False)
-params['B44'].set(value = B44, vary = False)
-params['B64'].set(value = B64, vary = False)
-# params.add('B44', expr = '5.0*B40')
-# params.add('B64', expr = '-21.0*B60')
-params['pf'].set(value = pf,  vary = False)
+# params['B20'].set(value = B20, vary = True)
+params['B40'].set(value = B40, vary = True)
+# params['B44'].set(value = '5.0 * B40', vary = True)
+params['B60'].set(value = B60, vary = True) 
+# params['B64'].set(expr = '-21.0*B60', vary = True)
+params.add('B44', expr = '5.0*B40')
+params.add('B64', expr = '-21.0*B60')
+params['pf'].set(value = pf,  vary = True)
 
 if LS_on:
-	params['LS'].set(value = LS, vary = Fals)
+	params['LS'].set(value = LS, vary = True)
 # Fit model to data
 
-# f ='/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Li8PrO6/Li8PrO6_gaussians.csv' # We need to re-open the file
+f ='/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Li8PrO6/Li8PrO6_gaussians.csv' # We need to re-open the file
 # f ='/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Sr2PrO4/Sr2PrO4_gaussians.csv' # We need to re-open the file
-f = '/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Sr2PrO4/Sr2PrO4_Produced_Gaussians_FINALPAPER.csv'
-# 
+
 df = pd.read_csv(f)
 energy = df['Energy']
 intensity = df['Intensity']
 lineErr = df['Error']
 
-energies = [0,0,274,274,274,274,676,676]
-# energies = [0,269,676]
-# energies = [0,274,274,676,676]
-
+energies = [0,269,269,676]
 TempM = 50
 
-eI = np.concatenate((energies,intensity), axis = None)
-eINorm = 6/7/len(energies)*np.ones(len(energies))
-lineNorm = 1/7/len(lineErr)*np.ones(len(lineErr))
-eIError = np.concatenate((eINorm,lineNorm), axis = None)
-
+eE = np.concatenate((energies,intensity))
 eXi = np.concatenate((energies,XiBohr))
+
 # fitted = myModel.fit(energies, params, fit_kws={'maxfev': 10000}, TempX = TempX, FieldX = FieldX, TempM = TempM, FieldM = HTes, LS_on = LS_on, energy = energy, ion = ion, Kmeans = True, numlevels = len(energies))
 # fitted = myModel.fit(eXi, params, fit_kws={'maxfev': 10000}, TempX = TempX, FieldX = FieldX, TempM = TempM, FieldM = HTes, LS_on = LS_on, ion = ion, Kmeans = True, numlevels = len(energies))
-fitted = myModel.fit(intensity, params, TempX = TempX, FieldX = FieldX, TempM = TempM, FieldM = HTes, energy = energy, LS_on = LS_on, ion = ion, Kmeans = True, weights = lineErr)
-# fitted = myModel.fit(eI, params, fit_kws={'maxfev': 10000}, TempX = TempX, FieldX = FieldX, TempM = TempM, FieldM = HTes, energy = energy, LS_on = LS_on, ion = ion, Kmeans = False, numlevels = len(energies), weights = eIError)
+fitted = myModel.fit(intensity, params, fit_kws={'maxfev': 10000}, TempX = TempX, FieldX = FieldX, TempM = TempM, FieldM = HTes, energy = energy, LS_on = LS_on, ion = ion, Kmeans = True, weights = lineErr)
 # fitted = myModel.fit(total, params,fit_kws={'maxfev': 10000}, TempX = TempX, FieldX = FieldX, TempM = TempM, FieldM = HTes, LS_on = LS_on, ion = ion, Kmeans = True, weights = error)
 # fitted = myModel.fit(MBohr, params,fit_kws={'maxfev': 3000}, TempX = TempX, FieldX = FieldX, TempM = TempM, FieldM = HTes, LS_on = LS_on, ion = ion, Kmeans = True, weights = MErrmBohr)
 # fitted = myModel.fit(XiBohr, params,fit_kws={'maxfev': 10000}, TempX = TempX, FieldX = FieldX, TempM = TempM, FieldM = HTes, LS_on = LS_on, ion = ion, Kmeans = True, weights = XiErr)
 
 # Create a dictionary of the fitted parameters (stevens coefficients)
-stev = {'B20' : fitted.params['B20'].value, 'B40' : fitted.params['B40'].value, 'B44': fitted.params['B44'].value, 'B60': fitted.params['B60'].value,'B64': fitted.params['B64'].value}
-# stev = {'B40' : fitted.params['B40'].value, 'B44': fitted.params['B44'].value, 'B60': fitted.params['B60'].value,'B64': fitted.params['B64'].value}
+# stev = {'B20' : fitted.params['B20'].value, 'B40' : fitted.params['B40'].value, 'B44': fitted.params['B44'].value, 'B60': fitted.params['B60'].value,'B64': fitted.params['B64'].value}
+stev = {'B40' : fitted.params['B40'].value, 'B44': fitted.params['B44'].value, 'B60': fitted.params['B60'].value,'B64': fitted.params['B64'].value}
 
 paramPrint(fitted.params)
 fitted.params.pretty_print()
@@ -604,27 +565,9 @@ else:
 	Pr.diagonalize()
 #####################################################################################################################################################################
 
-# X vs T 3T
-#####################################################################################################################################################################
-if LS_on:
-    XCalcPowderBohr = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = .0001)
-else:
-    XCalcPowderBohr = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = .0001, ion = ion)
 
 
-XCalcPowderEmu = -1*bohrToEmu2(XCalcPowderBohr)/10000
-XiCalcPowderEmu = 1/XCalcPowderEmu
-
-df = pd.DataFrame()
-df['Temperature (K)'] = TempX
- 
-df['Susceptibility (emu/mol/Oe)'] = XCalcPowderEmu
-# df.to_csv('/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Sr2PrO4/Final Stretch/XvsT/Sr2PrO4_XvsT_3T.csv')
-#####################################################################################################################################################################
-
-
-
-# Thermo Prediction 10k
+# Use best fit to make thermo and neutron predictions
 #####################################################################################################################################################################
 magCalcPowderBohr10 = []
 Tmh = '10K'
@@ -633,7 +576,6 @@ Mm, Hm, MErrmEmu, mass, filename = MHdata[Tmh]
 MBohr10 = emuToBohr2(Mm)/avo
 HTes10 = oeToTesla(Hm)
 MErrmBohr10 = emuToBohr2(MErrmEmu)/avo
-
 
 if LS_on:
     XCalcPowderBohr = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = .0001)
@@ -644,16 +586,6 @@ else:
     for i in HTes:
         magCalcPowderBohr10.append((Pr.magnetization(Temp = TempM, Field = [i, 0, 0], ion = ion)[0] + Pr.magnetization(Temp = TempM, Field = [0, i, 0], ion = ion)[1] + Pr.magnetization(Temp = TempM, Field = [0, 0, i], ion = ion)[2])/3)
 
-magCalcPowderBohr10 = -1*np.array(magCalcPowderBohr10)
-
-df = pd.DataFrame()
-df['Field (T)'] = HTes10
-df['Magnetization (uB/mol)'] = magCalcPowderBohr10
-df['Magnetization (emu/spin)'] = magCalcPowderBohr10
-# df.to_csv('/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Sr2PrO4/Final Stretch/MvsH/Sr2PrO4_MvsH_10K.csv')
-#####################################################################################################################################################################
-
-#####################################################################################################################################################################
 magCalcPowderBohr15 = []
 Tmh = '15K'
 TempM = getTemp(MHdata[Tmh][-1], who = who)
@@ -663,22 +595,14 @@ HTes15 = oeToTesla(Hm)
 MErrmBohr15 = emuToBohr2(MErrmEmu)/avo
 
 if LS_on:
+    XCalcPowderBohr = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = .0001)
     for i in HTes15:
         magCalcPowderBohr15.append((Pr.magnetization(Temp = TempM, Field = [i, 0, 0])[0] + Pr.magnetization(Temp = TempM, Field = [0, i, 0])[1] + Pr.magnetization(Temp = TempM, Field = [0, 0, i])[2])/3)
 else:
+    XCalcPowderBohr = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = .0001, ion = ion)
     for i in HTes:
         magCalcPowderBohr15.append((Pr.magnetization(Temp = TempM, Field = [i, 0, 0], ion = ion)[0] + Pr.magnetization(Temp = TempM, Field = [0, i, 0], ion = ion)[1] + Pr.magnetization(Temp = TempM, Field = [0, 0, i], ion = ion)[2])/3)
 
-
-magCalcPowderBohr15 = -1*np.array(magCalcPowderBohr15)
-
-df = pd.DataFrame()
-df['Field (T)'] = HTes15
-df['Magnetization (uB/mol)'] = magCalcPowderBohr15
-# df.to_csv('/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Sr2PrO4/Final Stretch/MvsH/Sr2PrO4_MvsH_15K.csv')
-#####################################################################################################################################################################
-
-#####################################################################################################################################################################
 magCalcPowderBohr50 = []
 Tmh = '50K'
 TempM = getTemp(MHdata[Tmh][-1], who = who)
@@ -688,69 +612,60 @@ HTes50 = oeToTesla(Hm)
 MErrmBohr50 = emuToBohr2(MErrmEmu)/avo
 
 if LS_on:
+    XCalcPowderBohr = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = .0001)
     for i in HTes50:
         magCalcPowderBohr50.append((Pr.magnetization(Temp = TempM, Field = [i, 0, 0])[0] + Pr.magnetization(Temp = TempM, Field = [0, i, 0])[1] + Pr.magnetization(Temp = TempM, Field = [0, 0, i])[2])/3)
 else:
+    XCalcPowderBohr = Pr.susceptibility(Temps = TempX, Field = FieldX, deltaField = .0001, ion = ion)
     for i in HTes:
         magCalcPowderBohr50.append((Pr.magnetization(Temp = TempM, Field = [i, 0, 0], ion = ion)[0] + Pr.magnetization(Temp = TempM, Field = [0, i, 0], ion = ion)[1] + Pr.magnetization(Temp = TempM, Field = [0, 0, i], ion = ion)[2])/3)
 
-magCalcPowderBohr50 = -1*np.array(magCalcPowderBohr50)
 
-df = pd.DataFrame()
-df['Field (T)'] = HTes50
-df['Magnetization (uB/mol)'] = magCalcPowderBohr50
-# df.to_csv('/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Sr2PrO4/Final Stretch/MvsH/Sr2PrO4_MvsH_50K.csv')
-#####################################################################################################################################################################
+XCalcPowderEmu = bohrToEmu2(XCalcPowderBohr)/10000
+XiCalcPowderEmu = -1/XCalcPowderEmu
 
+XEmu = XEmu
+XiEmu = 1/XEmu
 
 # XiCalcPowderBohr = -1/XCalcPowderBohr
-
+magCalcPowderBohr10 = -1*np.array(magCalcPowderBohr10)
+magCalcPowderBohr15 = -1*np.array(magCalcPowderBohr15)
+magCalcPowderBohr50 = -1*np.array(magCalcPowderBohr50)
 # magCalcPowderEmu = bohrToEmu2(magCalcPowderBohr)*6.02214076*10**23
 
 # Mm = Mm*avo
 
-# df = pd.DataFrame()
-# df['TempX'] = TempX
-# df['X'] = -XCalcPowderEmu
+df = pd.DataFrame()
+df['TempX'] = TempX
+df['X'] = -XCalcPowderEmu
 # df.to_csv('/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Sr2PrO4/Sr2PrO4_fitted_X.csv')
 
-# df = pd.DataFrame()
-# df['Hm'] = HTes10
-# df['Mm'] = magCalcPowderBohr10
+df = pd.DataFrame()
+df['Hm'] = HTes10
+df['Mm'] = magCalcPowderBohr10
 
 # df.to_csv('/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Sr2PrO4/Sr2PrO4_fitted_M.csv')
 
 
 # Plotting results
 #####################################################################################################################################################################
-fig = plt.figure(figsize = (10,10))
-gs = fig.add_gridspec(1, 1)
-ax1 = plt.subplot(gs[0])
+plt.figure()
 plt.errorbar(TempX, XiEmu, yerr = XiErr,linestyle = 'none', marker = 'o',color='magenta',label='Data',markersize = 5)
 plt.plot(TempX,XiCalcPowderEmu, linestyle = '-',color='black',label='PCF Prediction',linewidth = 4)
 plt.xlabel('Temperature (K)', fontweight = 'bold')
 plt.ylabel('X^-1 (emu^-1 T mol)', fontweight = 'bold')
-# plt.title('LS = {:.1f}'.format(LS))
+plt.title('LS = {:.1f}'.format(LS))
 plt.legend(fontsize = 30)
-if saveplots:
-    plt.savefig('/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Sr2PrO4/Final Stretch/XvsT/{}_Xi.png'.format(comp))
 
-fig = plt.figure(figsize = (10,10))
-gs = fig.add_gridspec(1, 1)
-ax1 = plt.subplot(gs[0])
+plt.figure()
 plt.errorbar(TempX, XBohr*TempX, yerr = XErrEmu,linestyle = 'none', marker = 'o',color='magenta',label='Data',markersize = 5)
 plt.plot(TempX,-XCalcPowderBohr*TempX,  linestyle = '-',color='black',label='PCF Prediction',linewidth = 4)
 plt.xlabel('Temperature (K)', fontweight = 'bold')
 plt.ylabel('X(T)*T (uB T^-1 K spin^-1)', fontweight = 'bold')
-# plt.title('LS = {:.1f}'.format(LS))
+plt.title('LS = {:.1f}'.format(LS))
 plt.legend(fontsize = 30)
-if saveplots:
-    plt.savefig('/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Sr2PrO4/Final Stretch/XvsT/{}_XT.png'.format(comp))
 
-
-fig = plt.figure(figsize = (10,10))
-gs = fig.add_gridspec(1, 1)
-ax1 = plt.subplot(gs[0])
+plt.figure()
 plt.errorbar(HTes10, MBohr10, yerr = MErrmBohr10, color = 'blue',linestyle = 'none', marker = 'o',label='10K Data',markersize = 5)
 plt.plot(HTes10,magCalcPowderBohr10,linestyle = '-',color='blue',label='10K PCF Prediction',linewidth = 4)
 plt.xlabel('Field (T)', fontweight = 'bold')
@@ -759,10 +674,8 @@ plt.errorbar(HTes15, MBohr15, yerr = MErrmBohr15, color = 'orange',linestyle = '
 plt.plot(HTes15,magCalcPowderBohr15, color = 'orange',linestyle = '-',label='15K PCF Prediction',linewidth = 4)
 plt.errorbar(HTes50, MBohr50, yerr = MErrmBohr50, color = 'red', linestyle = 'none', marker = 'o',label='50K Data',markersize = 5)
 plt.plot(HTes50,magCalcPowderBohr50, color = 'red',linestyle = '-',label='50K PCF Prediction',linewidth = 4)
-# plt.title('LS = {:.1f}'.format(LS))
+plt.title('LS = {:.1f}'.format(LS))
 plt.legend(fontsize = 25)
-if saveplots:
-    plt.savefig('/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Sr2PrO4/Final Stretch/MvsH/{}_MvsH.png'.format(comp))
 
 Pr.printEigenvectors()
 
@@ -771,20 +684,17 @@ Pr.printEigenvectors()
 
 # energy = np.linspace(.01,Ei,500)
 
-CalculatedSpectrum = fitted.params['pf'].value*Pr.neutronSpectrum(energy, Temp=Temp, Ei=Ei, ResFunc = lambda x: res)
-# CalculatedSpectrum = Pr.neutronSpectrum(energy, Temp=Temp, Ei=Ei, ResFunc = lambda x: res )
+# CalculatedSpectrum = fitted.params['pf'].value*Pr.neutronSpectrum(energy, Temp=Temp, Ei=Ei, ResFunc = lambda x: res )
+CalculatedSpectrum = Pr.neutronSpectrum(energy, Temp=Temp, Ei=Ei, ResFunc = lambda x: res )
 # ResFunc = lambda x: 9 if (energy < 200) else 21
-fig = plt.figure(figsize = (10,10))
-gs = fig.add_gridspec(1, 1)
-ax1 = plt.subplot(gs[0])
+plt.figure()
 plt.plot(energy, CalculatedSpectrum, linestyle = '--', label = 'Fitted')
 plt.plot(energy, intensity,  label = 'Generated Gaussian')
 plt.legend()
 plt.ylabel('Intensity (arb. units)')
 plt.xlabel('Energy (meV)')
-# plt.title('PCF Spectrum: Ei = {}meV, Temp = {}K'.format(Ei,Temp))
-if saveplots:
-    plt.savefig('/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Sr2PrO4/Final Stretch/Lineshape/{}_Lineshape.png'.format(comp))
+plt.title('PCF Spectrum: Ei = {}meV, Temp = {}K'.format(Ei,Temp))
+
 
 # print(fitted.params['B44']/fitted.params['B40'])
 # print(fitted.params['B64']/fitted.params['B60'])

@@ -27,7 +27,7 @@ rcParams['legend.frameon'] = False
 rcParams['legend.fontsize'] = 18
 
 
-comp = 'Sr2PrO4'
+comp = 'Sr2CeO4'
 who = 'PPMS'
 # comp = 'Li8PrO6'
 # who = 'MPMS'
@@ -54,11 +54,13 @@ for i in runs:
 
 plt.figure()
 for i in data.keys():
-	# if i == '0T':
+
 		
 	T = data[i][0][:]
-	h = data[i][1][:]*10E-6
-	hErr = data[i][2][:]*10E-6
+	h = data[i][1][:]*10E-6 # To Tesla
+	hErr = data[i][2][:]*10E-6 # To Tesla
+	# if i == '0T':
+		# print(type(T[0]))
 	plt.errorbar(T,h, yerr = hErr, linestyle = '--', marker = 'o',markersize = 5, linewidth = 3, label = i)
 plt.legend(fontsize = '30')
 plt.xlabel('Temperature (K)', fontweight = 'bold')

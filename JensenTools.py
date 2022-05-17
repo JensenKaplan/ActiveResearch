@@ -15,7 +15,7 @@ import pandas as pd
 from scipy import integrate
 
 # Moleuclar weight dictionary for our compounds.
-molweight = {'Sr2PrO4' : 380.15, 'Li8PrO6' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16} 
+molweight = {'Sr2PrO4' : 380.15, 'Li8PrO6' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16, 'Sr2CeO4' : 379.35} 
 avo = 6.0221409e+23 #spin/mol
 
 def POEXi(M,MErr,H,mass,massErr,comp,per):
@@ -187,12 +187,19 @@ def getData(magrun, dataDir,**kwargs):
 			return M,H,T,E, mass, measType
 		if dataType == 'HC':
 			name = magrun.split('_')[-1].split('.')[0]
-			# print(name)
-			# print(df.columns)
+			mass = magrun.split('_')[2][:-2].replace('p','.').replace('P','.')
+			mass = float(mass)/1000
+			# print('\n\n',name)
+			# print('\n\n',df.columns[2],'\n\n')
+			# try:
 			T = np.array(df['Sample Temp (Kelvin)'])
+			# except:
+			# 	print('Wrong Column Name for Temp')
+			# else:
+			# 	T = np.array(df['Temperature (Kelvin)'])
 			h = np.array(df['Samp HC (µJ/K)'])
 			hErr = np.array(df['Samp HC Err (µJ/K)'])
-			return T,h,hErr, name
+			return T,h,hErr, name, mass
 
 	elif who == 'MPMS':
 		if dataType == 'MT':

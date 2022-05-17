@@ -27,8 +27,8 @@ rcParams['legend.frameon'] = False
 rcParams['legend.fontsize'] = 18
 
 #####################################################################################################################################################################
-comp = 'Sr2PrO4'
-who = 'MPMS'
+comp = 'ErOI'
+who = 'PPMS'
 # comp = 'Li8PrO6'
 # who = 'MPMS'
 dataType = 'MT'
@@ -36,7 +36,7 @@ saveDir = getSaveDir('m', comp = comp, dataType = dataType)
 molweight = molweight[comp]
 per = 'mol'
 
-fit = True
+fit = False
 
 # The S,L,J values are as follows for the Pr4+ ion
 S = 0.5
@@ -73,29 +73,39 @@ for i in os.listdir(saveDir):
 temp = [] # temporary list for sorting
 # print(runs[0].split('_')[-2][:-1])
 for i in runs:
-    # print(i)
-    temp.append(i.split('_')[-2][:-1].replace('p','.')) # this creates a list of just temperatures as read by the filename   
+    temporary = i.split('_')[-2][:-1].replace('p','.')
+    temporary = temporary.replace('P','.')
+    temp.append(temporary) # this creates a list of just temperatures as read by the filename   
+
+
 temp = np.argsort([float(i) for i in temp]) # Sort by temperature
 runs = [runs[i] for i in temp] # newly sorted listed
 
 data = {}
 for i in runs:
+    fieldStr =i.split('_')[-2][:-1].replace('p','.')
+    fieldStr =fieldStr.replace('P','.')
+
     M,H,T,MErr,samplemass,measType = getData(i,saveDir, who = who, dataType = dataType)
-    data[measType] = [M,H,T,MErr,samplemass]
+    data[measType + ' ' + fieldStr + 'T'] = [M,H,T,MErr,samplemass]
 
 #####################################################################################################################################################################
 for i in runs:
+    fieldStr =i.split('_')[-2][:-1].replace('p','.')
+    fieldStr =fieldStr.replace('P','.')
     M,H,T,MErr,mass,measType = getData(i,saveDir, who = who, dataType = dataType)
     M = normalize(M,mass,molweight, per)
     Merr = normalize(M,mass,molweight, per)
-    data[measType] = [M,H,T,MErr,mass]
+    data[measType + ' ' + fieldStr + 'T'] = [M,H,T,MErr,mass]
 
 
 byField = {}
 #Choose here
 for i in data.keys():
     name = i
+    print(name)
     fieldStr = i.split('_')[0]
+    print(fieldStr)
     M,H,T,MErr,samplemass = data[name]
     MBohr = emuToBohr2(M)
     HTes = oeToTesla(H)
@@ -142,6 +152,8 @@ if fit:
     fullLine = []
     for i in T:
         fullLine.append(Curiei(i,resulti.params['c'].value,resulti.params['wc'].value))
+
+
 #####################################################################################################################################################################
 
 plt.figure()
@@ -152,21 +164,25 @@ if fit:
 plt.xlabel('Temperature (K)', fontweight = 'bold')
 plt.ylabel('X^-1 (emu ^-1 Oe)', fontweight = 'bold')
 plt.legend(fontsize = 30)
+plt.title(comp)
 # plt.show()
-print('Curie: ', resulti.params['c'].value )
-ueff, gj = calcConstants(resulti.params['c'].value, J =5./2)
-print('ueff = {}, gj = {}'.format(ueff,gj))
-resulti.params.pretty_print()
+if fit:
+    print('Curie: ', resulti.params['c'].value )
+    ueff, gj = calcConstants(resulti.params['c'].value, J =5./2)
+    print('ueff = {}, gj = {}'.format(ueff,gj))
+    resulti.params.pretty_print()
 
 plt.figure()
 
 for i in byField.keys():
-    plt.plot(byField[i][1],byField[i][3],label = byField[i][0])
+    plt.errorbar(byField[i][1],byField[i][3], yerr = byField[i][5], label = byField[i][0], marker = 'o', linestyle = 'none')
     # print(byField[i,2])
     plt.title("{} {}".format(comp, 'X^-1'), fontsize = 20)
     plt.xlabel('Temperature (K)', fontsize = 13)
     plt.ylabel('X^-1 (emu ^-1 Oe)', fontsize = 13)
-    plt.legend(fontsize = 30)    
+    plt.legend(fontsize = 30) 
+    plt.title(comp)
+
 plt.show()
 
 
@@ -178,6 +194,8 @@ for i in byField.keys():
     plt.xlabel('Temperature (K)', fontsize = 13)
     plt.ylabel('X^-1 (emu ^-1 Oe)', fontsize = 13)
     plt.legend(fontsize = 30)    
+    plt.title(comp)
+
 plt.show()
 
 plt.figure()
@@ -187,6 +205,8 @@ for i in byField.keys():
     plt.xlabel('Temperature (K)', fontsize = 13)
     plt.ylabel('X (emu Oe^-1)', fontsize = 13)
     plt.legend(fontsize = 30)   
+    plt.title(comp)
+
 plt.show()
 
 plt.figure()
@@ -196,6 +216,8 @@ for i in byField.keys():
     plt.xlabel('Temperature (K)')
     plt.ylabel('X*T (emu K Oe^-1)')
     plt.legend(fontsize = 30)   
+    plt.title(comp)
+
 plt.show()
 
 # fig,ax = plt.subplots()

@@ -1,0 +1,73 @@
+
+#(C) 2018 by FIZ Karlsruhe - Leibniz Institute for Information Infrastructure.  All rights reserved.
+data_90366-ICSD
+_database_code_ICSD 90366
+_audit_creation_date 2002-04-01
+_chemical_name_systematic 'Distrontium praseodymium(IV) oxide'
+_chemical_formula_structural 'Sr2 Pr O4'
+_chemical_formula_sum 'O4 Pr1 Sr2'
+_chemical_name_structure_type Na2MnCl4
+_exptl_crystal_density_diffrn 5.59
+_publ_section_title
+
+;
+Synthesis of Sr2 Pr O4: a Pr(4+)-containing oxide in the Sr2 Pb O4 structure
+type
+;
+loop_
+_citation_id
+_citation_journal_full
+_citation_year
+_citation_journal_volume
+_citation_page_first
+_citation_page_last
+_citation_journal_id_ASTM
+primary 'Journal of Alloys and Compounds' 2000 306 141 145 JALCEU
+loop_
+_publ_author_name
+'Fiscus, J.E.'
+'zur Loye, H.C.'
+_cell_length_a 6.12382(3)
+_cell_length_b 10.28083(5)
+_cell_length_c 3.58963(2)
+_cell_angle_alpha 90.
+_cell_angle_beta 90.
+_cell_angle_gamma 90.
+_cell_volume 226.
+_cell_formula_units_Z 2
+_symmetry_space_group_name_H-M 'P b a m'
+_symmetry_Int_Tables_number 55
+_refine_ls_R_factor_all 0.016
+loop_
+_symmetry_equiv_pos_site_id
+_symmetry_equiv_pos_as_xyz
+1 'x+1/2, -y+1/2, z'
+2 '-x+1/2, y+1/2, z'
+3 'x, y, -z'
+4 '-x, -y, -z'
+5 '-x+1/2, y+1/2, -z'
+6 'x+1/2, -y+1/2, -z'
+7 '-x, -y, z'
+8 'x, y, z'
+loop_
+_atom_type_symbol
+_atom_type_oxidation_number
+Sr2+ 2
+Ce3+ 4
+O2- -2
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_B_iso_or_equiv
+_atom_site_occupancy
+_atom_site_attached_hydrogens
+Sr1 Sr2+ 4 h 0.0643(1) 0.32083(7) 0.5 0.16(2) 1. 0
+Pr1 Ce3+ 2 a 0 0 0 0.01(1) 1. 0
+O1 O2- 4 h 0.2291(8) 0.0469(5) 0.5 1.8(1) 1. 0
+O2 O2- 4 g 0.3550(7) 0.3089(5) 0 1.2(1) 1. 0
+#End of TTdata_90366-ICSD
