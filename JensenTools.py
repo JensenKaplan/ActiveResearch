@@ -18,6 +18,29 @@ from scipy import integrate
 molweight = {'Sr2PrO4' : 380.15, 'Li8PrO6' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16, 'Sr2CeO4' : 379.35} 
 avo = 6.0221409e+23 #spin/mol
 
+
+# Jensen made
+def zeeman(self, Field):
+    # if len(Field) != 3: 
+    #     raise TypeError("Field needs to be 3-component vector")
+
+    muB = 5.7883818012e-2  # meV/T
+    #mu0 = np.pi*4e-7       # T*m/A
+    if type(Field) != list:
+        JdotB = muB*(Field/3*self.Jxg0 + Field/3*self.Jyg0 + Field/3*self.Jzg0)
+    else:
+        JdotB = muB*(Field[0]*self.Jxg0 + Field[1]*self.Jyg0 + Field[2]*self.Jzg0)
+    # B) Diagonalize full Hamiltonian
+    FieldHam = self.H_CEF.O + self.H_SOC.O + JdotB.O
+    #FieldHam = self.H + JdotB.O
+    diagonalH = LA.eigh(FieldHam)
+
+    minE = np.amin(diagonalH[0])
+    evals = diagonalH[0] - minE
+
+    return evals
+
+
 def POEXi(M,MErr,H,mass,massErr,comp,per):
 	X = M/H
 	XErr = []

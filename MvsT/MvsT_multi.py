@@ -4,6 +4,8 @@ from JensenTools import *
 from matplotlib import rcParams
 from matplotlib import patches
 
+# Plotting params
+#####################################################################################################################################################################
 rcParams['font.family'] = 'sans-serif'
 rcParams['font.sans-serif'] = ['Arial']
 rcParams.update({'font.size': 28})
@@ -25,13 +27,17 @@ rcParams['xtick.minor.visible'] = True
 rcParams['ytick.minor.visible'] = True
 rcParams['legend.frameon'] = False
 rcParams['legend.fontsize'] = 18
-
 #####################################################################################################################################################################
+
+# Define important stuff
+#####################################################################################################################################################################
+dataType = 'MT'
 comp = ['ErOI','ErOBr']
 who = 'PPMS'
 # comp = 'Li8PrO6'
 # who = 'MPMS'
-dataType = 'MT'
+
+
 saveDirDict = {}
 for j in comp:
     saveDirDict[j] = getSaveDir('m', comp = j, dataType = dataType)
@@ -93,7 +99,8 @@ for j in comp:
         fieldStr = fieldStr.replace('P','.')
         M,H,T,MErr,samplemass,measType = getData(i,saveDirDict[j], who = who, dataType = dataType)
         data[j + ' ' + measType + ' ' + fieldStr + 'T'] = [M,H,T,MErr,samplemass]
-    print(data.keys())
+    # print(data.keys())
+
     #####################################################################################################################################################################
     for i in runs:
         fieldStr =i.split('_')[-2][:-1].replace('p','.')
@@ -184,27 +191,47 @@ print()
 
 print()
 print(compounds['ErOI'].keys())
+print(compounds['ErOBr'].keys())
 print()
 
-print()
-print(compounds['ErOI']['ErOI FC 0.1T'])
-print()
-
-plt.figure()
+selectCompound = 'ErOI'
+XiPlotFig = plt.figure()
+XiPlot = XiPlotFig.add_subplot()
+XTPlotFig = plt.figure()
+XTPlot = XTPlotFig.add_subplot()
 for j in compounds.keys():
     for i in compounds[j].keys():
         print(i)
         if (i == 'ErOI ZFC 0.1T'):
             continue
+        XTPlot.plot(compounds[j][i][1],compounds[j][i][1]/compounds[j][i][3], label = compounds[j][i][0], marker = 'o', linestyle = 'none')
+        XiPlot.errorbar(compounds[j][i][1],compounds[j][i][3], compounds[j][i][5], label = compounds[j][i][0], marker = 'o', linestyle = 'none')
 
-        plt.errorbar(compounds[j][i][1],compounds[j][i][3], compounds[j][i][5], label = compounds[j][i][0], marker = 'o', linestyle = 'none')
-        # print(byField[i,2])
+XiPlot.set_title("{} {}".format(comp, 'X^-1(T)'), fontsize = 20)
+XiPlot.set_xlabel('Temperature (K)', fontsize = 13)
+XiPlot.set_ylabel('X^-1 (emu^-1 Oe {})'.format(per), fontsize = 13)
+XiPlot.legend(fontsize = 30) 
 
-plt.title("{} {}".format(comp, 'X^-1'), fontsize = 20)
-plt.xlabel('Temperature (K)', fontsize = 13)
-plt.ylabel('X^-1 (emu ^-1 Oe)', fontsize = 13)
-plt.legend(fontsize = 30) 
+XTPlot.set_title("{} {}".format(comp, 'XT(T)'), fontsize = 20)
+XTPlot.set_xlabel('Temperature (K)', fontsize = 13)
+XTPlot.set_ylabel('X*T (emu/Oe {}^-1)'.format(per), fontsize = 13)
+XTPlot.legend(fontsize = 30) 
+
 plt.show()
+# for j in compounds.keys():
+#     for i in compounds[j].keys():
+#         print(i)
+#         if (i == 'ErOI ZFC 0.1T'):
+#             continue
+#         plt.plot(compounds[j][i][1],1/compounds[j][i][3], label = compounds[j][i][0], marker = 'o', linestyle = 'none')
+#         # plt.errorbar(compounds[j][i][1],compounds[j][i][3], compounds[j][i][5], label = compounds[j][i][0], marker = 'o', linestyle = 'none')
+#         # print(byField[i,2])
+
+# plt.title("{} {}".format(comp, 'X^-1'), fontsize = 20)
+# plt.xlabel('Temperature (K)', fontsize = 13)
+# plt.ylabel('X^-1 (emu^-1 Oe {})'.format(per), fontsize = 13)
+# plt.legend(fontsize = 30) 
+# plt.show()
 
 
 # plt.figure()

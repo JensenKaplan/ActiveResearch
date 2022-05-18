@@ -7,9 +7,6 @@ from matplotlib import patches
 
 # Plot Formatting
 #####################################################################################################################################################################
-# fig = plt.figure(figsize = (10,10))
-# gs = fig.add_gridspec(1, 1)
-# ax1 = plt.subplot(gs[0])
 rcParams['font.family'] = 'sans-serif'
 rcParams['font.sans-serif'] = ['Arial']
 rcParams.update({'font.size': 15})
@@ -40,7 +37,7 @@ ion = 'Ce3+'
 who = 'MPMS'
 LS_on = True
 per = 'spin'
-saveplots = True
+saveplots = False
 
 molweight = molweight[comp]
 LSValue = 100.5
@@ -556,7 +553,7 @@ params['B64'].set(value = B64, vary = False)
 params['pf'].set(value = pf,  vary = False)
 
 if LS_on:
-	params['LS'].set(value = LS, vary = Fals)
+	params['LS'].set(value = LS, vary = False)
 # Fit model to data
 
 # f ='/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Li8PrO6/Li8PrO6_gaussians.csv' # We need to re-open the file
@@ -796,6 +793,15 @@ print(Pr.gtensor())
 
 plt.show()
 
+
+#Zeeman testing
+#####################################################################################################################################################################
+testField = [0,0,14]
+
+print("\n\nEigenvalues before applying magnetic field:\n{}.".format(Pr.eigenvalues))
+
+print("Eigenvalues after applying a vector {} T magnetic field:\n{}.".format(testField,Pr.zeeman(Field = testField)))
+#####################################################################################################################################################################
 
 # Best Fit Params from [E0,E1,E2,E3,E3/E2,E2/E1]
 # #####################################################################################################################################################################
