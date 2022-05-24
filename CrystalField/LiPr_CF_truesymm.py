@@ -37,7 +37,7 @@ ion = 'Ce3+'
 who = 'MPMS'
 LS_on = True
 per = 'spin'
-saveplots = True
+saveplots = False
 
 molweight = molweight[comp]
 LSValue = 100.5
@@ -568,7 +568,6 @@ if saveplots:
 #####################################################################################################################################################################
 
 Pr.printEigenvectors()
-# Pr.printLaTexEigenvectors()
 
 
 # wyb = cef.StevensToWybourne('Ce3+',stev, LS=True)
@@ -576,14 +575,8 @@ Pr.printEigenvectors()
 print(Pr.gtensor())
 plt.show()
 
-#Zeeman testing
-#####################################################################################################################################################################
-testField = [0,0,14]
-
-print("\n\nEigenvalues before applying magnetic field:\n{}.".format(Pr.eigenvalues))
-
-print("Eigenvalues after applying a vector {} T magnetic field:\n{}.".format(testField,Pr.zeeman(Field = testField)))
-#####################################################################################################################################################################
+print('\n\n')
+Pr.printLaTexEigenvectors()
 
 # #####################################################################################################################################################################
 # #Working on LiPr Non Cubic

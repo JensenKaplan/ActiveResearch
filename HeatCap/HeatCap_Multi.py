@@ -36,6 +36,7 @@ who = 'PPMS'
 # who = 'MPMS'
 dataType = 'HC'
 saveDirDict = {}
+
 for j in comp:
 	saveDirDict[j] = getSaveDir('m', comp = j, dataType = dataType)
 
@@ -45,7 +46,9 @@ for j in comp:
 	runs = []
 	for i in os.listdir(saveDirDict[j]):
 	    if i.endswith('.DAT') or i.endswith('.dat'):
-	        runs.append(i)
+	    	if 'dataviewer' not in i.lower():
+	        	runs.append(i)
+	print(runs)
 
 	temp = []
 	for i in runs:
@@ -57,19 +60,31 @@ for j in comp:
 	data = {}
 	for i in runs:
 		T,h,hErr,field, mass = getData(i,saveDirDict[j], dataType = dataType, who = who)
-		h = h * molweight[j]/mass
+		if mass == -1:
+			h = h
+		else:
+			h = h*molweight[j]/mass
+
+		# PPMS when doing HC can either go from lowT -> highT, or vice verse
+		# it also performs multiple iterations of the same temp step.
+		# This leads to possible messiness when plotting. Points connected that shouldn't be.
+		# The below sorts the dsata appropriately and hence fixes plots.
+		zippedHC = zip(T,h)
+		sortedHC = sorted(zippedHC)
+		HCtuples = zip(*sortedHC)
+
+		T, h = [ list(tuple) for tuple in  HCtuples]
 		data[field] = T,h,hErr,field
 
 	compounds[j] = data
 
 
-plt.figure()
 for j in compounds.keys():
 	for i in compounds[j].keys():
 		T = compounds[j][i][0][:]
 		h = compounds[j][i][1][:] # To Tesla
-		if j == 'Sr2CeO4':
-			h = h*35
+		if j == 'Sr2PrO4' and i == '0T':
+			h = h
 		plt.plot(T,h, label = j + ' ' + i,linestyle = '--', marker = 'o',markersize = 5, linewidth = 3)
 plt.legend(fontsize = '30')
 plt.xlabel('Temperature (K)', fontweight = 'bold')

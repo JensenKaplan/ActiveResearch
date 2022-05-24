@@ -27,8 +27,8 @@ rcParams['legend.frameon'] = False
 rcParams['legend.fontsize'] = 18
 
 #####################################################################################################################################################################
-comp = 'ErOI'
-who = 'PPMS'
+comp = 'Sr2PrO4'
+who = 'MPMS'
 # comp = 'Li8PrO6'
 # who = 'MPMS'
 dataType = 'MT'
@@ -36,7 +36,7 @@ saveDir = getSaveDir('m', comp = comp, dataType = dataType)
 molweight = molweight[comp]
 per = 'mol'
 
-fit = False
+fit = True
 
 # The S,L,J values are as follows for the Pr4+ ion
 S = 0.5
@@ -129,9 +129,11 @@ for i in data.keys():
 
 # print(byField.keys())
 
+Field = '0.1T'
+# print('\n\n\n',byField[Field][0])
 if fit:
-    name,T, X, Xi, XT,XiErr = byField['3T'][0],byField['3T'][1],byField['3T'][2],byField['3T'][3],byField['3T'][4],byField['3T'][5],
-    tr = [1,20] #temprange = [low,high]
+    name,T, X, Xi, XT,XiErr = byField[Field][0],byField[Field][1],byField[Field][2],byField[Field][3],byField[Field][4],byField[Field][5],
+    tr = [15,30] #temprange = [low,high]
     newT = []
     newXi = []
     newErr = []
@@ -157,7 +159,7 @@ if fit:
 #####################################################################################################################################################################
 
 plt.figure()
-plt.errorbar(T,Xi,yerr = XiErr,label = 'Measured Data', marker = 'o', color = 'magenta', linestyle = 'none')
+plt.errorbar(T,Xi,yerr = XiErr,label = '{} Measured Data'.format(Field), marker = 'o', color = 'magenta', linestyle = 'none')
 if fit:
     plt.plot(T,fullLine,'black', linestyle = '-', label = 'Curie Weiss Fit', linewidth = 4)
 # ax.set_title("{} {}".format(comp,name), fontsize = 20)

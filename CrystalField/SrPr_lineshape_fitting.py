@@ -783,9 +783,6 @@ plt.xlabel('Energy (meV)')
 if saveplots:
     plt.savefig('/Users/jensenkaplan/Dropbox (GaTech)/Jensen/Sr2PrO4/Final Stretch/Lineshape/{}_Lineshape.png'.format(comp))
 
-# print(fitted.params['B44']/fitted.params['B40'])
-# print(fitted.params['B64']/fitted.params['B60'])
-
 
 # wyb = cef.StevensToWybourne('Ce3+',stev, LS=True)
 # print(wyb)
@@ -793,15 +790,8 @@ print(Pr.gtensor())
 
 plt.show()
 
-
-#Zeeman testing
-#####################################################################################################################################################################
-testField = [0,0,14]
-
-print("\n\nEigenvalues before applying magnetic field:\n{}.".format(Pr.eigenvalues))
-
-print("Eigenvalues after applying a vector {} T magnetic field:\n{}.".format(testField,Pr.zeeman(Field = testField)))
-#####################################################################################################################################################################
+print('\n\n')
+Pr.printLaTexEigenvectors()
 
 # Best Fit Params from [E0,E1,E2,E3,E3/E2,E2/E1]
 # #####################################################################################################################################################################

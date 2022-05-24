@@ -211,7 +211,10 @@ def getData(magrun, dataDir,**kwargs):
 		if dataType == 'HC':
 			name = magrun.split('_')[-1].split('.')[0]
 			mass = magrun.split('_')[2][:-2].replace('p','.').replace('P','.')
-			mass = float(mass)/1000
+			try:
+				mass = float(mass)/1000
+			except:
+				mass = -1
 			# print('\n\n',name)
 			# print('\n\n',df.columns[2],'\n\n')
 			# try:
