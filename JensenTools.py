@@ -118,29 +118,48 @@ def thermoDiagnostic(Pr, TX, HX, TM, HM, **kwargs):
 # Can leave data type blank for the general directory of the compound
 # Or can specify the type of data: MH = magnetization, MT = susceptibility
 # These work as long as I follow data handling conventions well.
-def getSaveDir(name = 'm', comp = 'Sr2PrO4', dataType = None):
+def getSaveDir(name = 'm', comp = 'Sr2PrO4', dataType = None , DataViewer = False):
 	if name == 'm':
 		dataDir = '/Users/jensenkaplan/Dropbox (GaTech)/Jensen/{}/'.format(comp)		
 	elif name =='w':
 		dataDir =  "C:/Users/jense/Dropbox (GaTech)/Jensen/{}/".format(comp)
 	else:
 		"ERROR: Please use 'w' for Windows, 'm' for Mac." 
-		return
+		return	
 
-	if dataType == 'grid':
-		dataDir = dataDir + 'CubicGridSearch'
-	elif dataType =='MH':
-		dataDir = dataDir + 'MVSH/'
-	elif dataType == 'MT':
-		dataDir = dataDir + 'MVST/'
-	elif dataType == 'IE':
-		dataDir = dataDir + 'IE/'
-	elif dataType == 'IQ':
-		dataDir = dataDir + 'IQ/'
-	elif dataType == 'HC':
-		dataDir = dataDir + 'HC/'
+	if DataViewer == True:
+
+		if dataType == 'grid':
+			dataDir = dataDir + 'CubicGridSearch'
+		elif dataType =='MH':
+			dataDir = dataDir + 'MVSH/DataViewer/'
+		elif dataType == 'MT':
+			dataDir = dataDir + 'MVST/DataViewer/'
+		elif dataType == 'IE':
+			dataDir = dataDir + 'IE/'
+		elif dataType == 'IQ':
+			dataDir = dataDir + 'IQ/'
+		elif dataType == 'HC':
+			dataDir = dataDir + 'HC/DataViewer/'
+		else:
+			return dataDir
 	else:
-		return dataDir
+
+		if dataType == 'grid':
+			dataDir = dataDir + 'CubicGridSearch'
+		elif dataType =='MH':
+			dataDir = dataDir + 'MVSH/'
+		elif dataType == 'MT':
+			dataDir = dataDir + 'MVST/'
+		elif dataType == 'IE':
+			dataDir = dataDir + 'IE/'
+		elif dataType == 'IQ':
+			dataDir = dataDir + 'IQ/'
+		elif dataType == 'HC':
+			dataDir = dataDir + 'HC/'
+		else:
+			return dataDir
+
 	return dataDir
 
 # Takes a filename and data directory
@@ -148,7 +167,7 @@ def getSaveDir(name = 'm', comp = 'Sr2PrO4', dataType = None):
 # field, moment, and error are returned as np arrays
 # name is returned as a string
 ## Note that the name handling is hardcoded for how my lab conventionally names our files.
-def getData(magrun, dataDir,**kwargs):
+def getData(magrun, dataDir,DataViewer = False, **kwargs):
 	who = kwargs['who']
 	dataType = kwargs['dataType']
 	if who == 'Arun':
@@ -156,7 +175,7 @@ def getData(magrun, dataDir,**kwargs):
 		name = name.replace('P','.')
 		name = name.replace('p','.')
 		mass = getMass(magrun,**kwargs)
-		print(name)
+		# print(name)
 		f = open(dataDir + magrun)
 		while f.readline().strip() != '[Data]':
 			pass
@@ -175,7 +194,6 @@ def getData(magrun, dataDir,**kwargs):
 			return M,H,T,E, mass, name
 
 	elif who == 'PPMS':
-
 		# print(dataDir + magrun)
 		f = open(dataDir + magrun, encoding = 'latin1')
 		# print(dataDir+magrun)
@@ -226,6 +244,41 @@ def getData(magrun, dataDir,**kwargs):
 			h = np.array(df['Samp HC (µJ/K)'])
 			hErr = np.array(df['Samp HC Err (µJ/K)'])
 			return T,h,hErr, name, mass
+
+#####################################################################################################################################################################			
+	elif who == 'DataViewer' : 
+		# print(dataDir + magrun)
+		f = open(dataDir + magrun, encoding = 'latin1')
+
+		# print(dataDir+magrun)
+		# while f.readline().strip() != '[Data]':
+			# pass
+		f.readline()
+		df = pd.read_csv(f, sep  = ' ')
+
+		df.set_axis(["Temperature (Kelvin)", "Specific Heat (J/K/mol)",  "Specific Heat Error"], axis = 1, inplace = True)
+
+		df.dropna(inplace = True)
+		name = magrun.split('_')[4].split('.')[0]
+		name = name.replace('P','.')
+
+		if dataType == 'HC':
+			name = magrun.split('_')[-1].split('.')[0]
+			mass = magrun.split('_')[2][:-2].replace('p','.').replace('P','.')
+			# print(magrun.split('_'))
+			try:
+				mass = float(mass)/1000
+			except:
+				mass = -1
+			# print('\n\n',name)
+			# print('\n\n',df.columns[2],'\n\n')
+			# try:
+			T = np.array(df['Temperature (Kelvin)'])
+			h = np.array(df['Specific Heat (J/K/mol)'])
+			hErr = np.array(df['Specific Heat Error'])
+
+			return T,h,hErr, name, mass
+#####################################################################################################################################################################
 
 	elif who == 'MPMS':
 		if dataType == 'MT':

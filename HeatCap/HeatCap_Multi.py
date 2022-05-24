@@ -31,14 +31,16 @@ rcParams['legend.fontsize'] = 18
 
 
 comp = ['Sr2CeO4','Sr2PrO4']
-who = 'PPMS'
+
+dataViewer = {'Sr2CeO4' : True, 'Sr2PrO4' : True}
+who = 'DataViewer'
 # comp = 'Li8PrO6'
 # who = 'MPMS'
 dataType = 'HC'
 saveDirDict = {}
 
 for j in comp:
-	saveDirDict[j] = getSaveDir('m', comp = j, dataType = dataType)
+	saveDirDict[j] = getSaveDir('m', comp = j, dataType = dataType, DataViewer = dataViewer[j])
 
 compounds = {}
 
@@ -59,11 +61,13 @@ for j in comp:
 
 	data = {}
 	for i in runs:
-		T,h,hErr,field, mass = getData(i,saveDirDict[j], dataType = dataType, who = who)
+		T,h,hErr,field, mass = getData(i,saveDirDict[j], dataType = dataType, who = who, dataViewer = dataViewer[j])
+		# print(j,mass)
 		if mass == -1:
 			h = h
 		else:
-			h = h*molweight[j]/mass
+			if not dataViewer[j]:
+				h = h*molweight[j]/mass
 
 		# PPMS when doing HC can either go from lowT -> highT, or vice verse
 		# it also performs multiple iterations of the same temp step.
@@ -74,21 +78,21 @@ for j in comp:
 		HCtuples = zip(*sortedHC)
 
 		T, h = [ list(tuple) for tuple in  HCtuples]
-		data[field] = T,h,hErr,field
+		data[field] = np.array(T),np.array(h), np.array(hErr),field
 
 	compounds[j] = data
 
 
 for j in compounds.keys():
 	for i in compounds[j].keys():
-		T = compounds[j][i][0][:]
-		h = compounds[j][i][1][:] # To Tesla
+		T = compounds[j][i][0]
+		h = compounds[j][i][1] # To Tesla
 		if j == 'Sr2PrO4' and i == '0T':
 			h = h
 		plt.plot(T,h, label = j + ' ' + i,linestyle = '--', marker = 'o',markersize = 5, linewidth = 3)
 plt.legend(fontsize = '30')
 plt.xlabel('Temperature (K)', fontweight = 'bold')
-plt.ylabel('Heat Capacity (J/K) mol^-1', fontweight = 'bold')
+plt.ylabel('Heat Capacity (J/K/Mol)', fontweight = 'bold')
 plt.show()
 
 
