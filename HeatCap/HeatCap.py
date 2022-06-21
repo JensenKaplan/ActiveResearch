@@ -28,11 +28,14 @@ rcParams['legend.fontsize'] = 18
 
 
 comp = 'Sr2PrO4'
-who = 'PPMS'
+who = 'DataViewer'
 # comp = 'Li8PrO6'
 # who = 'MPMS'
 dataType = 'HC'
-saveDir = getSaveDir('m', comp = comp, dataType = dataType)
+DataViewer = True
+saveDir = getSaveDir('m', comp = comp, dataType = dataType, DataViewer = DataViewer)
+
+
 
 runs = []
 for i in os.listdir(saveDir):
@@ -46,23 +49,47 @@ for i in runs:
 temp = np.argsort([float(i) for i in temp]) # Sort by temperature
 runs = [runs[i] for i in temp] # newly sorted listed
 
+
 data = {}
 for i in runs:
-	T,h,hErr,field = getData(i,saveDir, dataType = dataType, who = who)
-	data[field] = T,h,hErr
+	T,h,hErr,field,mass = getData(i,saveDir, dataType = dataType, who = who, DataViewer = True)
+
+	if mass == -1:
+		h = h
+	else:
+		h = h*molweight[comp]/mass
+
+	# PPMS when doing HC can either go from lowT -> highT, or vice verse
+	# it also performs multiple iterations of the same temp step.
+	# This leads to possible messiness when plotting. Points connected that shouldn't be.
+	# The below sorts the dsata appropriately and hence fixes plots.
+	zippedHC = zip(T,h)
+	sortedHC = sorted(zippedHC)
+	HCtuples = zip(*sortedHC)
+	print(HCtuples)
+	T, h = [list(tuple) for tuple in  HCtuples]
+
+	data[field] = np.array(T),np.array(h),np.array(hErr)
+	# data[field] = T,h,hErr
+
 
 
 plt.figure()
 for i in data.keys():
+	T = data[i][0]
+	h = data[i][1]# To Tesla
+	hErr = data[i][2] # To Tesla
+
 	# if i == '0T':
-		
-	T = data[i][0][:]
-	h = data[i][1][:]*10E-6
-	hErr = data[i][2][:]*10E-6
+		# print(type(T[0]))
 	plt.errorbar(T,h, yerr = hErr, linestyle = '--', marker = 'o',markersize = 5, linewidth = 3, label = i)
 plt.legend(fontsize = '30')
+plt.title(comp)
 plt.xlabel('Temperature (K)', fontweight = 'bold')
-plt.ylabel('Heat Capacity (J/K)', fontweight = 'bold')
+if DataViewer == True:
+	plt.ylabel('Heat Capacity (J/K/mol)', fontweight = 'bold')
+else:
+	plt.ylabel('Heat Capacity (J/K)', fontweight = 'bold')	
 plt.show()
 
 # Sample Temp (Kelvin),Samp HC (µJ/K),Samp HC Err (µJ/K),
