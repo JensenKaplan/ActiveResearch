@@ -73,29 +73,39 @@ for i in os.listdir(saveDir):
 temp = [] # temporary list for sorting
 # print(runs[0].split('_')[-2][:-1])
 for i in runs:
-    # print(i)
-    temp.append(i.split('_')[-2][:-1].replace('p','.')) # this creates a list of just temperatures as read by the filename   
+    temporary = i.split('_')[-2][:-1].replace('p','.')
+    temporary = temporary.replace('P','.')
+    temp.append(temporary) # this creates a list of just temperatures as read by the filename   
+
+
 temp = np.argsort([float(i) for i in temp]) # Sort by temperature
 runs = [runs[i] for i in temp] # newly sorted listed
 
 data = {}
 for i in runs:
+    fieldStr =i.split('_')[-2][:-1].replace('p','.')
+    fieldStr =fieldStr.replace('P','.')
+
     M,H,T,MErr,samplemass,measType = getData(i,saveDir, who = who, dataType = dataType)
-    data[measType] = [M,H,T,MErr,samplemass]
+    data[measType + ' ' + fieldStr + 'T'] = [M,H,T,MErr,samplemass]
 
 #####################################################################################################################################################################
 for i in runs:
+    fieldStr =i.split('_')[-2][:-1].replace('p','.')
+    fieldStr =fieldStr.replace('P','.')
     M,H,T,MErr,mass,measType = getData(i,saveDir, who = who, dataType = dataType)
     M = normalize(M,mass,molweight, per)
     Merr = normalize(M,mass,molweight, per)
-    data[measType] = [M,H,T,MErr,mass]
+    data[measType + ' ' + fieldStr + 'T'] = [M,H,T,MErr,mass]
 
 
 byField = {}
 #Choose here
 for i in data.keys():
     name = i
+    print(name)
     fieldStr = i.split('_')[0]
+    print(fieldStr)
     M,H,T,MErr,samplemass = data[name]
     MBohr = emuToBohr2(M)
     HTes = oeToTesla(H)
@@ -119,9 +129,11 @@ for i in data.keys():
 
 # print(byField.keys())
 
+Field = '0.1T'
+# print('\n\n\n',byField[Field][0])
 if fit:
-    name,T, X, Xi, XT,XiErr = byField['3T'][0],byField['3T'][1],byField['3T'][2],byField['3T'][3],byField['3T'][4],byField['3T'][5],
-    tr = [1,20] #temprange = [low,high]
+    name,T, X, Xi, XT,XiErr = byField[Field][0],byField[Field][1],byField[Field][2],byField[Field][3],byField[Field][4],byField[Field][5],
+    tr = [15,30] #temprange = [low,high]
     newT = []
     newXi = []
     newErr = []
@@ -142,31 +154,37 @@ if fit:
     fullLine = []
     for i in T:
         fullLine.append(Curiei(i,resulti.params['c'].value,resulti.params['wc'].value))
+
+
 #####################################################################################################################################################################
 
 plt.figure()
-plt.errorbar(T,Xi,yerr = XiErr,label = 'Measured Data', marker = 'o', color = 'magenta', linestyle = 'none')
+plt.errorbar(T,Xi,yerr = XiErr,label = '{} Measured Data'.format(Field), marker = 'o', color = 'magenta', linestyle = 'none')
 if fit:
     plt.plot(T,fullLine,'black', linestyle = '-', label = 'Curie Weiss Fit', linewidth = 4)
 # ax.set_title("{} {}".format(comp,name), fontsize = 20)
 plt.xlabel('Temperature (K)', fontweight = 'bold')
 plt.ylabel('X^-1 (emu ^-1 Oe)', fontweight = 'bold')
 plt.legend(fontsize = 30)
+plt.title(comp)
 # plt.show()
-print('Curie: ', resulti.params['c'].value )
-ueff, gj = calcConstants(resulti.params['c'].value, J =5./2)
-print('ueff = {}, gj = {}'.format(ueff,gj))
-resulti.params.pretty_print()
+if fit:
+    print('Curie: ', resulti.params['c'].value )
+    ueff, gj = calcConstants(resulti.params['c'].value, J =5./2)
+    print('ueff = {}, gj = {}'.format(ueff,gj))
+    resulti.params.pretty_print()
 
 plt.figure()
 
 for i in byField.keys():
-    plt.plot(byField[i][1],byField[i][3],label = byField[i][0])
+    plt.errorbar(byField[i][1],byField[i][3], yerr = byField[i][5], label = byField[i][0], marker = 'o', linestyle = 'none')
     # print(byField[i,2])
     plt.title("{} {}".format(comp, 'X^-1'), fontsize = 20)
     plt.xlabel('Temperature (K)', fontsize = 13)
     plt.ylabel('X^-1 (emu ^-1 Oe)', fontsize = 13)
-    plt.legend(fontsize = 30)    
+    plt.legend(fontsize = 30) 
+    plt.title(comp)
+
 plt.show()
 
 
@@ -178,6 +196,8 @@ for i in byField.keys():
     plt.xlabel('Temperature (K)', fontsize = 13)
     plt.ylabel('X^-1 (emu ^-1 Oe)', fontsize = 13)
     plt.legend(fontsize = 30)    
+    plt.title(comp)
+
 plt.show()
 
 plt.figure()
@@ -187,6 +207,8 @@ for i in byField.keys():
     plt.xlabel('Temperature (K)', fontsize = 13)
     plt.ylabel('X (emu Oe^-1)', fontsize = 13)
     plt.legend(fontsize = 30)   
+    plt.title(comp)
+
 plt.show()
 
 plt.figure()
@@ -196,6 +218,8 @@ for i in byField.keys():
     plt.xlabel('Temperature (K)')
     plt.ylabel('X*T (emu K Oe^-1)')
     plt.legend(fontsize = 30)   
+    plt.title(comp)
+
 plt.show()
 
 # fig,ax = plt.subplots()
