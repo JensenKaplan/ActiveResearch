@@ -175,7 +175,7 @@ def getData(magrun, dataDir,DataViewer = False, **kwargs):
 		name = name.replace('P','.')
 		name = name.replace('p','.')
 		mass = getMass(magrun,**kwargs)
-		# print(name)
+		print(name)
 		f = open(dataDir + magrun)
 		while f.readline().strip() != '[Data]':
 			pass
@@ -281,6 +281,7 @@ def getData(magrun, dataDir,DataViewer = False, **kwargs):
 #####################################################################################################################################################################
 
 	elif who == 'MPMS':
+
 		if dataType == 'MT':
 			name = (magrun.split('_')[4] + "_" + magrun.split('_')[5]).split('.')[0]
 			name = name.replace('P','.')
@@ -289,18 +290,21 @@ def getData(magrun, dataDir,DataViewer = False, **kwargs):
 			name = (magrun.split('_')[-1].split('.')[0])
 			name = name.replace('P','.')
 			name = name.replace('p','.')	
-		print(magrun)		
+		print(magrun)	
 		mass = getMass(magrun,**kwargs)
+
 		f = open(dataDir + magrun)
 		while f.readline().strip() != '[Data]':
+			print('here')
 			pass
+			
 		df = pd.read_csv(f)
 		df.dropna(subset = ['DC Moment Fixed Ctr (emu)','DC Moment Err Fixed Ctr (emu)','Magnetic Field (Oe)'],inplace = True)
 		T = np.array(df['Temperature (K)'])
 		H = np.array(df['Magnetic Field (Oe)'])
 		E = np.array(df['DC Moment Err Fixed Ctr (emu)'])
 		M = np.array(df['DC Moment Fixed Ctr (emu)'])
-
+		# print(M)
 		if dataType == 'MH':
 			return  M, H, E, mass, name
 		if dataType == 'MT':
@@ -315,7 +319,7 @@ def getMass(filename,**kwargs):
 	elif kwargs['who'] == 'MPMS':
 		mass = filename.split('_')[2]
 		mass = mass.replace('P','.')
-		mass = mass.replace('p','.')		
+		mass = mass.replace('p','.')	
 	else:
 		mass = filename.split('_')[2]
 		mass = mass.replace('P','.')

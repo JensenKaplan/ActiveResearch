@@ -27,7 +27,7 @@ rcParams['legend.frameon'] = False
 rcParams['legend.fontsize'] = 18
 
 #####################################################################################################################################################################
-comp = 'Li8PrO6'
+comp = 'Sr2PrO4'
 # who = 'Arun'
 # comp = 'Li8PrO6'
 who = 'MPMS'
@@ -47,7 +47,8 @@ for i in os.listdir(MHDir):
 
 temp = [] # temporary list for sorting
 for i in runs:
-    temp.append(getTemp(i, who = who)) # this creates a list of just temperatures as read by the filename   
+    temp.append(getTemp(i, who = who)) # this creates a list of just temperatures as read by the filename
+
 temp = np.argsort([int(i) for i in temp]) # Sort by temperature
 runs = [runs[i] for i in temp] # newly sorted listed
 #####################################################################################################################################################################
@@ -67,14 +68,13 @@ plt.figure()
 for i in runs:
     M, H, Err, mass, T = getData(i,MHDir,who = who, dataType = 'MH')
     M = normalize(M,mass,molweight,per)
-    Err = normalize(Err,mass,molweight, per)
+    Err = normalize(Err,mass,molweight,per)
     MHdata[T] = [M,H,Err,mass,i]
     plt.plot(H, M, label = T)
 plt.title('{} Magnetization'.format(comp))
 plt.ylabel('Moment (emu {}^-1)'.format(per))
 plt.xlabel('Field (Oe)')
 plt.legend()
-
 
 #Plot in uB/T for all temperatures
 plt.figure()

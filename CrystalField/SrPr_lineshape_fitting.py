@@ -448,6 +448,7 @@ for i in runs:
     Merr = normalize(MErr,mass,molweight,per)
     MTdata[measType] = [M,H,T,MErr,mass]
 
+
 runs = []
 for i in os.listdir(MHDir):
     if i.endswith('.DAT') or i.endswith('.dat'): #This was a safeguard against a situation arising at an earlier implementation of my code.
