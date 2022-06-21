@@ -15,11 +15,31 @@ import pandas as pd
 from scipy import integrate
 
 # Moleuclar weight dictionary for our compounds.
-<<<<<<< HEAD
-molweight = { 'Sr2PrO4' : 380.15, 'Li8PrO6' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16 } 
-=======
-molweight = {'Sr2PrO4' : 380.15, 'Li8PrO6' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16} 
+molweight = {'Sr2PrO4' : 380.15, 'Li8PrO6' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16, 'Sr2CeO4' : 379.35} 
 avo = 6.0221409e+23 #spin/mol
+
+
+# Jensen made
+def zeeman(self, Field):
+    # if len(Field) != 3: 
+    #     raise TypeError("Field needs to be 3-component vector")
+
+    muB = 5.7883818012e-2  # meV/T
+    #mu0 = np.pi*4e-7       # T*m/A
+    if type(Field) != list:
+        JdotB = muB*(Field/3*self.Jxg0 + Field/3*self.Jyg0 + Field/3*self.Jzg0)
+    else:
+        JdotB = muB*(Field[0]*self.Jxg0 + Field[1]*self.Jyg0 + Field[2]*self.Jzg0)
+    # B) Diagonalize full Hamiltonian
+    FieldHam = self.H_CEF.O + self.H_SOC.O + JdotB.O
+    #FieldHam = self.H + JdotB.O
+    diagonalH = LA.eigh(FieldHam)
+
+    minE = np.amin(diagonalH[0])
+    evals = diagonalH[0] - minE
+
+    return evals
+
 
 def POEXi(M,MErr,H,mass,massErr,comp,per):
 	X = M/H
@@ -33,7 +53,6 @@ def POEXi(M,MErr,H,mass,massErr,comp,per):
 		XiErr.append(XErr[i]/(X[i]**2))
 	return XiErr
 
->>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
 
 # Thermo diagnostic function.
 # Uses PCF object
@@ -99,29 +118,48 @@ def thermoDiagnostic(Pr, TX, HX, TM, HM, **kwargs):
 # Can leave data type blank for the general directory of the compound
 # Or can specify the type of data: MH = magnetization, MT = susceptibility
 # These work as long as I follow data handling conventions well.
-def getSaveDir(name = 'm', comp = 'Sr2PrO4', dataType = None):
+def getSaveDir(name = 'm', comp = 'Sr2PrO4', dataType = None , DataViewer = False):
 	if name == 'm':
 		dataDir = '/Users/jensenkaplan/Dropbox (GaTech)/Jensen/{}/'.format(comp)		
 	elif name =='w':
 		dataDir =  "C:/Users/jense/Dropbox (GaTech)/Jensen/{}/".format(comp)
 	else:
 		"ERROR: Please use 'w' for Windows, 'm' for Mac." 
-		return
+		return	
 
-	if dataType == 'grid':
-		dataDir = dataDir + 'CubicGridSearch'
-	elif dataType =='MH':
-		dataDir = dataDir + 'MVSH/'
-	elif dataType == 'MT':
-		dataDir = dataDir + 'MVST/'
-	elif dataType == 'IE':
-		dataDir = dataDir + 'IE/'
-	elif dataType == 'IQ':
-		dataDir = dataDir + 'IQ/'
-	elif dataType == 'HC':
-		dataDir = dataDir + 'HC/'
+	if DataViewer == True:
+
+		if dataType == 'grid':
+			dataDir = dataDir + 'CubicGridSearch'
+		elif dataType =='MH':
+			dataDir = dataDir + 'MVSH/DataViewer/'
+		elif dataType == 'MT':
+			dataDir = dataDir + 'MVST/DataViewer/'
+		elif dataType == 'IE':
+			dataDir = dataDir + 'IE/'
+		elif dataType == 'IQ':
+			dataDir = dataDir + 'IQ/'
+		elif dataType == 'HC':
+			dataDir = dataDir + 'HC/DataViewer/'
+		else:
+			return dataDir
 	else:
-		return dataDir
+
+		if dataType == 'grid':
+			dataDir = dataDir + 'CubicGridSearch'
+		elif dataType =='MH':
+			dataDir = dataDir + 'MVSH/'
+		elif dataType == 'MT':
+			dataDir = dataDir + 'MVST/'
+		elif dataType == 'IE':
+			dataDir = dataDir + 'IE/'
+		elif dataType == 'IQ':
+			dataDir = dataDir + 'IQ/'
+		elif dataType == 'HC':
+			dataDir = dataDir + 'HC/'
+		else:
+			return dataDir
+
 	return dataDir
 
 # Takes a filename and data directory
@@ -129,43 +167,10 @@ def getSaveDir(name = 'm', comp = 'Sr2PrO4', dataType = None):
 # field, moment, and error are returned as np arrays
 # name is returned as a string
 ## Note that the name handling is hardcoded for how my lab conventionally names our files.
-def getData(magrun, dataDir,**kwargs):
+def getData(magrun, dataDir,DataViewer = False, **kwargs):
 	who = kwargs['who']
 	dataType = kwargs['dataType']
 	if who == 'Arun':
-<<<<<<< HEAD
-	    name = magrun.split('_')[-1].split('.')[0]
-	    mass = magrun.split('_')[3]
-	    mass = mass.replace('P','.')
-	    mass = mass[:-2]
-	    measType = magrun.split('_')[-1].split('.')[0]
-	    
-
-	    f = open(dataDir + magrun)
-	    while f.readline().strip() != '[Data]':
-	        pass
-	    df = pd.read_csv(f)
-	    df.dropna(subset = ['Magnetic Field (Oe)','M. Std. Err. (emu)'],inplace = True)
-	    T = np.array(df['Temperature (K)'])
-	    H = np.array(df['Magnetic Field (Oe)'])
-	    E = np.array(df['M. Std. Err. (emu)'])
-	    M = np.array(df['Moment (emu)'])
-	    mass = getMass(magrun, **kwargs)
-	    measType = magrun.split('_')[-1].split('.')[0]
-	    # print(measType)
-	    if dataType == 'MH':
-	    	return M, H, E, mass, name
-	    if dataType == 'MT':
-	    	return M,H,T,E, mass, measType
-
-	elif who == 'PPMS':
-		name = magrun.split('_')[4].split('.')[0]
-		name = name.replace('P','.')
-		mass = getMass(magrun,**kwargs)
-		# print(mass)
-		df = pd.read_csv(dataDir + magrun)
-		df.dropna(inplace = True)
-=======
 		name = (magrun.split('_')[-1] + "_" + magrun.split('_')[-1]).split('.')[0]
 		name = name.replace('P','.')
 		name = name.replace('p','.')
@@ -176,33 +181,10 @@ def getData(magrun, dataDir,**kwargs):
 			pass
 		df = pd.read_csv(f)
 		df.dropna(subset = ['Magnetic Field (Oe)','M. Std. Err. (emu)','Magnetic Field (Oe)','Moment (emu)'],inplace = True)
->>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
 		T = np.array(df['Temperature (K)'])
 		H = np.array(df['Magnetic Field (Oe)'])
 		E = np.array(df['M. Std. Err. (emu)'])
 		M = np.array(df['Moment (emu)'])
-<<<<<<< HEAD
-
-		if dataType == 'MH':
-			return  M, H, E, mass, name
-		if dataType == 'MT':
-			measType = magrun.split('_')[-1].split('.')[0]
-			return M,H,T,E, mass, measType
-
-# Get mass from filename and return in grams
-def getMass(filename,**kwargs):
-	if kwargs['who'] == 'Arun':
-		mass = filename.split('_')[3]
-		mass = mass.replace('P','.')
-	else:
-		mass = filename.split('_')[2]
-		mass = mass.replace('P','.')		
-	mass = mass[:-2]
-	mass = float(mass)
-	mass = mass/1000
-	return mass
-
-=======
 		mass = getMass(magrun, **kwargs)
 		measType = magrun.split('_')[-1].split('.')[0]
 		# print(measType)
@@ -212,7 +194,6 @@ def getMass(filename,**kwargs):
 			return M,H,T,E, mass, name
 
 	elif who == 'PPMS':
-
 		# print(dataDir + magrun)
 		f = open(dataDir + magrun, encoding = 'latin1')
 		# print(dataDir+magrun)
@@ -247,14 +228,60 @@ def getMass(filename,**kwargs):
 			return M,H,T,E, mass, measType
 		if dataType == 'HC':
 			name = magrun.split('_')[-1].split('.')[0]
-			# print(name)
-			# print(df.columns)
+			mass = magrun.split('_')[2][:-2].replace('p','.').replace('P','.')
+			try:
+				mass = float(mass)/1000
+			except:
+				mass = -1
+			# print('\n\n',name)
+			# print('\n\n',df.columns[2],'\n\n')
+			# try:
 			T = np.array(df['Sample Temp (Kelvin)'])
+			# except:
+			# 	print('Wrong Column Name for Temp')
+			# else:
+			# 	T = np.array(df['Temperature (Kelvin)'])
 			h = np.array(df['Samp HC (µJ/K)'])
 			hErr = np.array(df['Samp HC Err (µJ/K)'])
-			return T,h,hErr, name
+			return T,h,hErr, name, mass
+
+#####################################################################################################################################################################			
+	elif who == 'DataViewer' : 
+		# print(dataDir + magrun)
+		f = open(dataDir + magrun, encoding = 'latin1')
+
+		# print(dataDir+magrun)
+		# while f.readline().strip() != '[Data]':
+			# pass
+		f.readline()
+		df = pd.read_csv(f, sep  = ' ')
+
+		df.set_axis(["Temperature (Kelvin)", "Specific Heat (J/K/mol)",  "Specific Heat Error"], axis = 1, inplace = True)
+
+		df.dropna(inplace = True)
+		name = magrun.split('_')[4].split('.')[0]
+		name = name.replace('P','.')
+
+		if dataType == 'HC':
+			name = magrun.split('_')[-1].split('.')[0]
+			mass = magrun.split('_')[2][:-2].replace('p','.').replace('P','.')
+			# print(magrun.split('_'))
+			try:
+				mass = float(mass)/1000
+			except:
+				mass = -1
+			# print('\n\n',name)
+			# print('\n\n',df.columns[2],'\n\n')
+			# try:
+			T = np.array(df['Temperature (Kelvin)'])
+			h = np.array(df['Specific Heat (J/K/mol)'])
+			hErr = np.array(df['Specific Heat Error'])
+
+			return T,h,hErr, name, mass
+#####################################################################################################################################################################
 
 	elif who == 'MPMS':
+
 		if dataType == 'MT':
 			name = (magrun.split('_')[4] + "_" + magrun.split('_')[5]).split('.')[0]
 			name = name.replace('P','.')
@@ -263,18 +290,21 @@ def getMass(filename,**kwargs):
 			name = (magrun.split('_')[-1].split('.')[0])
 			name = name.replace('P','.')
 			name = name.replace('p','.')	
-		print(magrun)		
+		print(magrun)	
 		mass = getMass(magrun,**kwargs)
+
 		f = open(dataDir + magrun)
 		while f.readline().strip() != '[Data]':
+			print('here')
 			pass
+			
 		df = pd.read_csv(f)
 		df.dropna(subset = ['DC Moment Fixed Ctr (emu)','DC Moment Err Fixed Ctr (emu)','Magnetic Field (Oe)'],inplace = True)
 		T = np.array(df['Temperature (K)'])
 		H = np.array(df['Magnetic Field (Oe)'])
 		E = np.array(df['DC Moment Err Fixed Ctr (emu)'])
 		M = np.array(df['DC Moment Fixed Ctr (emu)'])
-
+		# print(M)
 		if dataType == 'MH':
 			return  M, H, E, mass, name
 		if dataType == 'MT':
@@ -289,7 +319,7 @@ def getMass(filename,**kwargs):
 	elif kwargs['who'] == 'MPMS':
 		mass = filename.split('_')[2]
 		mass = mass.replace('P','.')
-		mass = mass.replace('p','.')		
+		mass = mass.replace('p','.')	
 	else:
 		mass = filename.split('_')[2]
 		mass = mass.replace('P','.')
@@ -299,7 +329,6 @@ def getMass(filename,**kwargs):
 	mass = mass/1000
 	return mass
 
->>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
 # Get temp from filename and return as a float
 def getTemp(filename,**kwargs):
 	if kwargs['who'] == 'Arun':
@@ -418,11 +447,6 @@ def loadMatrix(runDir, **kwargs):
 				E.append(i)
 		return E, data		
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
 # Contour plotting function for all energy bands
 def plotContours(data,EList,**kwargs):
 
@@ -503,11 +527,7 @@ def paramFinder(data,band,E,tolerance,comp,**kwargs):
 
 #New K-Means sorting which uses ML to cluster and track the energy bands.
 def kmeansSort(e,numlevels):
-<<<<<<< HEAD
-	km = KMeans(numlevels+1) #5 clusters. One for each excited energy level (4) and one for the ground state.
-=======
 	km = KMeans(numlevels) #5 clusters. One for each excited energy level (4) and one for the ground state.
->>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
 	pred_y = km.fit(e.reshape(-1,1))
 	centers = pred_y.cluster_centers_
 	finalEvalList = []
@@ -516,11 +536,6 @@ def kmeansSort(e,numlevels):
 		i = data_shift.index(min(list(data_shift)))
 		finalEvalList.append(e[i])
 	finalEvalList = np.sort(finalEvalList).tolist()
-<<<<<<< HEAD
-	return finalEvalList[1:] #This excludes the lowest (0 energy) mode
-#####################################################################################################################################################################
-
-=======
 	# return finalEvalList[1:] #This excludes the lowest (0 energy) mode
 	return finalEvalList #This includes
 
@@ -537,7 +552,6 @@ def kmeansSort2(e,numlevels):
 	return finalEvalList[1:] #This excludes the lowest (0 energy) mode
 #####################################################################################################################################################################
 
->>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
 
 # for checking eigenvalues (and hence energies) at a given (x,bpf) coordinate
 def printPCFEigens(x,bpf, **kwargs):
