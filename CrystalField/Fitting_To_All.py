@@ -1,8 +1,6 @@
 import sys
 sys.path.append('..')
 from JensenTools import *
-<<<<<<< HEAD
-=======
 from scipy.integrate import simps
 from matplotlib import rcParams
 from matplotlib import patches
@@ -38,13 +36,13 @@ Ei = 700
 Temp = 4.82
 res = 6
 massErr = .00005
->>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
+
 
 # Define important things
 #####################################################################################################################################################################
 comp = 'Sr2PrO4'
 ion = 'Ce3+'
-<<<<<<< HEAD
+
 who = 'Arun'
 LS_on = True
 per = 'spin'
@@ -119,7 +117,6 @@ def lineshapeFit(pf, B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, e
 def fullFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
     deltaField = .0001
     numlevels = kwargs['numlevels']
->>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
 
     Stev = {} #Creating the Stevens' Coefficients dictionary and assigning values
     Stev['B20'] = B20
@@ -143,14 +140,12 @@ def fullFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs )
         for i in FieldM:
             M.append(1/3*Pr.magnetization(Temp = TempM, Field = [i, 0, 0], ion=ion)[0] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, i, 0], ion = ion)[1] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, 0, i], ion = ion)[2])
     
-<<<<<<< HEAD
     e = kmeansSort(Pr.eigenvalues,numlevels)[:numlevels-1] #Excluding the highest mode which we did not detect in our INS runs
     M = -1*np.array(M)
     Xi = -1/X
     total = np.concatenate((e,Xi,M), axis = None)
     return total
 
-=======
     e = kmeansSort(Pr.eigenvalues,numlevels)[:numlevels-3]
     # print(e) #Excluding the highest mode which we did not detect in our INS runs
     e.append(e[3]/e[2]) #The aforementioned ratio
@@ -162,7 +157,6 @@ def fullFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs )
     return total
 
 
->>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
 # Fits the concatenated X^-1 and magnetization
 def thermoFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
     deltaField = .0001
@@ -189,16 +183,13 @@ def thermoFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs
             M.append(1/3*Pr.magnetization(Temp = TempM, Field = [i, 0, 0], ion=ion)[0] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, i, 0], ion = ion)[1] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, 0, i], ion = ion)[2])
     M = -1*np.array(M)
     Xi = -1/X
-<<<<<<< HEAD
     total = np.concatenate((Xi,M), axis = None)
     return total
 
-=======
     total = np.concatenate((-X,M), axis = None)
     return total
 
 
->>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
 # Fits X^-1
 def susFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
     deltaField = .0001
@@ -210,10 +201,9 @@ def susFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
     Stev['B44'] = B44
     Stev['B64'] = B64
     
-<<<<<<< HEAD
+
 #     M = []
-=======
->>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
+
     if kwargs['LS_on']:
         Pr = cef.LS_CFLevels.Bdict(Bdict=Stev, L=3, S=0.5, SpinOrbitCoupling = LS) #Create CF_Levels obejct wtih the given coefficients.
         Pr.diagonalize()
@@ -251,7 +241,7 @@ def magFit(B20, B40,B60, B44, B64, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
             M.append(1/3*Pr.magnetization(Temp = TempM, Field = [i, 0, 0], ion=ion)[0] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, i, 0], ion = ion)[1] + 1/3*Pr.magnetization(Temp = TempM, Field = [0, 0, i], ion = ion)[2])
     M = -1*np.array(M)
     return M
-<<<<<<< HEAD
+
 #####################################################################################################################################################################
 
 
@@ -287,39 +277,6 @@ if not LS_on:
 #####################################################################################################################################################################
 
 
-# # From GridSearch For LS
-# #####################################################################################################################################################################
-# if LS_on:
-# 	LS = LSValue
-# 	x =  0.03629536921151444
-# 	bpf = -0.6570713391739674
-# 	# Assigning the coefficients from grid search
-# 	# Enforcing cubic constraints as a start
-# 	# and including the B20 term which is needed for tetragonal symmetry
-# 	B40 = bpf
-# 	B60 = x*bpf
-# 	B44 = 5*B40
-# 	B64 = -21*B60
-# 	B20 = 0
-# #####################################################################################################################################################################
-
-# # From GridSearch For J
-# #####################################################################################################################################################################
-# if not LS_on:
-# 	x = -1.0000
-# 	bpf = -0.4673
-# 	# Assigning the coefficients from grid search
-# 	# Enforcing cubic constraints as a start
-# 	# and including the B20 term which is needed for tetragonal symmetry	
-# 	B40 = bpf
-# 	B60 = x*bpf
-# 	B44 = 5*B40
-# 	B64 = -21*B60
-# 	B20 = 0
-# #####################################################################################################################################################################
-
-
-=======
 
 # Fitting to eigenvalues
 def energyFit(B40, B60, B44, B64, B20, LS, TempX, FieldX, TempM, FieldM, **kwargs ):
@@ -406,26 +363,17 @@ def paramPrint(fittedparams):
 
 
 #####################################################################################################################################################################
->>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
-
 saveDir = getSaveDir('m',comp = comp) #General Directory for the project
 MTDir = getSaveDir('m',comp = comp, dataType = 'MT') #MvsT data
 MHDir = getSaveDir('m',comp = comp, dataType = 'MH') #MvsT data
 
-<<<<<<< HEAD
-
-=======
->>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
 # Loading data for M vs T 
 #####################################################################################################################################################################
 runs = []
 for i in os.listdir(MTDir):
     if i.endswith('.DAT') or i.endswith('.dat'): #This was a safeguard against a situation arising at an earlier implementation of my code.
         runs.append(i)
-<<<<<<< HEAD
-=======
 
->>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
 MTdata = {}
 for i in runs:
     M,H,T,MErr,mass,measType = getData(i,MTDir, who = who, dataType = 'MT')
@@ -437,7 +385,7 @@ runs = []
 for i in os.listdir(MHDir):
     if i.endswith('.DAT') or i.endswith('.dat'): #This was a safeguard against a situation arising at an earlier implementation of my code.
         runs.append(i)       
-<<<<<<< HEAD
+< HEAD
 # Normalizes and stores data as well as plotting in Emu/Oe for all temperatures.
 MHdata = {}
 for i in runs: 
@@ -468,7 +416,6 @@ XiNorm = 3/7/len(Xi)*np.ones(len(Xi))
 MNorm = 3/7/len(M)*np.ones(len(M))
 
 error = np.concatenate((ENorm,XiNorm,MNorm),axis = None)
-=======
 
 # Normalizes and stores data as well as plotting in Emu/Oe for all temperatures.
 MHdata = {}
@@ -528,12 +475,11 @@ XiErr = POEXi(Mx,MErrxEmu,Hx,mass,massErr,comp,per)
 # error = np.concatenate((XNorm,MBohr),axis = None)
 #####################################################################################################################################################################
 
->>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
 
 # Make LMFIT model and fit
 # Create stevens coefficients dictionary from fitted parameters
 #####################################################################################################################################################################
-<<<<<<< HEAD
+< HEAD
 susModel = Model(fullFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM'])
 params = susModel.make_params()
 
@@ -552,7 +498,7 @@ fitted = susModel.fit(total,params, TempX = TempX, FieldX = .1, TempM = TempM, F
 
 # Create a dictionary of the fitted parameters (stevens coefficients)
 stev = {'B40': fitted.params['B40'].value, 'B60': fitted.params['B60'].value, 'B44' : fitted.params['B44'].value, 'B64' : fitted.params['B64'].value, 'B20' :fitted.params['B20'].value }
-=======
+
 myModel = Model(lineshapeFit, independent_vars = ['TempX', 'FieldX', 'TempM', 'FieldM', 'energy'])
 params = myModel.make_params()
 
@@ -596,7 +542,6 @@ stev = {'B20' : fitted.params['B20'].value, 'B40' : fitted.params['B40'].value, 
 
 paramPrint(fitted.params)
 fitted.params.pretty_print()
->>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
 
 # Create the CFLevels object and diagonalize it
 if LS_on:
@@ -607,7 +552,6 @@ else:
 	Pr.diagonalize()
 #####################################################################################################################################################################
 
-<<<<<<< HEAD
 params.pretty_print()
 magCalcBohrPowder = []
 
@@ -643,7 +587,6 @@ plt.title('Magnetization at {} K '.format(TempM))
 
 Pr.printEigenvectors()
 plt.show()
-=======
 
 
 # Use best fit to make thermo and neutron predictions
@@ -777,83 +720,3 @@ print(Pr.gtensor())
 
 plt.show()
 
-
-# Best Fit Params from [E0,E1,E2,E3,E3/E2,E2/E1]
-# #####################################################################################################################################################################
-# B40  =  -0.5012606800352563
-# B60  =  0.035606510173406256
-# B44  =  -2.3362611638838318
-# B64  =  0.16051908499496623
-# B20  =  2.786665787837128
-# LS  =  78.52277597643308
-# #####################################################################################################################################################################
-
-# #####################################################################################################################################################################
-# pf  =  1.544069493619394
-# B20  =  10.271176099207107
-# B40  =  -0.7900000926018218
-# B60  =  -0.027294715137310747
-# B44  =  -3.8834080305537184
-# B64  =  0.62379565696025
-# LS  =  112.13739498016606
-
-
-# # Ei = 700 meV, res = 12
-# pf  =  0.6392822975748268
-# B20  =  6.920936482418957
-# B40  =  -1.3459080476460257
-# B60  =  -0.04591184042570789
-# B44  =  -5.569383987577362
-# B64  =  0.8791325629968747
-# LS  =  111.94181118904241
-
-# # Ei = 700 meV, res = 12 BEST YET BITCH
-# pf  =  0.32306456625688873
-# B20  =  8.630823912691385
-# B40  =  -0.880918071031349
-# B60  =  -0.0036563779714316553
-# B44  =  -4.766629656046794
-# B64  =  0.8712457036717587
-# LS  =  69.56096710407799
-#####################################################################################################################################################################
-
-#####################################################################################################################################################################
-# EMeas = [0, 168, 336, 384.9, 384.9/336,336/168] # The measured INS magnetic modes
-# EMeasErr = [0, 0.1231, 0.3966, 0.993, 0.993/.3966, 0.3966/0.1231]
-# numlevels = 7
-
-# EmeasIntensity = [0, 168, 336, 384.9, 7.359660386881444e-05/0.0003294713170859596]
-# EmeasIntensityErr = [0, 0.1231, 0.3966, 0.993, 2.436e-05/7.163e-05]
-# numlevels = 6
-
-# Emeas = [0,168,336,384.9]
-# EMeasErr = [0, 0.1231, 0.3966, 0.993]
-
-# Emeas = [168, 335, 385] # The measured INS magnetic modes
-# numlevels = 4
-#####################################################################################################################################################################
-
-#####################################################################################################################################################################
-# Ei = 700 meV, res = 3 EVEN BETTER AGAIN BITCH
-# pf  =  0.3249302105514858
-# B20  =  11.878821057910848
-# B40  =  -0.027443660935498212
-# B60  =  0.04108937188089112
-# B44  =  -1.2762034463309937
-# B64  =  -0.07027980953931078
-# LS  =  64.63543962518928
-
-# Ei = 700 meV, res = 15 it ok BITCH
-# pf  =  0.32445546923595575
-# B20  =  11.506125633458634
-# B40  =  0.011066310392373468
-# B60  =  0.044913099230107265
-# B44  =  -0.9785990018637161
-# B64  =  -0.14654212894410554
-# LS  =  61.324671595577264
-
-# B44 = 5*B40
-# B64 = -21*B60
-# B20 = 0
-#####################################################################################################################################################################
->>>>>>> ac572bb867a6b4908301d659c78f94ccb077834b
