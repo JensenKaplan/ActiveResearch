@@ -138,14 +138,15 @@ def getData(magrun, dataDir,**kwargs):
 	elif who == 'PPMS':
 		# name = name.replace('P','.')
 		mass = getMass(magrun,**kwargs)
-		print(mass)
-		df = pd.read_csv(dataDir + magrun, sep = ',')
+		# print(mass)
+		df = pd.read_csv(dataDir + magrun, sep = ',',skiprows = 1, on_bad_lines='skip', names = ['Time Stamp (sec)','Temperature (K)','Magnetic Field (Oe)','Moment (emu)','M. Std. Err. (emu)'])
 		df.dropna(inplace = True)
+
 		T = np.array(df['Temperature (K)'])
 		H = np.array(df['Magnetic Field (Oe)'])
 		E = np.array(df['M. Std. Err. (emu)'])
 		M = np.array(df['Moment (emu)'])
-
+		print(T)
 		if dataType == 'MH':
 			name =  getTemp(magrun, who = who)
 			return  M, H, E, mass, name
