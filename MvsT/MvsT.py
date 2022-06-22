@@ -90,6 +90,7 @@ if fit:
 plt.figure()
 plt.plot(T,Xi,label = 'Measured 1/X')
 # plt.errorbar(T,Xi,yerr = XiErr,label = 'Measured 1/X')
+
 if fit:
     plt.plot(T,fullLine,'orange', linestyle = '--', label = 'Fitted 1/X')
     plt.title("{} {} fitted over T = [{},{}]".format(comp,measType,tr[0],tr[1]), fontsize = 15)
