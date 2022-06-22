@@ -2,6 +2,7 @@ import sys
 sys.path.append('..')
 from JensenTools import *
 
+# Important stuff
 #####################################################################################################################################################################
 comp = 'Ba2YbNbO6'
 who = 'PPMS'
@@ -10,6 +11,7 @@ saveDir = getSaveDir('m', comp = comp, dataType = dataType)
 molweight = molweight[comp]
 J = 7/2
 massErr = .00005
+fit = False
 #####################################################################################################################################################################
 
 # Inverse Curie Law for LMFIT
@@ -49,47 +51,50 @@ for i in runs:
 M,H,T,MErr,samplemass = data['FC']
 MBohr = emuToBohr2(M)
 HTes = oeToTesla(H)
-#####################################################################################################################################################################
 
-# Calculate susceptibility (Emu/Oe).
-# Choose a temp range to fit over (K)
-#####################################################################################################################################################################
 # X,XErr,Xi,XiErr = normSusc(M,H,MErr,molweight,samplemass,massErr)
 X = M/H
-Xi = 1 / X
+Xi = 1/X
 XBohr = MBohr/HTes
 XiBohr = 1/XBohr
-
-
-tr = [200,300] #temprange = [low,high]
-newT = []
-newXi = []
-newErr = []
-for i in range(len(T)):
-    if (T[i] >= tr[0] and T[i]<= tr[1]):
-        newT.append(T[i])
-        newXi.append(Xi[i])
-        # newErr.append(XiErr[i])
 #####################################################################################################################################################################
 
-cmodeli =  Model(Curiei, independent_vars = ['t'])
-params = cmodeli.make_params()
-params['wc'].set(value = -10)
-params['c'].set(value = 10)   
+# FITTING
+#####################################################################################################################################################################
+if fit:
+    tr = [200,300] #temprange = [low,high]
+    newT = []
+    newXi = []
+    newErr = []
+    for i in range(len(T)):
+        if (T[i] >= tr[0] and T[i]<= tr[1]):
+            newT.append(T[i])
+            newXi.append(Xi[i])
+            # newErr.append(XiErr[i])
+    cmodeli =  Model(Curiei, independent_vars = ['t'])
+    params = cmodeli.make_params()
+    params['wc'].set(value = -10)
+    params['c'].set(value = 10)   
 
-resulti = cmodeli.fit(newXi, params, t = newT) #fit
-# resulti = cmodeli.fit(newXi, params, t = newT, weights = newErr) #fit
+    resulti = cmodeli.fit(newXi, params, t = newT) #fit
+    # resulti = cmodeli.fit(newXi, params, t = newT, weights = newErr) #fit
+#####################################################################################################################################################################
 
-fullLine = []
-for i in T:
-    fullLine.append(Curiei(i,resulti.params['c'].value,resulti.params['wc'].value))
+
+
+    fullLine = []
+    for i in T:
+        fullLine.append(Curiei(i,resulti.params['c'].value,resulti.params['wc'].value))
 
 #####################################################################################################################################################################
 plt.figure()
 plt.plot(T,Xi,label = 'Measured 1/X')
 # plt.errorbar(T,Xi,yerr = XiErr,label = 'Measured 1/X')
-plt.plot(T,fullLine,'orange', linestyle = '--', label = 'Fitted 1/X')
-plt.title("{} {} fitted over T = [{},{}]".format(comp,measType,tr[0],tr[1]), fontsize = 15)
+if fit:
+    plt.plot(T,fullLine,'orange', linestyle = '--', label = 'Fitted 1/X')
+    plt.title("{} {} fitted over T = [{},{}]".format(comp,measType,tr[0],tr[1]), fontsize = 15)
+else:
+    plt.title("{} {}".format(comp,measType), fontsize = 15)    
 plt.xlabel('Temperature (K)', fontsize = 13)
 plt.ylabel('1/X (emu ^-1 Oe mol)', fontsize = 13)
 plt.legend()
@@ -101,11 +106,11 @@ plt.title("{} {}".format(comp,measType), fontsize = 15)
 plt.xlabel('Temperature (K)', fontsize = 13)
 plt.ylabel('1/X (uB^-1 T mol)', fontsize = 13)
 plt.legend()
-print('The Weiss constant = {:.2f} K\nThe Curie constant = {:.3f}'.format(resulti.params['wc'].value,resulti.params['c'].value))
+if fit:
+    print('The Weiss constant = {:.2f} K\nThe Curie constant = {:.3f}'.format(resulti.params['wc'].value,resulti.params['c'].value))
+    ueff, gj = calcConstants(resulti.params['c'].value,J)
+    print('Effective moment for {:} is {:.3f} bohr magnetons, with J={} -> gj factor = {:.3f}'.format(comp,ueff,J,gj))
 
-ueff, gj = calcConstants(resulti.params['c'].value,J)
-
-print('Effective moment for {:} is {:.3f} bohr magnetons, with J={} -> gj factor = {:.3f}'.format(comp,ueff,J,gj))
 plt.show()
 
 #####################################################################################################################################################################
