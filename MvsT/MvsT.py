@@ -36,7 +36,8 @@ runs = []
 for i in os.listdir(saveDir):
     if i.endswith('.DAT') or i.endswith('.dat'):
         runs.append(i)
-        print(i`)       
+        print(i)    
+           
 data = {}
 for i in runs:
     M,H,T,MErr,mass,measType = getData(i,saveDir, who = who, dataType = dataType)

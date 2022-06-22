@@ -138,8 +138,8 @@ def getData(magrun, dataDir,**kwargs):
 	elif who == 'PPMS':
 		# name = name.replace('P','.')
 		mass = getMass(magrun,**kwargs)
-		# print(mass)
-		df = pd.read_csv(dataDir + magrun)
+		print(mass)
+		df = pd.read_csv(dataDir + magrun, sep = ',')
 		df.dropna(inplace = True)
 		T = np.array(df['Temperature (K)'])
 		H = np.array(df['Magnetic Field (Oe)'])
