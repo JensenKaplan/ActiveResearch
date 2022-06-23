@@ -16,6 +16,8 @@ from scipy import integrate
 
 # Moleuclar weight dictionary for our compounds.
 molweight = { 'Sr2PrO4' : 380.15, 'Li8PrO6' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16, 'Ba2YbNbO6' : 636.60, 'Ba2DyNbO6': 626.06 , 'Ba2ErNbO6': 630.82 } 
+avo =6.0221409e+23 #spin/mol
+
 
 # Thermo diagnostic function.
 # Uses PCF object
@@ -74,6 +76,18 @@ def thermoDiagnostic(Pr, TX, HX, TM, HM, **kwargs):
 	plt.show()
 	return [Mx,My,Mz], [Xx,Xy,Xz]
 
+def POEXi(M,MErr,H,mass,massErr,comp,per):
+	X = M/H
+	XErr = []
+	print(len(M), len(MErr), len(H))
+	for i in range(len(MErr)):
+		XErr.append((MErr[i]/H[i])*(molweight[comp]/mass) + (M[i]/H[i])*(molweight[comp]/mass**2)*massErr)
+	
+	XErr = 1/avo**2*np.array(XErr)
+	XiErr = []
+	for i in range(len(XErr)):
+		XiErr.append(XErr[i]/(X[i]**2))
+	return XiErr
 
 # Data grabbing functions
 #####################################################################################################################################################################
@@ -114,7 +128,6 @@ def getData(magrun, dataDir,**kwargs):
 	    mass = mass.replace('P','.')
 	    mass = mass[:-2]
 	    measType = magrun.split('_')[-1].split('.')[0]
-	    
 
 	    f = open(dataDir + magrun)
 	    while f.readline().strip() != '[Data]':
@@ -139,14 +152,15 @@ def getData(magrun, dataDir,**kwargs):
 		# name = name.replace('P','.')
 		mass = getMass(magrun,**kwargs)
 		# print(mass)
-		df = pd.read_csv(dataDir + magrun, sep = ',',skiprows = 1, on_bad_lines='skip', names = ['Time Stamp (sec)','Temperature (K)','Magnetic Field (Oe)','Moment (emu)','M. Std. Err. (emu)'])
+		df = pd.read_csv(dataDir + magrun, sep = ',', skiprows = 1,  names = ['Time Stamp (sec)','Temperature (K)','Magnetic Field (Oe)','Moment (emu)','M. Std. Err. (emu)'])
 		df.dropna(inplace = True)
 
 		T = np.array(df['Temperature (K)'])
 		H = np.array(df['Magnetic Field (Oe)'])
 		E = np.array(df['M. Std. Err. (emu)'])
 		M = np.array(df['Moment (emu)'])
-		print(T)
+		# print(T)
+
 		if dataType == 'MH':
 			name =  getTemp(magrun, who = who)
 			return  M, H, E, mass, name
@@ -398,7 +412,6 @@ def printPCFEigens(x,bpf, **kwargs):
 # Takes in magnetization list/float (either bohr magnetons or emu)
 # Returns magnetization list/float normalized to per spin
 def normalize(M,mass,molweight, per):
-	avo =6.0221409e+23 #spin/mol
 	if (per == 'mol'):
 		if (isinstance(M,list) or isinstance(M, np.ndarray)):
 			normM = []
