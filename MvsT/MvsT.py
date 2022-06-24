@@ -4,7 +4,7 @@ from JensenTools import *
 
 # Important stuff
 #####################################################################################################################################################################
-comp = 'Ba2DyNbO6'
+comp = 'Ba2YbNbO6'
 who = 'PPMS'
 dataType = 'MT'
 saveDir = getSaveDir('m', comp = comp, dataType = dataType)

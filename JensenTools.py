@@ -178,12 +178,16 @@ def getData(magrun, dataDir,**kwargs):
 			measType = magrun.split('_')[-1].split('.')[0]
 			return M,H,T,E, mass, measType
 		if dataType == 'HC':
-			df = pd.read_table(dataDir + magrun, sep = ',', skiprows = 1,  names = ['Sample Temp (Kelvin)','Samp HC (µJ/K)','Samp HC Err (µJ/K)'])
+			f = open(dataDir + magrun, encoding = 'latin1')
+			mass = magrun.split('_')[2].replace('p','.').replace('P','.')[:-2]
+			mass = float(mass)/1000
+			df = pd.read_table(f, sep = ',', skiprows = 1,  names = ['Sample Temp (Kelvin)','Samp HC (µJ/K)','Samp HC Err (µJ/K)'])
 			df.dropna(inplace = True)
 			T = np.array(df['Sample Temp (Kelvin)'])
 			C = np.array(df['Samp HC (µJ/K)'])
 			CErr = np.array(df['Samp HC Err (µJ/K)'])
-			return T, C, CErr
+			field = magrun.split('_')[-2] +  magrun.split('_')[-1].split('.')[0]
+			return T, C, CErr, field, mass
 
 
 # Get mass from filename and return in grams
