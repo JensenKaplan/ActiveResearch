@@ -137,6 +137,7 @@ if fit:
     newT = []
     newXi = []
     newErr = []
+    
     for i in range(len(T)):
         if (T[i] >= tr[0] and T[i]<= tr[1]):
             newT.append(T[i])
