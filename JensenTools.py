@@ -110,6 +110,8 @@ def getSaveDir(name = 'm', comp = 'Sr2PrO4', dataType = None):
 		dataDir = dataDir + 'MVSH/'
 	elif dataType == 'MT':
 		dataDir = dataDir + 'MVST/'
+	elif dataType == 'HC':
+		dataDir = dataDir + 'HC/'
 	else:
 		return dataDir
 	return dataDir
@@ -150,23 +152,39 @@ def getData(magrun, dataDir,**kwargs):
 
 	elif who == 'PPMS':
 		# name = name.replace('P','.')
-		mass = getMass(magrun,**kwargs)
 		# print(mass)
-		df = pd.read_csv(dataDir + magrun, sep = ',', skiprows = 1,  names = ['Time Stamp (sec)','Temperature (K)','Magnetic Field (Oe)','Moment (emu)','M. Std. Err. (emu)'])
-		df.dropna(inplace = True)
 
-		T = np.array(df['Temperature (K)'])
-		H = np.array(df['Magnetic Field (Oe)'])
-		E = np.array(df['M. Std. Err. (emu)'])
-		M = np.array(df['Moment (emu)'])
 		# print(T)
 
 		if dataType == 'MH':
+			mass = getMass(magrun,**kwargs)
+			df = pd.read_csv(dataDir + magrun, sep = ',', skiprows = 1,  names = ['Time Stamp (sec)','Temperature (K)','Magnetic Field (Oe)','Moment (emu)','M. Std. Err. (emu)'])
+			df.dropna(inplace = True)
+			T = np.array(df['Temperature (K)'])
+			H = np.array(df['Magnetic Field (Oe)'])
+			E = np.array(df['M. Std. Err. (emu)'])
+			M = np.array(df['Moment (emu)'])
 			name =  getTemp(magrun, who = who)
 			return  M, H, E, mass, name
 		if dataType == 'MT':
+			mass = getMass(magrun,**kwargs)
+			df = pd.read_csv(dataDir + magrun, sep = ',', skiprows = 1,  names = ['Time Stamp (sec)','Temperature (K)','Magnetic Field (Oe)','Moment (emu)','M. Std. Err. (emu)'])
+			df.dropna(inplace = True)
+
+			T = np.array(df['Temperature (K)'])
+			H = np.array(df['Magnetic Field (Oe)'])
+			E = np.array(df['M. Std. Err. (emu)'])
+			M = np.array(df['Moment (emu)'])
 			measType = magrun.split('_')[-1].split('.')[0]
 			return M,H,T,E, mass, measType
+		if dataType == 'HC':
+			df = pd.read_table(dataDir + magrun, sep = ',', skiprows = 1,  names = ['Sample Temp (Kelvin)','Samp HC (µJ/K)','Samp HC Err (µJ/K)'])
+			df.dropna(inplace = True)
+			T = np.array(df['Sample Temp (Kelvin)'])
+			C = np.array(df['Samp HC (µJ/K)'])
+			CErr = np.array(df['Samp HC Err (µJ/K)'])
+			return T, C, CErr
+
 
 # Get mass from filename and return in grams
 def getMass(filename,**kwargs):

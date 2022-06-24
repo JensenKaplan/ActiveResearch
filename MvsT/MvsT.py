@@ -56,6 +56,7 @@ XPlt = plt.figure()
 XAx = XPlt.add_subplot(1,1,1)
 XTPlt = plt.figure()
 XTAx = XTPlt.add_subplot(1,1,1)
+
 # Plot all
 for i in data.keys():
     M,H,T,MErr,samplemass = data[i]
