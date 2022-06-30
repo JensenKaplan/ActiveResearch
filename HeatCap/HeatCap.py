@@ -26,7 +26,6 @@ rcParams['ytick.minor.visible'] = True
 rcParams['legend.frameon'] = False
 rcParams['legend.fontsize'] = 12
 
-
 comp = 'Ba2YbNbO6'
 who = 'PPMS'
 # comp = 'Li8PrO6'
@@ -34,6 +33,8 @@ who = 'PPMS'
 dataType = 'HC'
 saveDir = getSaveDir('m', comp = comp, dataType = dataType)
 DataViewer = False
+savepic = True
+Trange = True
 avo = 6.0221409e+23 #spin/mol
 
 runs = []
@@ -44,7 +45,7 @@ for i in os.listdir(saveDir):
 temp = []
 for i in runs:
 	# print()
-	temp.append((i.split('_')[-1]).split('.')[0][:-1]) # this creates a list of just temperatures as read by the filename   
+	temp.append((i.split('_')[-1]).split('.')[0][:-1].replace('p','.')) # this creates a list of just temperatures as read by the filename   
 temp = np.argsort([float(i) for i in temp]) # Sort by temperature
 runs = [runs[i] for i in temp] # newly sorted listed
 # print(runs)
@@ -52,7 +53,7 @@ runs = [runs[i] for i in temp] # newly sorted listed
 data = {}
 for i in runs:
 	T,C,CErr,field, mass = getData(i,saveDir, dataType = dataType, who = who)
-	
+
 	if mass == -1:
 		C = C
 	else:
@@ -73,10 +74,11 @@ for i in runs:
 	data[field] = np.array(T),np.array(C),np.array(CErr)
 	# data[field] = T,h,hErr
 
-CPlt = plt.figure()
+CPlt = plt.figure(figsize = (8,8))
 CAx = CPlt.add_subplot(1,1,1)
-CTPlt = plt.figure()
+CTPlt = plt.figure(figsize = (8,8))
 CTAx = CTPlt.add_subplot(1,1,1)
+
 for i in data.keys():
 	if i == 'HC1T' or i == 'HC0T' or i == 'DRHC0T':
 		pass
@@ -86,17 +88,43 @@ for i in data.keys():
 		C = data[i][1]# To Tesla
 		CErr = data[i][2] # To Tesla
 		CTErr = CErr/T
+
+		if Trange:
+		    tr = [0,20] #temprange = [low,high]
+		    TNew = []
+		    CNew = []
+		    CErrNew = []
+		    CTErrNew = []
+		    for j in range(len(T)):
+		        if (T[j] >= tr[0] and T[j]<= tr[1]):
+		            TNew.append(T[j])
+		            CNew.append(C[j])
+		            CErrNew.append(CErr[j])
+		            CTErrNew.append(CTErr[j])
+		    T = np.array(TNew)
+		    C = np.array(CNew)
+		    CErr  = np.array(CErrNew)
+		    CTErr = np.array(CTErrNew)
 		CAx.errorbar(T,C, yerr = CErr, linestyle = '--', marker = 'o',markersize = 5, linewidth = 3, label = i)
 		CTAx.errorbar(T, C/T, yerr = CTErr, linestyle = '--', marker = 'o',markersize = 5, linewidth = 3, label = i)
 
 CAx.legend(fontsize = '13')
 CAx.set_title(comp)
 CAx.set_xlabel('Temperature (K)', fontweight = 'bold')
-CAx.set_ylabel('Heat Capacity (J/K/mol)', fontweight = 'bold')
+CAx.set_ylabel('C (J/K/mol)', fontweight = 'bold')
 CTAx.legend(fontsize = '13')
 CTAx.set_title(comp)
 CTAx.set_xlabel('Temperature (K)', fontweight = 'bold')
 CTAx.set_ylabel('C/T (J/K^2 mol^-1)', fontweight = 'bold')
+
+if savepic:
+	if Trange:
+		CPlt.savefig(saveDir + '{}_CvsT_trimmed.pdf'.format(comp))
+		CTPlt.savefig(saveDir + '{}_CTvsT_trimmed.pdf'.format(comp))
+	else:
+		CPlt.savefig(saveDir + '{}_CvsT.pdf'.format(comp))
+		CTPlt.savefig(saveDir + '{}_CTvsT.pdf'.format(comp))
+
 plt.show()
 
 # Sample Temp (Kelvin),Samp HC (µJ/K),Samp HC Err (µJ/K),
