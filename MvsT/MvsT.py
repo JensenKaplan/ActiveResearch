@@ -4,7 +4,7 @@ from JensenTools import *
 
 # Important stuff
 #####################################################################################################################################################################
-comp = 'Ba2YbNbO6'
+comp = 'Ba2DyNbO6'
 who = 'PPMS'
 dataType = 'MT'
 saveDir = getSaveDir('m', comp = comp, dataType = dataType)
@@ -79,26 +79,26 @@ for i in data.keys():
     XiAx.errorbar(T, Xi, yerr = XiErr, label = 'Measured 1/X {}'.format(i), marker = '.', linestyle = 'none')
     XiAx.set_title("{}".format(comp), fontsize = 15)
     XiAx.set_xlabel('Temperature (K)', fontsize = 13)
-    XiAx.set_ylabel('1/X (emu^-1 Oe {})'.format(per), fontsize = 13)
+    XiAx.set_ylabel(r'1/X (emu$^{-1}$ Oe mol)', fontsize = 13)
     XiAx.legend()
 
-    XAx.errorbar(T, X, yerr = XiErr, label = 'Measured 1/X {}'.format(i), marker = '.', linestyle = 'none')
+    XAx.errorbar(T, X, yerr = XErr, label = 'Measured X {}'.format(i), marker = '.', linestyle = 'none')
     XAx.set_title("{}".format(comp), fontsize = 15)
     XAx.set_xlabel('Temperature (K)', fontsize = 13)
-    XAx.set_ylabel('X (emu Oe^-1 {})'.format(per), fontsize = 13)
+    XAx.set_ylabel(r'X (emu Oe$^{-1}$ mol${^-1}$)', fontsize = 13)
     XAx.legend()
 
-    XTAx.errorbar(T, X*T, yerr = XiErr, label = 'Measured 1/X {}'.format(i), marker = '.', linestyle = 'none')
+    XTAx.errorbar(T, np.sqrt(X*T*8), yerr = np.sqrt(8*XErr*T), label = 'Measured X*T {}'.format(i), marker = '.', linestyle = 'none')
     XTAx.set_title("{}".format(comp), fontsize = 15)
     XTAx.set_xlabel('Temperature (K)', fontsize = 13)
-    XTAx.set_ylabel('X*T (emu K Oe^-1 {})'.format(per), fontsize = 13)
+    XTAx.set_ylabel(r'X*T (uB mol$^{-1}$)', fontsize = 13)
     XTAx.legend()
 
 
 if savepic:
     XiPlt.savefig(MTDir+'{}_XivsT_emu_Oe.pdf'.format(comp))
     XPlt.savefig(MTDir+'{}_XvsT_emu_Oe.pdf'.format(comp))
-    XTPlt.savefig(MTDir+'{}_XTvsT_emu_Oe.pdf'.format(comp))
+    XTPlt.savefig(MTDir+'{}_XTvsT_uB_mol.pdf'.format(comp))
 plt.show()
 
 XiPlt = plt.figure()
@@ -114,6 +114,7 @@ for i in data.keys():
     HTes = oeToTesla(H)
     MBohrErr = emuToBohr2(MErr)
     XErr = MErr/H
+    XBohrErr = MBohrErr/HTes
 
     X = M/H
     Xi = 1/X
@@ -122,28 +123,28 @@ for i in data.keys():
     XiBohrErr = POEXi(MBohr,MBohrErr,HTes,samplemass,massErr,comp,per)
     XiErr = POEXi(M, MErr, H, samplemass, massErr, comp, per)
 
-    XiAx.errorbar(T, Xi, yerr = XiErr, label = 'Measured 1/X {}'.format(i), marker = '.', linestyle = 'none')
+    XiAx.errorbar(T, XiBohr, yerr = XiBohrErr, label = 'Measured 1/X {}'.format(i), marker = '.', linestyle = 'none')
     XiAx.set_title("{}".format(comp), fontsize = 15)
     XiAx.set_xlabel('Temperature (K)', fontsize = 13)
-    XiAx.set_ylabel('1/X (uB^-1 T {})'.format(per), fontsize = 13)
+    XiAx.set_ylabel(r'1/X (uB^${-1}$ T mol$^{-1}$)', fontsize = 13)
     XiAx.legend()
 
-    XAx.errorbar(T, X, yerr = XiErr, label = 'Measured 1/X {}'.format(i), marker = '.', linestyle = 'none')
+    XAx.errorbar(T, XBohr, yerr = XBohrErr, label = 'Measured X {}'.format(i), marker = '.', linestyle = 'none')
     XAx.set_title("{}".format(comp), fontsize = 15)
     XAx.set_xlabel('Temperature (K)', fontsize = 13)
-    XAx.set_ylabel('X (uB T^-1 {})'.format(per), fontsize = 13)
+    XAx.set_ylabel(r'X (uB T$^{-1}$)', fontsize = 13)
     XAx.legend()
 
-    XTAx.errorbar(T, X*T, yerr = XiErr, label = 'Measured 1/X {}'.format(i), marker = '.', linestyle = 'none')
+    XTAx.errorbar(T, XBohr*T, yerr = XBohrErr*T, label = 'Measured X*T {}'.format(i), marker = '.', linestyle = 'none')
     XTAx.set_title("{}".format(comp), fontsize = 15)
     XTAx.set_xlabel('Temperature (K)', fontsize = 13)
-    XTAx.set_ylabel('X*T (uB K T^-1 {})'.format(per), fontsize = 13)
+    XTAx.set_ylabel(r'X*T (uB K T$^{-1}$  mol$^{-1}$)', fontsize = 13)
     XTAx.legend()
 
 if savepic:
     XiPlt.savefig(MTDir+'{}_XivsT_uB_T.pdf'.format(comp))
     XPlt.savefig(MTDir+'{}_XvsT_uB_T.pdf'.format(comp))
-    XTPlt.savefig(MTDir+'{}_XTvsT_uB_T.pdf'.format(comp))
+    # XTPlt.savefig(MTDir+'{}_XTvsT_uB_T.pdf'.format(comp))
 plt.show()
 #####################################################################################################################################################################
 
@@ -166,11 +167,11 @@ if fit:
 
     resulti = cmodeli.fit(newXi, params, t = newT) #fit
     # resulti = cmodeli.fit(newXi, params, t = newT, weights = newErr) #fit
+
 #####################################################################################################################################################################
     fullLine = []
     for i in T:
         fullLine.append(Curiei(i,resulti.params['c'].value,resulti.params['wc'].value))
-
 #####################################################################################################################################################################
 # plt.figure()
 # plt.errorbar(T, Xi, yerr = XiErr, label = 'Measured 1/X', marker = '.', linestyle = 'none')
