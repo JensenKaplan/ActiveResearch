@@ -4,16 +4,22 @@ from JensenTools import *
 
 # Important stuff
 #####################################################################################################################################################################
-comp = 'Ba2DyNbO6'
+comp = 'Ba2TbNbO6'
 who = 'PPMS'
 dataType = 'MT'
 saveDir = getSaveDir('m', comp = comp, dataType = dataType)
 MTDir = getSaveDir('m', comp = comp, dataType = dataType)
 molweight = molweight[comp]
-J = 7/2
+#Yb
+# J = 7/2
+#Er and Dy
+# J = 15/2
+#Tb
+J = 6
+
 massErr = .00005
-fit = False
-savepic = True
+fit = True
+savepic = False
 per = 'mol'
 #####################################################################################################################################################################
 
@@ -94,11 +100,47 @@ for i in data.keys():
     XTAx.set_ylabel(r'X*T (uB mol$^{-1}$)', fontsize = 13)
     XTAx.legend()
 
+    # FITTING
+    #####################################################################################################################################################################
+    if fit:
+        if i == 'ZFC':
+            tr = [160,300] #temprange = [low,high]
+            newT = []
+            newXi = []
+            newErr = []
+            for i in range(len(T)):
+                if (T[i] >= tr[0] and T[i]<= tr[1]):
+                    newT.append(T[i])
+                    newXi.append(Xi[i])
+                    # newErr.append(XiErr[i])
+            cmodeli =  Model(Curiei, independent_vars = ['t'])
+            params = cmodeli.make_params()
+            params['wc'].set(value = -10)
+            params['c'].set(value = 10)   
 
-if savepic:
-    XiPlt.savefig(MTDir+'{}_XivsT_emu_Oe.pdf'.format(comp))
-    XPlt.savefig(MTDir+'{}_XvsT_emu_Oe.pdf'.format(comp))
-    XTPlt.savefig(MTDir+'{}_XTvsT_uB_mol.pdf'.format(comp))
+            resulti = cmodeli.fit(newXi, params, t = newT) #fit
+            # resulti = cmodeli.fit(newXi, params, t = newT, weights = newErr) #fit
+
+        #####################################################################################################################################################################
+            fullLine = []
+            for i in T:
+                fullLine.append(Curiei(i,resulti.params['c'].value,resulti.params['wc'].value))
+        #####################################################################################################################################################################
+
+            #####
+            if fit:
+                XiAx.plot(T,fullLine,'black', linestyle = '--', label = 'Fitted 1/X')
+                # plt.show()
+            if fit:
+                print('The Weiss constant = {:.2f} K\nThe Curie constant = {:.3f}'.format(resulti.params['wc'].value,resulti.params['c'].value))
+                ueff, gj = calcConstants(resulti.params['c'].value,J)
+                print('Effective moment for {:} is {:.3f} bohr magnetons, with J={} -> gj factor = {:.3f}'.format(comp,ueff,J,gj))
+            ######
+
+    if savepic:
+        XiPlt.savefig(MTDir+'{}_XivsT_emu_Oe.pdf'.format(comp))
+        XPlt.savefig(MTDir+'{}_XvsT_emu_Oe.pdf'.format(comp))
+        XTPlt.savefig(MTDir+'{}_XTvsT_uB_mol.pdf'.format(comp))
 plt.show()
 
 XiPlt = plt.figure()
@@ -145,42 +187,15 @@ if savepic:
     XiPlt.savefig(MTDir+'{}_XivsT_uB_T.pdf'.format(comp))
     XPlt.savefig(MTDir+'{}_XvsT_uB_T.pdf'.format(comp))
     # XTPlt.savefig(MTDir+'{}_XTvsT_uB_T.pdf'.format(comp))
-plt.show()
+# plt.show()
 #####################################################################################################################################################################
 
-# FITTING
-#####################################################################################################################################################################
-if fit:
-    tr = [200,300] #temprange = [low,high]
-    newT = []
-    newXi = []
-    newErr = []
-    for i in range(len(T)):
-        if (T[i] >= tr[0] and T[i]<= tr[1]):
-            newT.append(T[i])
-            newXi.append(Xi[i])
-            # newErr.append(XiErr[i])
-    cmodeli =  Model(Curiei, independent_vars = ['t'])
-    params = cmodeli.make_params()
-    params['wc'].set(value = -10)
-    params['c'].set(value = 10)   
 
-    resulti = cmodeli.fit(newXi, params, t = newT) #fit
-    # resulti = cmodeli.fit(newXi, params, t = newT, weights = newErr) #fit
-
-#####################################################################################################################################################################
-    fullLine = []
-    for i in T:
-        fullLine.append(Curiei(i,resulti.params['c'].value,resulti.params['wc'].value))
-#####################################################################################################################################################################
 # plt.figure()
 # plt.errorbar(T, Xi, yerr = XiErr, label = 'Measured 1/X', marker = '.', linestyle = 'none')
 # # plt.errorbar(T,Xi,yerr = XiErr,label = 'Measured 1/X')
 
-# if fit:
-#     plt.plot(T,fullLine,'orange', linestyle = '--', label = 'Fitted 1/X')
-#     plt.title("{} {} fitted over T = [{},{}]".format(comp,measType,tr[0],tr[1]), fontsize = 15)
-# else:
+
 #     plt.title("{} {}".format(comp,measType), fontsize = 15) 
 
 # plt.xlabel('Temperature (K)', fontsize = 13)
@@ -195,10 +210,6 @@ if fit:
 # plt.ylabel('1/X (uB^-1 T {})'.format(per), fontsize = 13)
 # plt.legend()
 
-# if fit:
-#     print('The Weiss constant = {:.2f} K\nThe Curie constant = {:.3f}'.format(resulti.params['wc'].value,resulti.params['c'].value))
-#     ueff, gj = calcConstants(resulti.params['c'].value,J)
-#     print('Effective moment for {:} is {:.3f} bohr magnetons, with J={} -> gj factor = {:.3f}'.format(comp,ueff,J,gj))
 
 plt.show()
 
