@@ -15,7 +15,7 @@ import pandas as pd
 from scipy import integrate
 
 # Moleuclar weight dictionary for our compounds.
-molweight = { 'Sr2PrO4' : 380.15, 'Li8PrO6' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16, 'Ba2YbNbO6' : 636.60, 'Ba2DyNbO6': 626.06 , 'Ba2ErNbO6': 630.82 } 
+molweight = { 'Sr2PrO4' : 380.15, 'Li8PrO6' : 292.43, 'ErOI' : 310.16, 'ErOBr' : 263.16, 'Ba2YbNbO6' : 636.60, 'Ba2DyNbO6': 626.06 , 'Ba2ErNbO6': 630.82 , 'Ba2TbNbO6' : 622.48} 
 avo =6.0221409e+23 #spin/mol
 
 
@@ -79,7 +79,7 @@ def thermoDiagnostic(Pr, TX, HX, TM, HM, **kwargs):
 def POEXi(M,MErr,H,mass,massErr,comp,per):
 	X = M/H
 	XErr = []
-	print(len(M), len(MErr), len(H))
+	# print(len(M), len(MErr), len(H))
 	for i in range(len(MErr)):
 		XErr.append((MErr[i]/H[i])*(molweight[comp]/mass) + (M[i]/H[i])*(molweight[comp]/mass**2)*massErr)
 	

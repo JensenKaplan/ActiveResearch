@@ -4,7 +4,7 @@ from JensenTools import *
 
 #####################################################################################################################################################################
 who = 'PPMS'
-comp = 'Ba2DyNbO6'
+comp = 'Ba2TbNbO6'
 MHDir = getSaveDir('m', comp = comp, dataType = 'MH')
 molweight = molweight[comp]
 fit  = False

@@ -4,7 +4,7 @@ from JensenTools import *
 
 # Important stuff
 #####################################################################################################################################################################
-comp = 'Ba2TbNbO6'
+comp = 'Ba2YbNbO6'
 who = 'PPMS'
 dataType = 'MT'
 saveDir = getSaveDir('m', comp = comp, dataType = dataType)
@@ -19,7 +19,7 @@ J = 6
 
 massErr = .00005
 fit = True
-savepic = False
+savepic = True
 per = 'mol'
 #####################################################################################################################################################################
 
@@ -94,17 +94,17 @@ for i in data.keys():
     XAx.set_ylabel(r'X (emu Oe$^{-1}$ mol${^-1}$)', fontsize = 13)
     XAx.legend()
 
-    XTAx.errorbar(T, np.sqrt(X*T*8), yerr = np.sqrt(8*XErr*T), label = 'Measured X*T {}'.format(i), marker = '.', linestyle = 'none')
+    XTAx.errorbar(T, np.sqrt(X*T*8), yerr = np.sqrt(8*XErr*T), label = 'Measured Moment {}'.format(i), marker = '.', linestyle = 'none')
     XTAx.set_title("{}".format(comp), fontsize = 15)
     XTAx.set_xlabel('Temperature (K)', fontsize = 13)
-    XTAx.set_ylabel(r'X*T (uB mol$^{-1}$)', fontsize = 13)
+    XTAx.set_ylabel(r'$\sqrt{8*X*T}$ ($\mu_B$ f.u.$^{-1}$)', fontsize = 13)
     XTAx.legend()
 
     # FITTING
     #####################################################################################################################################################################
     if fit:
         if i == 'ZFC':
-            tr = [160,300] #temprange = [low,high]
+            tr = [0,20] #temprange = [low,high]
             newT = []
             newXi = []
             newErr = []
@@ -129,7 +129,8 @@ for i in data.keys():
 
             #####
             if fit:
-                XiAx.plot(T,fullLine,'black', linestyle = '--', label = 'Fitted 1/X')
+                XiAx.plot(T,fullLine,'black', linestyle = '--', label = 'Curie-Weiss Fit T = [{},{}]'.format(tr[0],tr[1]))
+                XiAx.legend()
                 # plt.show()
             if fit:
                 print('The Weiss constant = {:.2f} K\nThe Curie constant = {:.3f}'.format(resulti.params['wc'].value,resulti.params['c'].value))
@@ -143,74 +144,52 @@ for i in data.keys():
         XTPlt.savefig(MTDir+'{}_XTvsT_uB_mol.pdf'.format(comp))
 plt.show()
 
-XiPlt = plt.figure()
-XiAx = XiPlt.add_subplot(1,1,1)
-XPlt = plt.figure()
-XAx = XPlt.add_subplot(1,1,1)
-XTPlt = plt.figure()
-XTAx = XTPlt.add_subplot(1,1,1)
+# XiPlt = plt.figure()
+# XiAx = XiPlt.add_subplot(1,1,1)
+# XPlt = plt.figure()
+# XAx = XPlt.add_subplot(1,1,1)
+# XTPlt = plt.figure()
+# XTAx = XTPlt.add_subplot(1,1,1)
 
-for i in data.keys():
-    M,H,T,MErr,samplemass = data[i]
-    MBohr = emuToBohr2(M)
-    HTes = oeToTesla(H)
-    MBohrErr = emuToBohr2(MErr)
-    XErr = MErr/H
-    XBohrErr = MBohrErr/HTes
+# #####################################################################################################################################################################
 
-    X = M/H
-    Xi = 1/X
-    XBohr = MBohr/HTes
-    XiBohr = 1/XBohr
-    XiBohrErr = POEXi(MBohr,MBohrErr,HTes,samplemass,massErr,comp,per)
-    XiErr = POEXi(M, MErr, H, samplemass, massErr, comp, per)
+# for i in data.keys():
+#     M,H,T,MErr,samplemass = data[i]
+#     MBohr = emuToBohr2(M)
+#     HTes = oeToTesla(H)
+#     MBohrErr = emuToBohr2(MErr)
+#     XErr = MErr/H
+#     XBohrErr = MBohrErr/HTes
 
-    XiAx.errorbar(T, XiBohr, yerr = XiBohrErr, label = 'Measured 1/X {}'.format(i), marker = '.', linestyle = 'none')
-    XiAx.set_title("{}".format(comp), fontsize = 15)
-    XiAx.set_xlabel('Temperature (K)', fontsize = 13)
-    XiAx.set_ylabel(r'1/X (uB^${-1}$ T mol$^{-1}$)', fontsize = 13)
-    XiAx.legend()
+#     X = M/H
+#     Xi = 1/X
+#     XBohr = MBohr/HTes
+#     XiBohr = 1/XBohr
+#     XiBohrErr = POEXi(MBohr,MBohrErr,HTes,samplemass,massErr,comp,per)
+#     XiErr = POEXi(M, MErr, H, samplemass, massErr, comp, per)
 
-    XAx.errorbar(T, XBohr, yerr = XBohrErr, label = 'Measured X {}'.format(i), marker = '.', linestyle = 'none')
-    XAx.set_title("{}".format(comp), fontsize = 15)
-    XAx.set_xlabel('Temperature (K)', fontsize = 13)
-    XAx.set_ylabel(r'X (uB T$^{-1}$)', fontsize = 13)
-    XAx.legend()
+#     XiAx.errorbar(T, XiBohr, yerr = XiBohrErr, label = 'Measured 1/X {}'.format(i), marker = '.', linestyle = 'none')
+#     XiAx.set_title("{}".format(comp), fontsize = 15)
+#     XiAx.set_xlabel('Temperature (K)', fontsize = 13)
+#     XiAx.set_ylabel(r'1/X (uB^${-1}$ T mol$^{-1}$)', fontsize = 13)
+#     XiAx.legend()
 
-    XTAx.errorbar(T, XBohr*T, yerr = XBohrErr*T, label = 'Measured X*T {}'.format(i), marker = '.', linestyle = 'none')
-    XTAx.set_title("{}".format(comp), fontsize = 15)
-    XTAx.set_xlabel('Temperature (K)', fontsize = 13)
-    XTAx.set_ylabel(r'X*T (uB K T$^{-1}$  mol$^{-1}$)', fontsize = 13)
-    XTAx.legend()
+#     XAx.errorbar(T, XBohr, yerr = XBohrErr, label = 'Measured X {}'.format(i), marker = '.', linestyle = 'none')
+#     XAx.set_title("{}".format(comp), fontsize = 15)
+#     XAx.set_xlabel('Temperature (K)', fontsize = 13)
+#     XAx.set_ylabel(r'X (uB T$^{-1}$)', fontsize = 13)
+#     XAx.legend()
 
-if savepic:
-    XiPlt.savefig(MTDir+'{}_XivsT_uB_T.pdf'.format(comp))
-    XPlt.savefig(MTDir+'{}_XvsT_uB_T.pdf'.format(comp))
-    # XTPlt.savefig(MTDir+'{}_XTvsT_uB_T.pdf'.format(comp))
+#     XTAx.errorbar(T, XBohr*T, yerr = XBohrErr*T, label = 'Measured X*T {}'.format(i), marker = '.', linestyle = 'none')
+#     XTAx.set_title("{}".format(comp), fontsize = 15)
+#     XTAx.set_xlabel('Temperature (K)', fontsize = 13)
+#     XTAx.set_ylabel(r'X*T ($\mu_B^2$ K T$^{-1}$  mol$^{-1}$)', fontsize = 13)
+#     XTAx.legend()
+
+# if savepic:
+#     XiPlt.savefig(MTDir+'{}_XivsT_uB_T.pdf'.format(comp))
+#     XPlt.savefig(MTDir+'{}_XvsT_uB_T.pdf'.format(comp))
+
 # plt.show()
-#####################################################################################################################################################################
 
-
-# plt.figure()
-# plt.errorbar(T, Xi, yerr = XiErr, label = 'Measured 1/X', marker = '.', linestyle = 'none')
-# # plt.errorbar(T,Xi,yerr = XiErr,label = 'Measured 1/X')
-
-
-#     plt.title("{} {}".format(comp,measType), fontsize = 15) 
-
-# plt.xlabel('Temperature (K)', fontsize = 13)
-# plt.ylabel('1/X (emu ^-1 Oe {})'.format(per), fontsize = 13)
-# plt.legend()
-
-# plt.figure()
-# plt.errorbar(T,XiBohr, yerr = XiBohrErr, label = 'Measured 1/X', marker = '.', linestyle = 'none')
-# # plt.plot(T,fullLine,'orange', linestyle = '--', label = 'Fitted 1/X')
-# plt.title("{} {}".format(comp,measType), fontsize = 15)
-# plt.xlabel('Temperature (K)', fontsize = 13)
-# plt.ylabel('1/X (uB^-1 T {})'.format(per), fontsize = 13)
-# plt.legend()
-
-
-plt.show()
-
-#####################################################################################################################################################################
+# #####################################################################################################################################################################
