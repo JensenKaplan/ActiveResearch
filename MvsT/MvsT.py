@@ -19,7 +19,7 @@ J = 6
 
 massErr = .00005
 fit = True
-savepic = True
+savepic = False
 per = 'mol'
 #####################################################################################################################################################################
 
@@ -46,9 +46,10 @@ def calcConstants(c,J):
 runs = []
 for i in os.listdir(saveDir):
     if i.endswith('.DAT') or i.endswith('.dat'):
-        runs.append(i)
-        # print(i)    
+        runs.append(i) 
            
+
+
 data = {}
 for i in runs:
     M,H,T,MErr,mass,measType = getData(i,saveDir, who = who, dataType = dataType)
